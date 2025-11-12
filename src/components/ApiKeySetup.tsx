@@ -63,7 +63,7 @@ export function ApiKeySetup({ onComplete }: ApiKeySetupProps) {
     onComplete();
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!keys.hyperliquid.apiKey || !keys.openRouter) {
       toast.error('Please fill in all required API keys');
       return;
@@ -112,7 +112,14 @@ export function ApiKeySetup({ onComplete }: ApiKeySetupProps) {
     }
 
     storage.saveApiKeys(keys);
-    toast.success('API keys saved securely in browser storage');
+    
+    // Set mode to live to trigger balance fetching
+    const { setMode } = await import('@/store/tradingStore').then(m => m.useTradingStore.getState());
+    setMode('live');
+    
+    toast.success('API keys saved - Fetching live balance...', {
+      description: 'Switch to LIVE mode in dashboard to see your balance',
+    });
     onComplete();
   };
 
