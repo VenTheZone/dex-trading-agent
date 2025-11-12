@@ -15,6 +15,7 @@ import { useTradingStore } from '@/store/tradingStore';
 import { Activity, DollarSign, TrendingUp, Settings, Loader2, LineChart, Network, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { TradingLogs } from '@/components/TradingLogs';
+import { NewsFeed } from '@/components/NewsFeed';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { BalanceChart } from '@/components/BalanceChart';
@@ -348,9 +349,30 @@ export default function Dashboard() {
               <TradingChart symbol="AVAXUSD" chartId={4} />
             </div>
             
-            {/* Trading Logs - 1/3 width */}
+            {/* Logs and News - 1/3 width */}
             <div className="lg:col-span-1">
-              <TradingLogs />
+              <Tabs defaultValue="logs" className="w-full">
+                <TabsList className="grid w-full grid-cols-2 bg-black/50">
+                  <TabsTrigger 
+                    value="logs" 
+                    className="data-[state=active]:bg-cyan-500 data-[state=active]:text-black font-mono"
+                  >
+                    📊 Logs
+                  </TabsTrigger>
+                  <TabsTrigger 
+                    value="news" 
+                    className="data-[state=active]:bg-cyan-500 data-[state=active]:text-black font-mono"
+                  >
+                    📰 News
+                  </TabsTrigger>
+                </TabsList>
+                <TabsContent value="logs" className="mt-4">
+                  <TradingLogs />
+                </TabsContent>
+                <TabsContent value="news" className="mt-4">
+                  <NewsFeed />
+                </TabsContent>
+              </Tabs>
             </div>
           </motion.div>
         </div>

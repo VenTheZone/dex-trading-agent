@@ -12,6 +12,7 @@ import type * as auth from "../auth.js";
 import type * as auth_emailOtp from "../auth/emailOtp.js";
 import type * as balanceHistory from "../balanceHistory.js";
 import type * as crons from "../crons.js";
+import type * as cryptoPanic from "../cryptoPanic.js";
 import type * as http from "../http.js";
 import type * as hyperliquid from "../hyperliquid.js";
 import type * as marketData from "../marketData.js";
@@ -31,6 +32,7 @@ declare const fullApi: ApiFromModules<{
   "auth/emailOtp": typeof auth_emailOtp;
   balanceHistory: typeof balanceHistory;
   crons: typeof crons;
+  cryptoPanic: typeof cryptoPanic;
   http: typeof http;
   hyperliquid: typeof hyperliquid;
   marketData: typeof marketData;
