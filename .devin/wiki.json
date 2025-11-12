@@ -1,0 +1,302 @@
+{
+  "repo_notes": [
+    {
+      "content": ""
+    }
+  ],
+  "pages": [
+    {
+      "title": "Overview",
+      "purpose": "High-level introduction to the DeX Trading Agent, its purpose, key features, and architecture at a glance",
+      "page_notes": [
+        {
+          "content": ""
+        }
+      ]
+    },
+    {
+      "title": "Getting Started",
+      "purpose": "Guide users through installation, initial setup, and first-time configuration",
+      "page_notes": [
+        {
+          "content": ""
+        }
+      ]
+    },
+    {
+      "title": "Installation & Dependencies",
+      "purpose": "Detailed instructions for installing dependencies and setting up the development environment",
+      "parent": "Getting Started",
+      "page_notes": [
+        {
+          "content": ""
+        }
+      ]
+    },
+    {
+      "title": "API Key Configuration",
+      "purpose": "Complete guide to configuring Hyperliquid and OpenRouter API keys, including wallet setup and demo mode",
+      "parent": "Getting Started",
+      "page_notes": [
+        {
+          "content": ""
+        }
+      ]
+    },
+    {
+      "title": "Wallet Connection",
+      "purpose": "Guide to connecting MetaMask wallet for read-only monitoring and network switching",
+      "parent": "Getting Started",
+      "page_notes": [
+        {
+          "content": ""
+        }
+      ]
+    },
+    {
+      "title": "System Architecture",
+      "purpose": "Comprehensive overview of the three-tier architecture (Frontend, Backend, External Services)",
+      "page_notes": [
+        {
+          "content": ""
+        }
+      ]
+    },
+    {
+      "title": "Frontend Architecture",
+      "purpose": "Deep dive into React components, routing, and UI organization",
+      "parent": "System Architecture",
+      "page_notes": [
+        {
+          "content": ""
+        }
+      ]
+    },
+    {
+      "title": "Backend Architecture (Convex)",
+      "purpose": "Explanation of Convex serverless functions, actions, mutations, and queries",
+      "parent": "System Architecture",
+      "page_notes": [
+        {
+          "content": ""
+        }
+      ]
+    },
+    {
+      "title": "State Management",
+      "purpose": "Documentation of Zustand store, state structure, and persistence mechanisms",
+      "parent": "System Architecture",
+      "page_notes": [
+        {
+          "content": ""
+        }
+      ]
+    },
+    {
+      "title": "Data Persistence",
+      "purpose": "Overview of localStorage for credentials, Convex database for logs, and data flow patterns",
+      "parent": "System Architecture",
+      "page_notes": [
+        {
+          "content": ""
+        }
+      ]
+    },
+    {
+      "title": "User Interface",
+      "purpose": "Guide to the application's UI components and user workflows",
+      "page_notes": [
+        {
+          "content": ""
+        }
+      ]
+    },
+    {
+      "title": "Landing Page",
+      "purpose": "Documentation of the landing page features, preview modal, and navigation",
+      "parent": "User Interface",
+      "page_notes": [
+        {
+          "content": ""
+        }
+      ]
+    },
+    {
+      "title": "Trading Dashboard",
+      "purpose": "Complete guide to the main dashboard interface, stats cards, and layout structure",
+      "parent": "User Interface",
+      "page_notes": [
+        {
+          "content": ""
+        }
+      ]
+    },
+    {
+      "title": "Trading Controls Panel",
+      "purpose": "Detailed documentation of strategy configuration, AI model selection, and risk parameters",
+      "parent": "User Interface",
+      "page_notes": [
+        {
+          "content": ""
+        }
+      ]
+    },
+    {
+      "title": "Multi-Chart Display",
+      "purpose": "Explanation of TradingView chart integration, position overlays, and chart configuration",
+      "parent": "User Interface",
+      "page_notes": [
+        {
+          "content": ""
+        }
+      ]
+    },
+    {
+      "title": "Trading Features",
+      "purpose": "Core trading functionality including AI analysis, execution, and position management",
+      "page_notes": [
+        {
+          "content": ""
+        }
+      ]
+    },
+    {
+      "title": "AI-Powered Market Analysis",
+      "purpose": "Deep dive into AI analysis workflow, multi-chart correlation, and OpenRouter integration",
+      "parent": "Trading Features",
+      "page_notes": [
+        {
+          "content": ""
+        }
+      ]
+    },
+    {
+      "title": "Trade Execution",
+      "purpose": "Documentation of trade execution flow, confirmation modal, order placement, and error handling",
+      "parent": "Trading Features",
+      "page_notes": [
+        {
+          "content": ""
+        }
+      ]
+    },
+    {
+      "title": "Position Management",
+      "purpose": "Guide to position monitoring, P&L calculation, closing positions, and real-time updates",
+      "parent": "Trading Features",
+      "page_notes": [
+        {
+          "content": ""
+        }
+      ]
+    },
+    {
+      "title": "Risk Management",
+      "purpose": "Comprehensive coverage of TP/SL, trailing stops, margin monitoring, and liquidation prevention",
+      "parent": "Trading Features",
+      "page_notes": [
+        {
+          "content": ""
+        }
+      ]
+    },
+    {
+      "title": "Auto-Trading System",
+      "purpose": "Explanation of the automated trading loop, validation checks, and safety mechanisms",
+      "parent": "Trading Features",
+      "page_notes": [
+        {
+          "content": ""
+        }
+      ]
+    },
+    {
+      "title": "Trading Modes",
+      "purpose": "Overview of the three trading modes and their use cases",
+      "page_notes": [
+        {
+          "content": ""
+        }
+      ]
+    },
+    {
+      "title": "Paper Trading",
+      "purpose": "Guide to simulated trading with real market data and virtual funds",
+      "parent": "Trading Modes",
+      "page_notes": [
+        {
+          "content": ""
+        }
+      ]
+    },
+    {
+      "title": "Live Trading",
+      "purpose": "Documentation of live trading with real funds on Hyperliquid mainnet/testnet",
+      "parent": "Trading Modes",
+      "page_notes": [
+        {
+          "content": ""
+        }
+      ]
+    },
+    {
+      "title": "Demo Mode",
+      "purpose": "Explanation of demo mode with simulated credentials and free AI tier",
+      "parent": "Trading Modes",
+      "page_notes": [
+        {
+          "content": ""
+        }
+      ]
+    },
+    {
+      "title": "External Integrations",
+      "purpose": "Documentation of third-party service integrations and APIs",
+      "page_notes": [
+        {
+          "content": ""
+        }
+      ]
+    },
+    {
+      "title": "Hyperliquid Exchange",
+      "purpose": "Complete guide to Hyperliquid DEX integration, Agent Wallets, and order types",
+      "parent": "External Integrations",
+      "page_notes": [
+        {
+          "content": ""
+        }
+      ]
+    },
+    {
+      "title": "OpenRouter AI Integration",
+      "purpose": "Documentation of AI model selection, prompt customization, and pricing",
+      "parent": "External Integrations",
+      "page_notes": [
+        {
+          "content": ""
+        }
+      ]
+    },
+    {
+      "title": "TradingView Charts",
+      "purpose": "Guide to TradingView widget integration, configuration, and customization",
+      "parent": "External Integrations",
+      "page_notes": [
+        {
+          "content": ""
+        }
+      ]
+    },
+    {
+      "title": "Market Data Sources",
+      "purpose": "Explanation of Binance API usage for demo mode and real-time price fetching",
+      "parent": "External Integrations",
+      "page_notes": [
+        {
+          "content": ""
+        }
+      ]
+    }
+  ]
+}
