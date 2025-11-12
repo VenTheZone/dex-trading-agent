@@ -71,29 +71,40 @@ export function ApiKeySetup({ onComplete }: ApiKeySetupProps) {
 
     // Validate private key format
     if (keys.hyperliquid.apiSecret && keys.hyperliquid.apiSecret !== 'DEMO_MODE') {
-      const privateKey = keys.hyperliquid.apiSecret.trim();
+      let privateKey = keys.hyperliquid.apiSecret.trim();
       
-      if (!privateKey.startsWith('0x')) {
-        toast.error('Invalid private key: Must start with "0x"', {
-          description: `Your key starts with: ${privateKey.substring(0, 4)}...`,
-          duration: 5000,
+      // Accept both formats: 64 chars (no 0x) or 66 chars (with 0x)
+      if (privateKey.length === 64 && /^[0-9a-fA-F]+$/.test(privateKey)) {
+        // Valid 64-char format, add 0x prefix for storage
+        privateKey = '0x' + privateKey;
+        keys.hyperliquid.apiSecret = privateKey;
+      } else if (privateKey.length === 66) {
+        if (!privateKey.startsWith('0x')) {
+          toast.error('Invalid private key: 66-character key must start with "0x"', {
+            description: `Your key starts with: ${privateKey.substring(0, 4)}...`,
+            duration: 5000,
+          });
+          return;
+        }
+        
+        // Check if it contains only valid hex characters after 0x
+        const hexPart = privateKey.slice(2);
+        if (!/^[0-9a-fA-F]+$/.test(hexPart)) {
+          toast.error('Invalid private key: Contains non-hexadecimal characters', {
+            description: 'Private key should only contain 0-9 and a-f after "0x"',
+            duration: 5000,
+          });
+          return;
+        }
+      } else if (privateKey.length === 42 && privateKey.startsWith('0x')) {
+        toast.error('This looks like a wallet ADDRESS, not a private key!', {
+          description: 'You need the PRIVATE KEY (64-66 chars), not the wallet address (42 chars). The private key is shown ONCE when you generate the agent wallet.',
+          duration: 8000,
         });
         return;
-      }
-      
-      if (privateKey.length !== 66) {
+      } else {
         toast.error(`Invalid private key length: ${privateKey.length} characters`, {
-          description: `Expected 66 characters (0x + 64 hex digits). You have ${privateKey.length}.`,
-          duration: 5000,
-        });
-        return;
-      }
-      
-      // Check if it contains only valid hex characters after 0x
-      const hexPart = privateKey.slice(2);
-      if (!/^[0-9a-fA-F]+$/.test(hexPart)) {
-        toast.error('Invalid private key: Contains non-hexadecimal characters', {
-          description: 'Private key should only contain 0-9 and a-f after "0x"',
+          description: `Expected 64 characters (no prefix) or 66 characters (0x + 64 hex digits). You have ${privateKey.length}.`,
           duration: 5000,
         });
         return;
@@ -273,7 +284,7 @@ export function ApiKeySetup({ onComplete }: ApiKeySetupProps) {
                   </Label>
                   <Input
                     type="password"
-                    placeholder="Example: 0xabcd...ef01 (66 characters - from API page)"
+                    placeholder="Example: 0xabcd...ef01 (64-66 chars) - PRIVATE KEY, not address!"
                     value={keys.hyperliquid.apiSecret}
                     onChange={(e) => setKeys({
                       ...keys,
@@ -282,15 +293,30 @@ export function ApiKeySetup({ onComplete }: ApiKeySetupProps) {
                     className="bg-black/50 border-cyan-500/30 text-cyan-100 font-mono focus:border-cyan-500"
                   />
                   <div className="bg-green-500/10 p-2 rounded border border-green-500/30">
-                    <p className="text-xs text-green-300 font-mono">
-                      🔒 This is the PRIVATE KEY shown when you clicked "Generate" at app.hyperliquid.xyz/API
+                    <p className="text-xs text-green-300 font-mono font-bold">
+                      🔒 This is the PRIVATE KEY shown ONCE when you clicked "Generate"
                     </p>
                     <p className="text-xs text-yellow-300 font-mono mt-1">
-                      ⚠️ Must be exactly 66 characters (0x + 64 hex digits)
+                      ⚠️ Accepts: 64 characters (no prefix) OR 66 characters (0x + 64 hex digits)
+                    </p>
+                    <p className="text-xs text-red-300 font-mono mt-1">
+                      ❌ NOT the 42-character wallet address! That goes in field #3 below.
                     </p>
                     {keys.hyperliquid.apiSecret && (
-                      <p className={`text-xs font-mono mt-1 ${keys.hyperliquid.apiSecret.trim().length === 66 ? 'text-green-400' : 'text-red-400'}`}>
-                        Current length: {keys.hyperliquid.apiSecret.trim().length} characters {keys.hyperliquid.apiSecret.trim().length === 66 ? '✅' : '❌'}
+                      <p className={`text-xs font-mono mt-1 ${
+                        keys.hyperliquid.apiSecret.trim().length === 64 || keys.hyperliquid.apiSecret.trim().length === 66 
+                          ? 'text-green-400' 
+                          : keys.hyperliquid.apiSecret.trim().length === 42
+                          ? 'text-red-400 font-bold'
+                          : 'text-red-400'
+                      }`}>
+                        Current length: {keys.hyperliquid.apiSecret.trim().length} characters {
+                          keys.hyperliquid.apiSecret.trim().length === 64 || keys.hyperliquid.apiSecret.trim().length === 66 
+                            ? '✅' 
+                            : keys.hyperliquid.apiSecret.trim().length === 42
+                            ? '❌ This is an ADDRESS, not a PRIVATE KEY!'
+                            : '❌'
+                        }
                       </p>
                     )}
                   </div>
