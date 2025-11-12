@@ -163,47 +163,6 @@ export default function Dashboard() {
                     size="icon"
                     className="border-cyan-500/30 text-cyan-400 hover:bg-cyan-500/20"
                   >
-                    <Settings className="h-5 w-5" />
-                  </Button>
-                </SheetTrigger>
-                <SheetContent side="right" className="w-[400px] bg-black/95 border-cyan-500/50 overflow-y-auto">
-                  <SheetHeader>
-                    <SheetTitle className="text-cyan-400 font-mono">Trading Controls</SheetTitle>
-                  </SheetHeader>
-                  <div className="mt-6">
-                    <Tabs defaultValue="controls" className="w-full">
-                      <TabsList className="grid w-full grid-cols-2 bg-black/50">
-                        <TabsTrigger 
-                          value="controls" 
-                          className="data-[state=active]:bg-cyan-500 data-[state=active]:text-black font-mono"
-                        >
-                          Controls
-                        </TabsTrigger>
-                        <TabsTrigger 
-                          value="logs" 
-                          className="data-[state=active]:bg-cyan-500 data-[state=active]:text-black font-mono"
-                        >
-                          Logs
-                        </TabsTrigger>
-                      </TabsList>
-                      <TabsContent value="controls" className="mt-4">
-                        <TradingControls />
-                      </TabsContent>
-                      <TabsContent value="logs" className="mt-4">
-                        <TradingLogs />
-                      </TabsContent>
-                    </Tabs>
-                  </div>
-                </SheetContent>
-              </Sheet>
-
-              <Sheet>
-                <SheetTrigger asChild>
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    className="border-cyan-500/30 text-cyan-400 hover:bg-cyan-500/20"
-                  >
                     <LineChart className="h-5 w-5" />
                   </Button>
                 </SheetTrigger>
@@ -369,6 +328,55 @@ export default function Dashboard() {
           </motion.div>
         </div>
         
+        {/* Floating Trading Controls Button */}
+        <motion.div
+          initial={{ opacity: 0, scale: 0.8 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ delay: 0.3 }}
+          className="fixed bottom-6 right-6 z-30"
+        >
+          <Sheet>
+            <SheetTrigger asChild>
+              <Button
+                size="lg"
+                className="bg-cyan-500 hover:bg-cyan-600 text-black font-bold font-mono shadow-[0_0_30px_rgba(0,255,255,0.6)] hover:shadow-[0_0_40px_rgba(0,255,255,0.8)] transition-all"
+              >
+                <Settings className="h-5 w-5 mr-2" />
+                Trading Controls
+              </Button>
+            </SheetTrigger>
+            <SheetContent side="right" className="w-[400px] bg-black/95 border-cyan-500/50 overflow-y-auto">
+              <SheetHeader>
+                <SheetTitle className="text-cyan-400 font-mono">Trading Controls</SheetTitle>
+              </SheetHeader>
+              <div className="mt-6">
+                <Tabs defaultValue="controls" className="w-full">
+                  <TabsList className="grid w-full grid-cols-2 bg-black/50">
+                    <TabsTrigger 
+                      value="controls" 
+                      className="data-[state=active]:bg-cyan-500 data-[state=active]:text-black font-mono"
+                    >
+                      Controls
+                    </TabsTrigger>
+                    <TabsTrigger 
+                      value="logs" 
+                      className="data-[state=active]:bg-cyan-500 data-[state=active]:text-black font-mono"
+                    >
+                      Logs
+                    </TabsTrigger>
+                  </TabsList>
+                  <TabsContent value="controls" className="mt-4">
+                    <TradingControls />
+                  </TabsContent>
+                  <TabsContent value="logs" className="mt-4">
+                    <TradingLogs />
+                  </TabsContent>
+                </Tabs>
+              </div>
+            </SheetContent>
+          </Sheet>
+        </motion.div>
+
         {/* Footer Credit */}
         <motion.footer
           initial={{ opacity: 0 }}
