@@ -243,3 +243,19 @@ This software is for educational purposes only. Trading cryptocurrencies carries
 MIT License - see LICENSE file for details
 
 ---
+
+##Comment
+ inspired by Nof1's Alpha Arena
+
+I saw how well DeepSeek V3.1 and Qwen3 Max did during the competition...
+
+But it's obvious People at Nof1 have never traded before in their life. since I didn't see any Take Profit or Stop Loss being set at all.
+They just YOLOed $60k between 6 LLMs.
+
+So I figured I'd make one myself..
+
+Feel free to review the source code or fork it.
+I even added the repo to DeepWiki
+> https://deepwiki.com/VenTheZone/dex-trading-agent
+
+Reviews and suggestions are appreciated.
