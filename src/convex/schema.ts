@@ -51,6 +51,20 @@ const schema = defineSchema(
       mode: v.union(v.literal("paper"), v.literal("live")),
     }).index("by_user", ["userId"]),
 
+    // Position snapshots table for historical tracking
+    positionSnapshots: defineTable({
+      userId: v.id("users"),
+      symbol: v.string(),
+      side: v.union(v.literal("long"), v.literal("short")),
+      size: v.number(),
+      entryPrice: v.number(),
+      currentPrice: v.number(),
+      unrealizedPnl: v.number(),
+      leverage: v.number(),
+      mode: v.union(v.literal("paper"), v.literal("live")),
+    }).index("by_user", ["userId"])
+      .index("by_user_and_symbol", ["userId", "symbol"]),
+
     // Paper trading positions table
     paperPositions: defineTable({
       userId: v.id("users"),

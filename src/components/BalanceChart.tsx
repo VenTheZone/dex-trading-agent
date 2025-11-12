@@ -1,12 +1,14 @@
 import { useQuery } from 'convex/react';
 import { api } from '@/convex/_generated/api';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Area, AreaChart } from 'recharts';
 import { motion } from 'framer-motion';
-import { TrendingUp, DollarSign } from 'lucide-react';
+import { TrendingUp, DollarSign, Activity } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 export function BalanceChart() {
   const balanceHistory = useQuery(api.balanceHistory.getBalanceHistory, { limit: 50 });
+  const positionHistory = useQuery(api.positionSnapshots.getPositionHistory, { limit: 50 });
 
   if (!balanceHistory || balanceHistory.length === 0) {
     return (
@@ -14,19 +16,19 @@ export function BalanceChart() {
         <CardHeader>
           <CardTitle className="text-cyan-400 font-mono flex items-center gap-2">
             <TrendingUp className="h-5 w-5" />
-            Balance History
+            Performance History
           </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="text-center text-gray-500 py-8 font-mono">
-            No balance history yet
+            No history data yet
           </div>
         </CardContent>
       </Card>
     );
   }
 
-  const chartData = balanceHistory.map((entry) => ({
+  const balanceChartData = balanceHistory.map((entry) => ({
     time: new Date(entry._creationTime).toLocaleTimeString([], { 
       hour: '2-digit', 
       minute: '2-digit' 
@@ -34,6 +36,16 @@ export function BalanceChart() {
     balance: entry.balance,
     fullTime: new Date(entry._creationTime).toLocaleString(),
   }));
+
+  const pnlChartData = positionHistory?.map((entry) => ({
+    time: new Date(entry._creationTime).toLocaleTimeString([], { 
+      hour: '2-digit', 
+      minute: '2-digit' 
+    }),
+    pnl: entry.unrealizedPnl,
+    symbol: entry.symbol,
+    fullTime: new Date(entry._creationTime).toLocaleString(),
+  })) || [];
 
   const currentBalance = balanceHistory[balanceHistory.length - 1]?.balance || 0;
   const startBalance = balanceHistory[0]?.balance || 0;
@@ -46,7 +58,7 @@ export function BalanceChart() {
         <CardTitle className="text-cyan-400 font-mono flex items-center justify-between">
           <div className="flex items-center gap-2">
             <TrendingUp className="h-5 w-5" />
-            Balance History
+            Performance History
           </div>
           <div className="flex items-center gap-4 text-sm">
             <div className="flex items-center gap-1">
@@ -60,40 +72,103 @@ export function BalanceChart() {
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <ResponsiveContainer width="100%" height={300}>
-          <LineChart data={chartData}>
-            <CartesianGrid strokeDasharray="3 3" stroke="rgba(0, 255, 255, 0.1)" />
-            <XAxis 
-              dataKey="time" 
-              stroke="#00ffff"
-              style={{ fontSize: '12px', fontFamily: 'monospace' }}
-            />
-            <YAxis 
-              stroke="#00ffff"
-              style={{ fontSize: '12px', fontFamily: 'monospace' }}
-              tickFormatter={(value) => `$${value.toLocaleString()}`}
-            />
-            <Tooltip
-              contentStyle={{
-                backgroundColor: 'rgba(0, 0, 0, 0.9)',
-                border: '1px solid rgba(0, 255, 255, 0.5)',
-                borderRadius: '4px',
-                fontFamily: 'monospace',
-              }}
-              labelStyle={{ color: '#00ffff' }}
-              itemStyle={{ color: '#00ff00' }}
-              formatter={(value: number) => [`$${value.toLocaleString()}`, 'Balance']}
-            />
-            <Line 
-              type="monotone" 
-              dataKey="balance" 
-              stroke="#00ff00" 
-              strokeWidth={2}
-              dot={{ fill: '#00ffff', r: 3 }}
-              activeDot={{ r: 5, fill: '#ff0080' }}
-            />
-          </LineChart>
-        </ResponsiveContainer>
+        <Tabs defaultValue="balance" className="w-full">
+          <TabsList className="grid w-full grid-cols-2 bg-black/50">
+            <TabsTrigger value="balance" className="data-[state=active]:bg-cyan-500 data-[state=active]:text-black font-mono">
+              Balance Curve
+            </TabsTrigger>
+            <TabsTrigger value="pnl" className="data-[state=active]:bg-cyan-500 data-[state=active]:text-black font-mono">
+              P&L History
+            </TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="balance" className="mt-4">
+            <ResponsiveContainer width="100%" height={300}>
+              <AreaChart data={balanceChartData}>
+                <defs>
+                  <linearGradient id="balanceGradient" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#00ff00" stopOpacity={0.3}/>
+                    <stop offset="95%" stopColor="#00ff00" stopOpacity={0}/>
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" stroke="rgba(0, 255, 255, 0.1)" />
+                <XAxis 
+                  dataKey="time" 
+                  stroke="#00ffff"
+                  style={{ fontSize: '12px', fontFamily: 'monospace' }}
+                />
+                <YAxis 
+                  stroke="#00ffff"
+                  style={{ fontSize: '12px', fontFamily: 'monospace' }}
+                  tickFormatter={(value) => `$${value.toLocaleString()}`}
+                />
+                <Tooltip
+                  contentStyle={{
+                    backgroundColor: 'rgba(0, 0, 0, 0.9)',
+                    border: '1px solid rgba(0, 255, 255, 0.5)',
+                    borderRadius: '4px',
+                    fontFamily: 'monospace',
+                  }}
+                  labelStyle={{ color: '#00ffff' }}
+                  itemStyle={{ color: '#00ff00' }}
+                  formatter={(value: number) => [`$${value.toLocaleString()}`, 'Balance']}
+                />
+                <Area 
+                  type="monotone" 
+                  dataKey="balance" 
+                  stroke="#00ff00" 
+                  strokeWidth={2}
+                  fill="url(#balanceGradient)"
+                />
+              </AreaChart>
+            </ResponsiveContainer>
+          </TabsContent>
+          
+          <TabsContent value="pnl" className="mt-4">
+            {pnlChartData.length === 0 ? (
+              <div className="text-center text-gray-500 py-8 font-mono">
+                No position history yet
+              </div>
+            ) : (
+              <ResponsiveContainer width="100%" height={300}>
+                <LineChart data={pnlChartData}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(0, 255, 255, 0.1)" />
+                  <XAxis 
+                    dataKey="time" 
+                    stroke="#00ffff"
+                    style={{ fontSize: '12px', fontFamily: 'monospace' }}
+                  />
+                  <YAxis 
+                    stroke="#00ffff"
+                    style={{ fontSize: '12px', fontFamily: 'monospace' }}
+                    tickFormatter={(value) => `$${value.toFixed(2)}`}
+                  />
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: 'rgba(0, 0, 0, 0.9)',
+                      border: '1px solid rgba(0, 255, 255, 0.5)',
+                      borderRadius: '4px',
+                      fontFamily: 'monospace',
+                    }}
+                    labelStyle={{ color: '#00ffff' }}
+                    formatter={(value: number, name: string, props: any) => [
+                      `$${value.toFixed(2)}`,
+                      `P&L (${props.payload.symbol})`
+                    ]}
+                  />
+                  <Line 
+                    type="monotone" 
+                    dataKey="pnl" 
+                    stroke="#ff0080" 
+                    strokeWidth={2}
+                    dot={{ fill: '#00ffff', r: 3 }}
+                    activeDot={{ r: 5, fill: '#ff0080' }}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            )}
+          </TabsContent>
+        </Tabs>
       </CardContent>
     </Card>
   );

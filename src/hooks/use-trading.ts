@@ -9,12 +9,14 @@ import { useEffect, useRef } from "react";
 export function useTrading() {
   const createLog = useMutation(api.tradingLogs.createLog);
   const recordBalance = useMutation(api.balanceHistory.recordBalance);
+  const recordPositionSnapshot = useMutation(api.positionSnapshots.recordSnapshot);
   const analyzeMarket = useAction(api.trading.analyzeMarket);
   const executeLiveTrade = useAction(api.trading.executeLiveTrade);
   const getHyperliquidPositions = useAction(api.trading.getHyperliquidPositions);
-  const { balance, settings, mode, chartType, chartInterval, setBalance, setPosition } = useTradingStore();
+  const { balance, settings, mode, chartType, chartInterval, setBalance, setPosition, isAutoTrading, setAutoTrading } = useTradingStore();
   const { user } = useAuth();
   const lastRecordedBalance = useRef(balance);
+  const marginWarningShown = useRef(false);
 
   // Record balance changes
   useEffect(() => {
@@ -47,6 +49,45 @@ export function useTrading() {
             setBalance(accountValue);
           }
 
+          // Check margin usage and liquidation risk
+          if (result.positions.marginSummary) {
+            const totalMarginUsed = parseFloat(result.positions.marginSummary.totalMarginUsed || "0");
+            const accountValue = parseFloat(result.positions.marginSummary.accountValue || "0");
+            
+            if (accountValue > 0) {
+              const marginUsagePercent = (totalMarginUsed / accountValue) * 100;
+              
+              // Liquidation warning at 80% margin usage
+              if (marginUsagePercent >= 80 && isAutoTrading) {
+                if (!marginWarningShown.current) {
+                  toast.error(
+                    `⚠️ LIQUIDATION WARNING: ${marginUsagePercent.toFixed(1)}% margin usage! Auto-trading paused.`,
+                    { duration: 10000 }
+                  );
+                  marginWarningShown.current = true;
+                }
+                setAutoTrading(false);
+                
+                await createLog({
+                  action: "auto_pause",
+                  symbol: "SYSTEM",
+                  reason: `Auto-trading paused due to high margin usage: ${marginUsagePercent.toFixed(1)}%`,
+                  details: `Total Margin Used: $${totalMarginUsed}, Account Value: $${accountValue}`,
+                });
+              } else if (marginUsagePercent < 70) {
+                marginWarningShown.current = false;
+              }
+              
+              // Warning at 60% margin usage
+              if (marginUsagePercent >= 60 && marginUsagePercent < 80 && !marginWarningShown.current) {
+                toast.warning(
+                  `⚠️ High margin usage: ${marginUsagePercent.toFixed(1)}%`,
+                  { duration: 5000 }
+                );
+              }
+            }
+          }
+
           // Update active positions
           if (result.positions.assetPositions && result.positions.assetPositions.length > 0) {
             const pos = result.positions.assetPositions[0];
@@ -54,13 +95,29 @@ export function useTrading() {
             const entryPrice = parseFloat(pos.position.entryPx || "0");
             const unrealizedPnl = parseFloat(pos.position.unrealizedPnl || "0");
 
-            setPosition({
+            const currentPosition = {
               symbol: pos.position.coin,
               size: Math.abs(size),
               entryPrice,
               currentPrice: entryPrice + (unrealizedPnl / size),
               pnl: unrealizedPnl,
-              side: size > 0 ? 'long' : 'short',
+              side: size > 0 ? 'long' : 'short' as 'long' | 'short',
+            };
+
+            setPosition(currentPosition);
+
+            // Record position snapshot
+            await recordPositionSnapshot({
+              symbol: currentPosition.symbol,
+              side: currentPosition.side,
+              size: currentPosition.size,
+              entryPrice: currentPosition.entryPrice,
+              currentPrice: currentPosition.currentPrice,
+              unrealizedPnl: currentPosition.pnl,
+              leverage: settings.leverage,
+              mode,
+            }).catch((error) => {
+              console.error("Failed to record position snapshot:", error);
             });
           } else {
             setPosition(null);
@@ -76,7 +133,7 @@ export function useTrading() {
     pollPositions(); // Initial fetch
 
     return () => clearInterval(interval);
-  }, [mode, user, getHyperliquidPositions, setBalance, setPosition]);
+  }, [mode, user, getHyperliquidPositions, setBalance, setPosition, isAutoTrading, setAutoTrading, createLog, recordPositionSnapshot, settings.leverage]);
 
   const runAIAnalysis = async (symbol: string, currentPrice: number) => {
     try {
