@@ -32,12 +32,17 @@ const schema = defineSchema(
       role: v.optional(roleValidator), // role of the user. do not remove
     }).index("email", ["email"]), // index for the email. do not remove or modify
 
-    // add other tables here
-
-    // tableName: defineTable({
-    //   ...
-    //   // table fields
-    // }).index("by_field", ["field"])
+    // Trading logs table
+    tradingLogs: defineTable({
+      userId: v.id("users"),
+      action: v.string(),
+      symbol: v.string(),
+      reason: v.string(),
+      details: v.optional(v.string()),
+      price: v.optional(v.number()),
+      size: v.optional(v.number()),
+      side: v.optional(v.union(v.literal("long"), v.literal("short"))),
+    }).index("by_user", ["userId"]),
   },
   {
     schemaValidation: false,

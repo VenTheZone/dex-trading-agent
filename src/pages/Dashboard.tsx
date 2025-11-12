@@ -14,6 +14,8 @@ import { storage } from '@/lib/storage';
 import { useTradingStore } from '@/store/tradingStore';
 import { Activity, DollarSign, TrendingUp, Settings, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
+import { TradingLogs } from '@/components/TradingLogs';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 export default function Dashboard() {
   const { isLoading, isAuthenticated } = useAuth();
@@ -182,14 +184,35 @@ export default function Dashboard() {
               <TradingChart symbol="AVAXUSD" chartId={4} />
             </motion.div>
             
-            {/* Controls Sidebar */}
+            {/* Controls and Logs Sidebar */}
             <motion.div
               initial={{ x: 20, opacity: 0 }}
               animate={{ x: 0, opacity: 1 }}
               transition={{ delay: 0.3 }}
               className="lg:col-span-1"
             >
-              <TradingControls />
+              <Tabs defaultValue="controls" className="w-full">
+                <TabsList className="grid w-full grid-cols-2 bg-black/50">
+                  <TabsTrigger 
+                    value="controls" 
+                    className="data-[state=active]:bg-cyan-500 data-[state=active]:text-black font-mono"
+                  >
+                    Controls
+                  </TabsTrigger>
+                  <TabsTrigger 
+                    value="logs" 
+                    className="data-[state=active]:bg-cyan-500 data-[state=active]:text-black font-mono"
+                  >
+                    Logs
+                  </TabsTrigger>
+                </TabsList>
+                <TabsContent value="controls" className="mt-4">
+                  <TradingControls />
+                </TabsContent>
+                <TabsContent value="logs" className="mt-4">
+                  <TradingLogs />
+                </TabsContent>
+              </Tabs>
             </motion.div>
           </div>
         </div>
