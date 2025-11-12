@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { ExternalLink, TrendingUp, TrendingDown, Flame, RefreshCw } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { toast } from 'sonner';
+import { sanitizeUrl, sanitizeText } from '@/lib/utils';
 
 interface NewsPost {
   id: string;
@@ -153,12 +154,12 @@ export function NewsFeed() {
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex-1 min-w-0">
                       <a
-                        href={post.url}
+                        href={sanitizeUrl(post.url)}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="text-cyan-100 hover:text-cyan-400 font-mono text-sm font-medium line-clamp-2 flex items-start gap-2"
                       >
-                        {post.title}
+                        {sanitizeText(post.title, 200)}
                         <ExternalLink className="h-3 w-3 flex-shrink-0 mt-0.5" />
                       </a>
 
@@ -169,13 +170,13 @@ export function NewsFeed() {
                             variant="outline"
                             className="border-cyan-500/50 text-cyan-400 font-mono text-xs"
                           >
-                            {currency.code}
+                            {sanitizeText(currency.code, 10)}
                           </Badge>
                         ))}
                       </div>
 
                       <div className="flex items-center gap-4 mt-2 text-xs font-mono">
-                        <span className="text-gray-500">{post.domain}</span>
+                        <span className="text-gray-500">{sanitizeText(post.domain, 50)}</span>
                         <span className="text-gray-500">{formatTimeAgo(post.created_at)}</span>
                         {post.votes.important > 0 && (
                           <span className="text-orange-400 flex items-center gap-1">

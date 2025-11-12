@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Trash2, TrendingUp, TrendingDown, Activity } from 'lucide-react';
 import { toast } from 'sonner';
 import { motion } from 'framer-motion';
+import { sanitizeText } from '@/lib/utils';
 
 export function TradingLogs() {
   const logs = useQuery((api as any).tradingLogs.getUserLogs, { limit: 100 });
@@ -90,12 +91,12 @@ export function TradingLogs() {
                         </div>
                         
                         <p className="text-sm text-cyan-100 mt-1 font-mono">
-                          <span className="text-cyan-400">Reason:</span> {log.reason}
+                          <span className="text-cyan-400">Reason:</span> {sanitizeText(log.reason, 500)}
                         </p>
                         
                         {log.details && (
                           <p className="text-xs text-gray-400 mt-1 font-mono">
-                            {log.details}
+                            {sanitizeText(log.details, 500)}
                           </p>
                         )}
                         
