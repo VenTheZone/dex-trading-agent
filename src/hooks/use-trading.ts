@@ -26,6 +26,7 @@ export function useTrading() {
         Chart Type: ${chartType === 'range' ? 'Range Chart' : 'Time-based Chart'}
         Interval: ${chartInterval}
         Current Price: $${currentPrice}
+        Leverage: ${settings.leverage}x ${settings.allowAILeverage ? '(AI can adjust)' : '(fixed)'}
         ${chartType === 'range' ? 
           'Range Analysis: Price movement analyzed by range bars (fixed price movements) rather than time intervals. This provides clearer trend identification and reduces noise from time-based volatility.' : 
           'Time Analysis: Price movement analyzed by fixed time intervals.'
@@ -82,8 +83,8 @@ export function useTrading() {
         size,
         reason: reasoning,
         details: stopLoss 
-          ? `SL: ${stopLoss}, TP: ${takeProfit}, Chart: ${chartType} ${chartInterval}` 
-          : `Chart: ${chartType} ${chartInterval}`,
+          ? `SL: ${stopLoss}, TP: ${takeProfit}, Leverage: ${settings.leverage}x, Chart: ${chartType} ${chartInterval}` 
+          : `Leverage: ${settings.leverage}x, Chart: ${chartType} ${chartInterval}`,
       });
 
       toast.success(`Trade executed: ${action.toUpperCase()}`);

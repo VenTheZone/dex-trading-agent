@@ -17,6 +17,9 @@ export interface TradingSettings {
   useAdvancedStrategy: boolean;
   partialProfitPercent: number;
   useTrailingStop: boolean;
+  leverage: number;
+  maxLeverage: number;
+  allowAILeverage: boolean;
 }
 
 export const storage = {
@@ -44,6 +47,9 @@ export const storage = {
       useAdvancedStrategy: false,
       partialProfitPercent: 50,
       useTrailingStop: true,
+      leverage: 1,
+      maxLeverage: 20,
+      allowAILeverage: false,
     };
   },
   

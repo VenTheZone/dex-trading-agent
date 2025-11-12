@@ -47,6 +47,8 @@ export class DeepSeekService {
       takeProfitPercent: number;
       stopLossPercent: number;
       maxPositionSize?: number;
+      leverage?: number;
+      allowAILeverage?: boolean;
     }
   ): Promise<TradingAnalysis> {
     const chartTypeContext = marketData.chartType === "range" 
@@ -63,9 +65,20 @@ When analyzing Range charts, focus on:
 4. Trend continuation signals are more reliable`
       : `TIME-BASED CHART ANALYSIS: Standard time-interval chart (${marketData.chartInterval}). Each bar represents a fixed time period.`;
 
+    const leverageContext = riskSettings.allowAILeverage 
+      ? `LEVERAGE ENABLED: You can recommend leverage up to ${riskSettings.leverage}x for this trade. Consider:
+- Higher leverage increases both potential profit and risk
+- Use lower leverage (1-3x) for uncertain market conditions
+- Use moderate leverage (3-10x) for clear trends with good risk/reward
+- Use higher leverage (10x+) only for very high confidence setups with tight stop losses
+- Always account for liquidation risk when recommending leverage`
+      : `LEVERAGE DISABLED: User has set leverage to ${riskSettings.leverage}x. Do not recommend changing leverage.`;
+
     const systemPrompt = `You are an expert cryptocurrency trading analyst specializing in technical analysis.
 
 ${chartTypeContext}
+
+${leverageContext}
 
 Your analysis must consider:
 1. Current market conditions and price action
@@ -73,12 +86,13 @@ Your analysis must consider:
 3. Risk management principles
 4. Position sizing based on account balance
 5. Stop loss and take profit levels
+6. Leverage considerations and liquidation risk
 
 Respond ONLY with valid JSON matching this exact structure:
 {
   "action": "open_long" | "open_short" | "close_position" | "hold",
   "confidence": 0.0 to 1.0,
-  "reasoning": "detailed explanation including chart type analysis",
+  "reasoning": "detailed explanation including chart type analysis and leverage rationale",
   "entryPrice": number (if opening position),
   "stopLoss": number (if opening position),
   "takeProfit": number (if opening position),
@@ -98,6 +112,7 @@ Current Price: $${marketData.currentPrice}
 24h Volume: $${marketData.volume24h?.toLocaleString()}
 
 Account Balance: $${balance}
+Leverage: ${riskSettings.leverage}x ${riskSettings.allowAILeverage ? '(AI can adjust)' : '(fixed)'}
 Risk Settings:
 - Take Profit: ${riskSettings.takeProfitPercent}%
 - Stop Loss: ${riskSettings.stopLossPercent}%
