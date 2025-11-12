@@ -52,24 +52,26 @@ You'll also need API keys for:
 ## 🚀 Local Deployment Instructions
 
 ### 1. Clone the Repository
-
-git clone <your-repository-url>
+```
+git clone https://github.com/VenTheZone/dex-trading-agent.git
 cd dex-trading-agent
-
+```
 
 ### 2. Install Dependencies
-
+```
 pnpm install
-
+```
 
 ### 3. Set Up Convex
 
 Install Convex CLI globally (if not already installed)
+```
 pnpm add -g convex
- 
+```
 Initialize and deploy Convex backend
+```
 npx convex dev
-
+```
 
 This will:
 - Create a new Convex project (if first time)
@@ -90,9 +92,9 @@ OPENROUTER_API_KEY=<your-openrouter-api-key>
 ### 5. Run the Development Server
 
 In a new terminal (keep Convex dev running):
-
+```
 pnpm dev
-
+```
 
 The application will be available at `http://localhost:5173`
 
@@ -111,10 +113,10 @@ Once the app is running:
 **Security Note:** All API keys are stored locally in your browser's localStorage and never sent to any server.
 
 ## 📦 Building for Production
-
+```
 pnpm build
 pnpm preview
-
+```
 
 ## 🪙 Available Trading Coins
 
@@ -147,7 +149,7 @@ You can select up to 5 coins for the AI to actively trade.
 - Regularly **review trading logs** and performance metrics
 
 ## 📁 Project Structure
-
+```
 src/
 ├── components/ # React components
 │ ├── ApiKeySetup.tsx
@@ -163,7 +165,7 @@ src/
 ├── lib/ # Utility libraries
 ├── pages/ # Page components
 └── store/ # State management
-
+```
 
 ## 🤝 Contributing
 
