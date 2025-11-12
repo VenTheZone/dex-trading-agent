@@ -47,27 +47,12 @@ export function TradingChart({ symbol, chartId }: TradingChartProps) {
           gridColor: 'rgba(0, 255, 255, 0.1)',
           studies: chartType === 'range' ? ['Volume@tv-basicstudies'] : [],
           drawings_access: { type: 'black', tools: [{ name: 'LineToolHorzLine' }] },
-          datafeed: undefined,
-          library_path: undefined,
         });
 
-        // Use iframe API to access chart when ready
-        if (widgetRef.current && widgetRef.current.headerReady) {
-          widgetRef.current.headerReady().then(() => {
-            const iframe = widgetRef.current.iframe;
-            if (iframe && iframe.contentWindow) {
-              // Chart is ready, but we can't directly manipulate it without advanced API
-              console.log(`Chart ready for ${symbol} with interval ${chartInterval}`);
-              
-              // Note: Drawing position lines requires TradingView's advanced charting library
-              // For now, we'll just log the position data
-              if (position && position.symbol === symbol) {
-                console.log('Active position:', position);
-              }
-            }
-          }).catch((err: any) => {
-            console.error('Chart initialization error:', err);
-          });
+        // Log chart initialization
+        console.log(`TradingView chart initialized for ${symbol}`);
+        if (position && position.symbol === symbol) {
+          console.log('Active position:', position);
         }
       }
     };
