@@ -9,6 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
 import { motion } from 'framer-motion';
 import { Bot, BotOff } from 'lucide-react';
+import { storage } from '@/lib/storage';
 
 export function TradingControls() {
   const { settings, updateSettings, chartInterval, setChartInterval, chartType, setChartType, isAutoTrading, setAutoTrading } = useTradingStore();
@@ -29,8 +30,26 @@ export function TradingControls() {
   
   const handleToggleAutoTrading = () => {
     const newState = !isAutoTrading;
+    
+    if (newState) {
+      // Validate before enabling
+      const keys = storage.getApiKeys();
+      if (!keys?.openRouter) {
+        toast.error('OpenRouter API key required for AI trading');
+        return;
+      }
+      
+      if ((localSettings.allowedCoins || []).length === 0) {
+        toast.error('Please select at least one coin for AI trading');
+        return;
+      }
+      
+      toast.success('🤖 AI Auto-Trading Enabled - Analyzing market every 2 minutes');
+    } else {
+      toast.success('AI Auto-Trading Disabled');
+    }
+    
     setAutoTrading(newState);
-    toast.success(newState ? 'AI Auto-Trading Enabled' : 'AI Auto-Trading Disabled');
   };
   
   const handleToggleCoin = (coin: string) => {

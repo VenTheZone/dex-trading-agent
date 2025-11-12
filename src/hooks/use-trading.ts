@@ -14,7 +14,7 @@ export function useTrading() {
   const analyzeMultiChart = useAction(api.trading.analyzeMultiChart);
   const executeLiveTrade = useAction(api.trading.executeLiveTrade);
   const getHyperliquidPositions = useAction(api.trading.getHyperliquidPositions);
-  const { balance, settings, mode, network, chartType, chartInterval, setBalance, setPosition, isAutoTrading, setAutoTrading } = useTradingStore();
+  const { balance, settings, mode, network, chartType, chartInterval, setBalance, setPosition, position, isAutoTrading, setAutoTrading } = useTradingStore();
   const { user } = useAuth();
   const lastRecordedBalance = useRef(balance);
   const marginWarningShown = useRef(false);
@@ -160,7 +160,7 @@ export function useTrading() {
       const chartData = `
         Chart Type: ${chartType === 'range' ? 'Range Chart' : 'Time-based Chart'}
         Interval: ${chartInterval}
-        Current Price: $${currentPrice}
+        Current Price: ${currentPrice}
         Leverage: ${settings.leverage}x ${settings.allowAILeverage ? '(AI can adjust)' : '(fixed)'}
         ${chartType === 'range' ? 
           'Range Analysis: Price movement analyzed by range bars (fixed price movements) rather than time intervals. This provides clearer trend identification and reduces noise from time-based volatility.' : 
@@ -304,6 +304,105 @@ export function useTrading() {
       throw error;
     }
   };
+
+  // Real-time auto-trading loop
+  useEffect(() => {
+    if (!isAutoTrading || !user) return;
+
+    const runAutoTrading = async () => {
+      try {
+        const keys = storage.getApiKeys();
+        if (!keys?.openRouter) {
+          console.log("OpenRouter API key not configured, skipping auto-trading");
+          return;
+        }
+
+        // Get current prices for all allowed coins
+        const allowedCoins = settings.allowedCoins || [];
+        if (allowedCoins.length === 0) {
+          console.log("No allowed coins selected, skipping auto-trading");
+          return;
+        }
+
+        // Fetch current market data for allowed coins
+        const chartData = await Promise.all(
+          allowedCoins.map(async (symbol) => {
+            try {
+              // Use a simple price fetch - in production you'd want more sophisticated data
+              const response = await fetch(
+                `https://api.binance.com/api/v3/ticker/price?symbol=${symbol.replace('USD', 'USDT')}`
+              );
+              const data = await response.json();
+              return {
+                symbol,
+                currentPrice: parseFloat(data.price),
+              };
+            } catch (error) {
+              console.error(`Failed to fetch price for ${symbol}:`, error);
+              return null;
+            }
+          })
+        );
+
+        const validCharts = chartData.filter((chart) => chart !== null) as Array<{
+          symbol: string;
+          currentPrice: number;
+        }>;
+
+        if (validCharts.length === 0) {
+          console.log("No valid market data, skipping auto-trading");
+          return;
+        }
+
+        // Run multi-chart AI analysis
+        const analysis = await runMultiChartAIAnalysis(validCharts);
+
+        if (!analysis) {
+          console.log("AI analysis returned no recommendation");
+          return;
+        }
+
+        // Execute trade based on AI recommendation
+        if (analysis.action === "open_long" || analysis.action === "open_short") {
+          const side = analysis.action === "open_long" ? "long" : "short";
+          
+          await executeTrade(
+            analysis.recommendedSymbol || validCharts[0].symbol,
+            analysis.action,
+            side,
+            analysis.entryPrice,
+            analysis.positionSize,
+            analysis.stopLoss,
+            analysis.takeProfit,
+            analysis.reasoning
+          );
+        } else if (analysis.action === "close" && position) {
+          // Close existing position
+          await executeTrade(
+            position.symbol,
+            "close_position",
+            position.side,
+            position.currentPrice,
+            position.size,
+            undefined,
+            undefined,
+            analysis.reasoning
+          );
+        }
+      } catch (error) {
+        console.error("Auto-trading error:", error);
+        // Don't spam toast notifications for auto-trading errors
+      }
+    };
+
+    // Run immediately on enable
+    runAutoTrading();
+
+    // Then run every 2 minutes while auto-trading is enabled
+    const interval = setInterval(runAutoTrading, 2 * 60 * 1000);
+
+    return () => clearInterval(interval);
+  }, [isAutoTrading, user, settings.allowedCoins, position, balance, settings, chartType, chartInterval, mode, network]);
 
   return {
     runAIAnalysis,
