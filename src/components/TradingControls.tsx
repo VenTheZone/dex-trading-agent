@@ -15,6 +15,7 @@ import { useTrading } from '@/hooks/use-trading';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Textarea } from '@/components/ui/textarea';
 import { DEFAULT_PROMPT } from '@/store/tradingStore';
+import { sanitizeNumberWithBounds, sanitizeMultilineText } from '@/lib/utils';
 
 export function TradingControls() {
   const { settings, updateSettings, chartInterval, setChartInterval, chartType, setChartType, isAutoTrading, setAutoTrading, position, aiModel, setAiModel, customPrompt, setCustomPrompt, resetPromptToDefault, mode } = useTradingStore();
@@ -410,10 +411,13 @@ export function TradingControls() {
                     max={localSettings.maxLeverage}
                     step="1"
                     value={localSettings.leverage}
-                    onChange={(e) => setLocalSettings({
-                      ...localSettings,
-                      leverage: Number(e.target.value)
-                    })}
+                    onChange={(e) => {
+                      const sanitized = sanitizeNumberWithBounds(e.target.value, 1, localSettings.maxLeverage, 1);
+                      setLocalSettings({
+                        ...localSettings,
+                        leverage: sanitized
+                      });
+                    }}
                     className="bg-black/50 border-cyan-500/30 accent-cyan-500"
                   />
                   <div className="flex justify-between text-xs text-gray-500 font-mono">
@@ -430,7 +434,7 @@ export function TradingControls() {
                     max="100"
                     value={localSettings.maxLeverage}
                     onChange={(e) => {
-                      const maxLev = Number(e.target.value);
+                      const maxLev = sanitizeNumberWithBounds(e.target.value, 1, 100, 20);
                       setLocalSettings({
                         ...localSettings,
                         maxLeverage: maxLev,
@@ -483,10 +487,13 @@ export function TradingControls() {
                   <Input
                     type="number"
                     value={localSettings.takeProfitPercent}
-                    onChange={(e) => setLocalSettings({
-                      ...localSettings,
-                      takeProfitPercent: Number(e.target.value)
-                    })}
+                    onChange={(e) => {
+                      const sanitized = sanitizeNumberWithBounds(e.target.value, 0, 1000, 100);
+                      setLocalSettings({
+                        ...localSettings,
+                        takeProfitPercent: sanitized
+                      });
+                    }}
                     className="bg-black/50 border-cyan-500/30 text-cyan-100 font-mono"
                   />
                 </div>
@@ -496,10 +503,13 @@ export function TradingControls() {
                   <Input
                     type="number"
                     value={localSettings.stopLossPercent}
-                    onChange={(e) => setLocalSettings({
-                      ...localSettings,
-                      stopLossPercent: Number(e.target.value)
-                    })}
+                    onChange={(e) => {
+                      const sanitized = sanitizeNumberWithBounds(e.target.value, 0, 100, 20);
+                      setLocalSettings({
+                        ...localSettings,
+                        stopLossPercent: sanitized
+                      });
+                    }}
                     className="bg-black/50 border-cyan-500/30 text-cyan-100 font-mono"
                   />
                 </div>
@@ -526,10 +536,13 @@ export function TradingControls() {
                       <Input
                         type="number"
                         value={localSettings.partialProfitPercent}
-                        onChange={(e) => setLocalSettings({
-                          ...localSettings,
-                          partialProfitPercent: Number(e.target.value)
-                        })}
+                        onChange={(e) => {
+                          const sanitized = sanitizeNumberWithBounds(e.target.value, 0, 100, 50);
+                          setLocalSettings({
+                            ...localSettings,
+                            partialProfitPercent: sanitized
+                          });
+                        }}
                         className="bg-black/50 border-cyan-500/30 text-cyan-100 font-mono"
                       />
                     </div>
@@ -609,7 +622,10 @@ export function TradingControls() {
                   <Label className="text-cyan-400 font-mono">AI Prompt Template</Label>
                   <Textarea
                     value={localPrompt}
-                    onChange={(e) => setLocalPrompt(e.target.value)}
+                    onChange={(e) => {
+                      const sanitized = sanitizeMultilineText(e.target.value, 10000);
+                      setLocalPrompt(sanitized);
+                    }}
                     className="bg-black/50 border-cyan-500/30 text-cyan-100 font-mono min-h-[400px] text-sm"
                     placeholder="Enter your custom AI trading strategy prompt..."
                   />

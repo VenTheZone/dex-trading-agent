@@ -11,6 +11,7 @@ import { motion } from 'framer-motion';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { WalletConnect } from '@/components/WalletConnect';
+import { sanitizeApiKey, sanitizeWalletAddress, sanitizePrivateKey, sanitizeNumberWithBounds } from '@/lib/utils';
 
 interface ApiKeySetupProps {
   onComplete: () => void;
@@ -33,16 +34,14 @@ export function ApiKeySetup({ onComplete }: ApiKeySetupProps) {
   const handleDemoMode = () => {
     // Get initial balance from input
     const balanceInput = document.getElementById('demo-initial-balance') as HTMLInputElement;
-    const initialBalance = balanceInput ? parseFloat(balanceInput.value) || 10000 : 10000;
+    const rawBalance = balanceInput ? balanceInput.value : '10000';
     
-    // Validate balance
-    if (initialBalance < 100 || initialBalance > 1000000) {
-      toast.error('Initial balance must be between $100 and $1,000,000');
-      return;
-    }
+    // Sanitize and validate balance
+    const initialBalance = sanitizeNumberWithBounds(rawBalance, 100, 1000000, 10000);
     
     // Preserve OpenRouter key if provided, otherwise use DEMO_MODE
-    const openRouterKey = keys.openRouter && keys.openRouter.trim() !== '' ? keys.openRouter : 'DEMO_MODE';
+    const rawOpenRouterKey = keys.openRouter && keys.openRouter.trim() !== '' ? keys.openRouter : 'DEMO_MODE';
+    const openRouterKey = rawOpenRouterKey === 'DEMO_MODE' ? 'DEMO_MODE' : sanitizeApiKey(rawOpenRouterKey);
     
     storage.saveApiKeys({
       hyperliquid: { apiKey: 'DEMO_MODE', apiSecret: 'DEMO_MODE', walletAddress: 'DEMO_MODE' },
@@ -56,22 +55,28 @@ export function ApiKeySetup({ onComplete }: ApiKeySetupProps) {
     });
     
     if (openRouterKey !== 'DEMO_MODE') {
-      toast.success(`Demo mode activated with ${initialBalance.toLocaleString()} - Using your OpenRouter API key for real AI analysis`);
+      toast.success(`Demo mode activated with $${initialBalance.toLocaleString()} - Using your OpenRouter API key for real AI analysis`);
     } else {
-      toast.success(`Demo mode activated with ${initialBalance.toLocaleString()} - Using DeepSeek free tier`);
+      toast.success(`Demo mode activated with $${initialBalance.toLocaleString()} - Using DeepSeek free tier`);
     }
     onComplete();
   };
 
   const handleSave = async () => {
-    if (!keys.hyperliquid.apiKey || !keys.openRouter) {
+    // Sanitize all inputs before validation
+    const sanitizedApiKey = sanitizeWalletAddress(keys.hyperliquid.apiKey.trim());
+    const sanitizedApiSecret = sanitizePrivateKey(keys.hyperliquid.apiSecret.trim());
+    const sanitizedWalletAddress = keys.hyperliquid.walletAddress ? sanitizeWalletAddress(keys.hyperliquid.walletAddress.trim()) : '';
+    const sanitizedOpenRouter = sanitizeApiKey(keys.openRouter.trim());
+    
+    if (!sanitizedApiKey || !sanitizedOpenRouter) {
       toast.error('Please fill in all required API keys');
       return;
     }
 
     // Validate OpenRouter API key format
-    if (keys.openRouter && keys.openRouter !== 'DEMO_MODE') {
-      if (!keys.openRouter.startsWith('sk-or-v1-')) {
+    if (sanitizedOpenRouter && sanitizedOpenRouter !== 'DEMO_MODE') {
+      if (!sanitizedOpenRouter.startsWith('sk-or-v1-')) {
         toast.error('Invalid OpenRouter API key format', {
           description: 'OpenRouter keys must start with "sk-or-v1-"',
           duration: 5000,
@@ -81,8 +86,8 @@ export function ApiKeySetup({ onComplete }: ApiKeySetupProps) {
     }
 
     // Validate private key format
-    if (keys.hyperliquid.apiSecret && keys.hyperliquid.apiSecret !== 'DEMO_MODE') {
-      let privateKey = keys.hyperliquid.apiSecret.trim();
+    if (sanitizedApiSecret && sanitizedApiSecret !== 'DEMO_MODE') {
+      let privateKey = sanitizedApiSecret;
       
       // Accept both formats: 64 chars (no 0x) or 66 chars (with 0x)
       if (privateKey.length === 64) {
@@ -96,7 +101,6 @@ export function ApiKeySetup({ onComplete }: ApiKeySetupProps) {
         }
         // Valid 64-char format, add 0x prefix for storage
         privateKey = '0x' + privateKey;
-        keys.hyperliquid.apiSecret = privateKey;
       } else if (privateKey.length === 66) {
         // Must start with 0x
         if (!privateKey.startsWith('0x')) {
@@ -129,9 +133,20 @@ export function ApiKeySetup({ onComplete }: ApiKeySetupProps) {
         });
         return;
       }
+      
+      // Update with validated private key
+      keys.hyperliquid.apiSecret = privateKey;
     }
 
-    storage.saveApiKeys(keys);
+    // Save sanitized keys
+    storage.saveApiKeys({
+      hyperliquid: {
+        apiKey: sanitizedApiKey,
+        apiSecret: keys.hyperliquid.apiSecret, // Already validated above
+        walletAddress: sanitizedWalletAddress,
+      },
+      openRouter: sanitizedOpenRouter,
+    });
     
     // Set mode to live to trigger balance fetching
     const { setMode } = await import('@/store/tradingStore').then(m => m.useTradingStore.getState());
@@ -283,10 +298,13 @@ export function ApiKeySetup({ onComplete }: ApiKeySetupProps) {
                   <Input
                     placeholder="Example: 0x1234...5678 (YOUR wallet address from app.hyperliquid.xyz)"
                     value={keys.hyperliquid.apiKey}
-                    onChange={(e) => setKeys({
-                      ...keys,
-                      hyperliquid: { ...keys.hyperliquid, apiKey: e.target.value.trim() }
-                    })}
+                    onChange={(e) => {
+                      const sanitized = sanitizeWalletAddress(e.target.value);
+                      setKeys({
+                        ...keys,
+                        hyperliquid: { ...keys.hyperliquid, apiKey: sanitized }
+                      });
+                    }}
                     className="bg-black/50 border-cyan-500/30 text-cyan-100 font-mono focus:border-cyan-500"
                   />
                   <div className="bg-cyan-500/10 p-2 rounded border border-cyan-500/30">
@@ -316,10 +334,13 @@ export function ApiKeySetup({ onComplete }: ApiKeySetupProps) {
                     type="password"
                     placeholder="Example: 0xabcd...ef01 (64-66 chars) - PRIVATE KEY, not address!"
                     value={keys.hyperliquid.apiSecret}
-                    onChange={(e) => setKeys({
-                      ...keys,
-                      hyperliquid: { ...keys.hyperliquid, apiSecret: e.target.value.trim() }
-                    })}
+                    onChange={(e) => {
+                      const sanitized = sanitizePrivateKey(e.target.value);
+                      setKeys({
+                        ...keys,
+                        hyperliquid: { ...keys.hyperliquid, apiSecret: sanitized }
+                      });
+                    }}
                     className="bg-black/50 border-cyan-500/30 text-cyan-100 font-mono focus:border-cyan-500"
                   />
                   <div className="bg-green-500/10 p-2 rounded border border-green-500/30">
@@ -359,10 +380,13 @@ export function ApiKeySetup({ onComplete }: ApiKeySetupProps) {
                   <Input
                     placeholder="Example: 0x9876...4321 (NEW address created by Hyperliquid)"
                     value={keys.hyperliquid.walletAddress}
-                    onChange={(e) => setKeys({
-                      ...keys,
-                      hyperliquid: { ...keys.hyperliquid, walletAddress: e.target.value.trim() }
-                    })}
+                    onChange={(e) => {
+                      const sanitized = sanitizeWalletAddress(e.target.value);
+                      setKeys({
+                        ...keys,
+                        hyperliquid: { ...keys.hyperliquid, walletAddress: sanitized }
+                      });
+                    }}
                     className="bg-black/50 border-cyan-500/30 text-cyan-100 font-mono focus:border-cyan-500"
                   />
                   <div className="bg-blue-500/10 p-2 rounded border border-blue-500/30">
@@ -387,7 +411,10 @@ export function ApiKeySetup({ onComplete }: ApiKeySetupProps) {
                     type="password"
                     placeholder="sk-or-v1-..."
                     value={keys.openRouter}
-                    onChange={(e) => setKeys({ ...keys, openRouter: e.target.value })}
+                    onChange={(e) => {
+                      const sanitized = sanitizeApiKey(e.target.value);
+                      setKeys({ ...keys, openRouter: sanitized });
+                    }}
                     className="bg-black/50 border-cyan-500/30 text-cyan-100 font-mono focus:border-cyan-500"
                   />
                   <p className="text-xs text-gray-500 font-mono">Required for AI-powered market analysis</p>
@@ -467,14 +494,17 @@ export function ApiKeySetup({ onComplete }: ApiKeySetupProps) {
                     Set your starting capital for demo trading simulation
                   </p>
                 </div>
-=======
+
                 <div className="space-y-2">
                   <Label className="text-cyan-400 font-mono">OpenRouter API Key (Optional)</Label>
                   <Input
                     type="password"
                     placeholder="sk-or-v1-... (optional for enhanced AI)"
                     value={keys.openRouter}
-                    onChange={(e) => setKeys({ ...keys, openRouter: e.target.value })}
+                    onChange={(e) => {
+                      const sanitized = sanitizeApiKey(e.target.value);
+                      setKeys({ ...keys, openRouter: sanitized });
+                    }}
                     className="bg-black/50 border-cyan-500/30 text-cyan-100 font-mono focus:border-cyan-500"
                   />
                   <p className="text-xs text-gray-500 font-mono">

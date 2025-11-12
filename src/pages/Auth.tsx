@@ -18,6 +18,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { ArrowRight, Loader2, Mail, UserX } from "lucide-react";
 import { Suspense, useEffect, useState } from "react";
 import { useNavigate } from "react-router";
+import { sanitizeEmail } from "@/lib/utils";
 
 interface AuthProps {
   redirectAfterAuth?: string;
@@ -43,8 +44,23 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
     setError(null);
     try {
       const formData = new FormData(event.currentTarget);
-      await signIn("email-otp", formData);
-      setStep({ email: formData.get("email") as string });
+      const rawEmail = formData.get("email") as string;
+      
+      // Sanitize email input
+      const sanitizedEmail = sanitizeEmail(rawEmail);
+      
+      if (!sanitizedEmail) {
+        setError("Please enter a valid email address");
+        setIsLoading(false);
+        return;
+      }
+      
+      // Create new FormData with sanitized email
+      const sanitizedFormData = new FormData();
+      sanitizedFormData.set("email", sanitizedEmail);
+      
+      await signIn("email-otp", sanitizedFormData);
+      setStep({ email: sanitizedEmail });
       setIsLoading(false);
     } catch (error) {
       console.error("Email sign-in error:", error);
@@ -63,7 +79,23 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
     setError(null);
     try {
       const formData = new FormData(event.currentTarget);
-      await signIn("email-otp", formData);
+      
+      // Sanitize OTP input (only allow digits)
+      const rawOtp = formData.get("code") as string;
+      const sanitizedOtp = rawOtp.replace(/[^0-9]/g, '').slice(0, 6);
+      
+      if (sanitizedOtp.length !== 6) {
+        setError("Please enter a valid 6-digit code");
+        setIsLoading(false);
+        return;
+      }
+      
+      // Create new FormData with sanitized values
+      const sanitizedFormData = new FormData();
+      sanitizedFormData.set("email", step !== "signIn" ? step.email : "");
+      sanitizedFormData.set("code", sanitizedOtp);
+      
+      await signIn("email-otp", sanitizedFormData);
 
       console.log("signed in");
 
