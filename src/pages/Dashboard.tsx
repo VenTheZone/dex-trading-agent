@@ -19,6 +19,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { BalanceChart } from '@/components/BalanceChart';
 import { useTrading } from '@/hooks/use-trading';
+import { Breadcrumb, BreadcrumbList, BreadcrumbItem, BreadcrumbLink, BreadcrumbSeparator, BreadcrumbPage } from '@/components/ui/breadcrumb';
 
 export default function Dashboard() {
   const { isLoading, isAuthenticated } = useAuth();
@@ -123,15 +124,35 @@ export default function Dashboard() {
           <div className="container mx-auto px-4 py-4 flex items-center justify-between">
             <div className="flex items-center gap-4">
               <LogoDropdown />
-              <h1 
-                className="text-3xl font-bold text-cyan-400"
-                style={{ 
-                  fontFamily: 'monospace',
-                  textShadow: '0 0 20px rgba(0,255,255,0.8), 2px 2px 0 #ff0080'
-                }}
-              >
-                DeX TRADING AGENT
-              </h1>
+              <div className="flex flex-col gap-1">
+                <h1 
+                  className="text-3xl font-bold text-cyan-400"
+                  style={{ 
+                    fontFamily: 'monospace',
+                    textShadow: '0 0 20px rgba(0,255,255,0.8), 2px 2px 0 #ff0080'
+                  }}
+                >
+                  DeX TRADING AGENT
+                </h1>
+                <Breadcrumb>
+                  <BreadcrumbList>
+                    <BreadcrumbItem>
+                      <BreadcrumbLink 
+                        onClick={() => navigate('/')}
+                        className="text-cyan-400/70 hover:text-cyan-400 cursor-pointer font-mono text-sm"
+                      >
+                        Home
+                      </BreadcrumbLink>
+                    </BreadcrumbItem>
+                    <BreadcrumbSeparator className="text-cyan-500/50" />
+                    <BreadcrumbItem>
+                      <BreadcrumbPage className="text-cyan-400 font-mono text-sm font-bold">
+                        Dashboard
+                      </BreadcrumbPage>
+                    </BreadcrumbItem>
+                  </BreadcrumbList>
+                </Breadcrumb>
+              </div>
             </div>
             
             <div className="flex items-center gap-4">
