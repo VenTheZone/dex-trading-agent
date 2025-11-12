@@ -10,7 +10,9 @@ export function useTrading() {
   const createLog = useMutation(api.tradingLogs.createLog);
   const recordBalance = useMutation(api.balanceHistory.recordBalance);
   const analyzeMarket = useAction(api.trading.analyzeMarket);
-  const { balance, settings, mode, chartType, chartInterval, setBalance } = useTradingStore();
+  const executeLiveTrade = useAction(api.trading.executeLiveTrade);
+  const getHyperliquidPositions = useAction(api.trading.getHyperliquidPositions);
+  const { balance, settings, mode, chartType, chartInterval, setBalance, setPosition } = useTradingStore();
   const { user } = useAuth();
   const lastRecordedBalance = useRef(balance);
 
@@ -23,6 +25,58 @@ export function useTrading() {
       lastRecordedBalance.current = balance;
     }
   }, [balance, mode, user, recordBalance]);
+
+  // Poll for live positions if in live mode
+  useEffect(() => {
+    if (mode !== 'live' || !user) return;
+
+    const pollPositions = async () => {
+      try {
+        const keys = storage.getApiKeys();
+        if (!keys?.hyperliquid.apiSecret || !keys?.hyperliquid.walletAddress) return;
+
+        const result = await getHyperliquidPositions({
+          apiSecret: keys.hyperliquid.apiSecret,
+          walletAddress: keys.hyperliquid.walletAddress,
+        });
+
+        if (result.success && result.positions) {
+          // Update balance from margin summary
+          if (result.positions.marginSummary?.accountValue) {
+            const accountValue = parseFloat(result.positions.marginSummary.accountValue);
+            setBalance(accountValue);
+          }
+
+          // Update active positions
+          if (result.positions.assetPositions && result.positions.assetPositions.length > 0) {
+            const pos = result.positions.assetPositions[0];
+            const size = parseFloat(pos.position.szi);
+            const entryPrice = parseFloat(pos.position.entryPx || "0");
+            const unrealizedPnl = parseFloat(pos.position.unrealizedPnl || "0");
+
+            setPosition({
+              symbol: pos.position.coin,
+              size: Math.abs(size),
+              entryPrice,
+              currentPrice: entryPrice + (unrealizedPnl / size),
+              pnl: unrealizedPnl,
+              side: size > 0 ? 'long' : 'short',
+            });
+          } else {
+            setPosition(null);
+          }
+        }
+      } catch (error) {
+        console.error("Failed to fetch positions:", error);
+      }
+    };
+
+    // Poll every 5 seconds
+    const interval = setInterval(pollPositions, 5000);
+    pollPositions(); // Initial fetch
+
+    return () => clearInterval(interval);
+  }, [mode, user, getHyperliquidPositions, setBalance, setPosition]);
 
   const runAIAnalysis = async (symbol: string, currentPrice: number) => {
     try {
@@ -78,13 +132,32 @@ export function useTrading() {
     try {
       if (mode === "live") {
         const keys = storage.getApiKeys();
-        if (!keys?.hyperliquid.apiKey || !keys?.hyperliquid.apiSecret) {
+        if (!keys?.hyperliquid.apiSecret) {
           toast.error("Hyperliquid API keys not configured");
           return;
         }
 
         toast.info("📡 Executing live trade...");
-        // Implementation would call Hyperliquid API here
+        
+        const result = await executeLiveTrade({
+          apiSecret: keys.hyperliquid.apiSecret,
+          symbol,
+          side: side === 'long' ? 'buy' : 'sell',
+          size,
+          price,
+          stopLoss,
+          takeProfit,
+          leverage: settings.leverage,
+        });
+
+        if (!result.success) {
+          throw new Error(result.error || "Trade execution failed");
+        }
+
+        toast.success("✅ Live trade executed");
+      } else {
+        // Paper trading
+        toast.info("📄 Executing paper trade...");
       }
 
       // Log the trade

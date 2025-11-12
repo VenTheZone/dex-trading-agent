@@ -23,7 +23,7 @@ export default function Dashboard() {
   const { isLoading, isAuthenticated } = useAuth();
   const navigate = useNavigate();
   const [hasApiKeys, setHasApiKeys] = useState(false);
-  const { mode, setMode, balance } = useTradingStore();
+  const { mode, setMode, balance, position } = useTradingStore();
   
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
@@ -35,6 +35,10 @@ export default function Dashboard() {
     const keys = storage.getApiKeys();
     setHasApiKeys(!!keys);
   }, []);
+  
+  // Calculate P&L
+  const pnl = position?.pnl || 0;
+  const pnlPercent = position ? ((pnl / (position.entryPrice * position.size)) * 100).toFixed(2) : '0.00';
   
   const handleModeToggle = () => {
     const newMode = mode === 'paper' ? 'live' : 'paper';
@@ -163,18 +167,24 @@ export default function Dashboard() {
                 <div className="text-2xl font-bold text-cyan-100 font-mono">
                   ${balance.toLocaleString()}
                 </div>
+                {mode === 'live' && (
+                  <p className="text-xs text-gray-400 mt-1">Live Account</p>
+                )}
               </CardContent>
             </Card>
             
             <Card className="bg-black/80 border-cyan-500/50 shadow-[0_0_20px_rgba(0,255,255,0.2)]">
               <CardHeader className="flex flex-row items-center justify-between pb-2">
                 <CardTitle className="text-sm font-mono text-cyan-400">P&L</CardTitle>
-                <TrendingUp className="h-4 w-4 text-green-400" />
+                <TrendingUp className={`h-4 w-4 ${pnl >= 0 ? 'text-green-400' : 'text-red-400'}`} />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold text-green-400 font-mono">
-                  +$0.00
+                <div className={`text-2xl font-bold font-mono ${pnl >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                  {pnl >= 0 ? '+' : ''}${pnl.toFixed(2)}
                 </div>
+                <p className={`text-xs mt-1 ${pnl >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                  {pnl >= 0 ? '+' : ''}{pnlPercent}%
+                </p>
               </CardContent>
             </Card>
             
@@ -185,8 +195,13 @@ export default function Dashboard() {
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold text-cyan-100 font-mono">
-                  READY
+                  {position ? 'IN POSITION' : 'READY'}
                 </div>
+                {position && (
+                  <p className="text-xs text-gray-400 mt-1">
+                    {position.side.toUpperCase()} {position.size} {position.symbol}
+                  </p>
+                )}
               </CardContent>
             </Card>
           </motion.div>
