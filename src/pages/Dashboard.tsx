@@ -364,14 +364,7 @@ export default function Dashboard() {
             
             {/* Trading Logs - 1/3 width */}
             <div className="lg:col-span-1">
-              <Card className="bg-black/80 border-cyan-500/50 shadow-[0_0_20px_rgba(0,255,255,0.2)] h-full">
-                <CardHeader className="border-b border-cyan-500/30">
-                  <CardTitle className="text-cyan-400 font-mono">Trading Logs</CardTitle>
-                </CardHeader>
-                <CardContent className="p-4 h-[calc(100%-4rem)] overflow-hidden">
-                  <TradingLogs />
-                </CardContent>
-              </Card>
+              <TradingLogs />
             </div>
           </motion.div>
         </div>
