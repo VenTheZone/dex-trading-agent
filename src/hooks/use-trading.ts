@@ -498,26 +498,42 @@ export function useTrading() {
             description: hasOpenRouterKey ? "Using your OpenRouter key" : "Using DeepSeek Free tier",
           });
 
-          // Fetch real market data for demo mode
-          const chartData = await Promise.all(
-            allowedCoins.map(async (symbol) => {
-              try {
-                const response = await fetch(
-                  `https://api.binance.com/api/v3/ticker/price?symbol=${symbol.replace('USD', 'USDT')}`
-                );
-                const data = await response.json();
-                return {
-                  symbol,
-                  currentPrice: parseFloat(data.price),
-                };
-              } catch (error) {
-                console.error(`[DEMO] Failed to fetch price for ${symbol}:`, error);
-                toast.warning(`⚠️ Failed to fetch ${symbol} price`);
+          // Fetch real market data for demo mode with better error handling
+          const chartDataPromises = allowedCoins.map(async (symbol) => {
+            try {
+              // Convert symbol format: BTCUSD -> BTCUSDT
+              const binanceSymbol = symbol.replace('USD', 'USDT');
+              const response = await fetch(
+                `https://api.binance.com/api/v3/ticker/price?symbol=${binanceSymbol}`,
+                { 
+                  method: 'GET',
+                  headers: { 'Content-Type': 'application/json' }
+                }
+              );
+              
+              if (!response.ok) {
+                console.error(`Binance API error for ${symbol}: ${response.status} ${response.statusText}`);
                 return null;
               }
-            })
-          );
+              
+              const data = await response.json();
+              
+              if (!data.price) {
+                console.error(`No price data for ${symbol}:`, data);
+                return null;
+              }
+              
+              return {
+                symbol,
+                currentPrice: parseFloat(data.price),
+              };
+            } catch (error) {
+              console.error(`[DEMO] Failed to fetch price for ${symbol}:`, error);
+              return null;
+            }
+          });
 
+          const chartData = await Promise.all(chartDataPromises);
           const validCharts = chartData.filter((chart) => chart !== null) as Array<{
             symbol: string;
             currentPrice: number;
@@ -525,7 +541,7 @@ export function useTrading() {
 
           if (validCharts.length === 0) {
             toast.error("❌ Auto-trading paused: No market data available", {
-              description: "Failed to fetch prices from Binance API",
+              description: `Failed to fetch prices for ${allowedCoins.join(', ')}. Check console for details.`,
               duration: 5000,
             });
             
@@ -533,10 +549,20 @@ export function useTrading() {
               action: "auto_pause",
               symbol: "SYSTEM",
               reason: "Auto-trading paused: No valid market data",
-              details: "Failed to fetch prices for all selected coins",
+              details: `Failed to fetch prices for all selected coins: ${allowedCoins.join(', ')}. Binance API may be unavailable or symbols may be incorrect.`,
             });
             
             return;
+          }
+
+          // Log successful data fetch
+          if (validCharts.length < allowedCoins.length) {
+            const failedCoins = allowedCoins.filter(
+              coin => !validCharts.find(chart => chart.symbol === coin)
+            );
+            toast.warning(`⚠️ Some prices unavailable: ${failedCoins.join(', ')}`, {
+              description: `Trading with ${validCharts.length} available coins`,
+            });
           }
 
           // Run real AI analysis with DeepSeek V3.1 free tier
@@ -614,26 +640,42 @@ export function useTrading() {
 
         toast.info(`🔄 Auto-trading cycle started (${allowedCoins.length} coins)`);
 
-        // Fetch current market data for allowed coins
-        const chartData = await Promise.all(
-          allowedCoins.map(async (symbol) => {
-            try {
-              const response = await fetch(
-                `https://api.binance.com/api/v3/ticker/price?symbol=${symbol.replace('USD', 'USDT')}`
-              );
-              const data = await response.json();
-              return {
-                symbol,
-                currentPrice: parseFloat(data.price),
-              };
-            } catch (error) {
-              console.error(`Failed to fetch price for ${symbol}:`, error);
-              toast.warning(`⚠️ Failed to fetch ${symbol} price`);
+        // Fetch current market data for allowed coins with better error handling
+        const chartDataPromises = allowedCoins.map(async (symbol) => {
+          try {
+            // Convert symbol format: BTCUSD -> BTCUSDT
+            const binanceSymbol = symbol.replace('USD', 'USDT');
+            const response = await fetch(
+              `https://api.binance.com/api/v3/ticker/price?symbol=${binanceSymbol}`,
+              { 
+                method: 'GET',
+                headers: { 'Content-Type': 'application/json' }
+              }
+            );
+            
+            if (!response.ok) {
+              console.error(`Binance API error for ${symbol}: ${response.status} ${response.statusText}`);
               return null;
             }
-          })
-        );
+            
+            const data = await response.json();
+            
+            if (!data.price) {
+              console.error(`No price data for ${symbol}:`, data);
+              return null;
+            }
+            
+            return {
+              symbol,
+              currentPrice: parseFloat(data.price),
+            };
+          } catch (error) {
+            console.error(`Failed to fetch price for ${symbol}:`, error);
+            return null;
+          }
+        });
 
+        const chartData = await Promise.all(chartDataPromises);
         const validCharts = chartData.filter((chart) => chart !== null) as Array<{
           symbol: string;
           currentPrice: number;
@@ -641,7 +683,7 @@ export function useTrading() {
 
         if (validCharts.length === 0) {
           toast.error("❌ Auto-trading paused: No market data available", {
-            description: "Failed to fetch prices from Binance API",
+            description: `Failed to fetch prices for ${allowedCoins.join(', ')}. Check console for details.`,
             duration: 5000,
           });
           
@@ -649,10 +691,20 @@ export function useTrading() {
             action: "auto_pause",
             symbol: "SYSTEM",
             reason: "Auto-trading paused: No valid market data",
-            details: "Failed to fetch prices for all selected coins",
+            details: `Failed to fetch prices for all selected coins: ${allowedCoins.join(', ')}. Binance API may be unavailable or symbols may be incorrect.`,
           });
           
           return;
+        }
+
+        // Log successful data fetch
+        if (validCharts.length < allowedCoins.length) {
+          const failedCoins = allowedCoins.filter(
+            coin => !validCharts.find(chart => chart.symbol === coin)
+          );
+          toast.warning(`⚠️ Some prices unavailable: ${failedCoins.join(', ')}`, {
+            description: `Trading with ${validCharts.length} available coins`,
+          });
         }
 
         // Run multi-chart AI analysis
