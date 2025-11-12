@@ -74,11 +74,20 @@ export function ApiKeySetup({ onComplete }: ApiKeySetupProps) {
       let privateKey = keys.hyperliquid.apiSecret.trim();
       
       // Accept both formats: 64 chars (no 0x) or 66 chars (with 0x)
-      if (privateKey.length === 64 && /^[0-9a-fA-F]+$/.test(privateKey)) {
+      if (privateKey.length === 64) {
+        // Must be valid hex
+        if (!/^[0-9a-fA-F]+$/.test(privateKey)) {
+          toast.error('Invalid private key: Contains non-hexadecimal characters', {
+            description: 'Private key should only contain 0-9 and a-f',
+            duration: 5000,
+          });
+          return;
+        }
         // Valid 64-char format, add 0x prefix for storage
         privateKey = '0x' + privateKey;
         keys.hyperliquid.apiSecret = privateKey;
       } else if (privateKey.length === 66) {
+        // Must start with 0x
         if (!privateKey.startsWith('0x')) {
           toast.error('Invalid private key: 66-character key must start with "0x"', {
             description: `Your key starts with: ${privateKey.substring(0, 4)}...`,
@@ -89,8 +98,8 @@ export function ApiKeySetup({ onComplete }: ApiKeySetupProps) {
         
         // Check if it contains only valid hex characters after 0x
         const hexPart = privateKey.slice(2);
-        if (!/^[0-9a-fA-F]+$/.test(hexPart)) {
-          toast.error('Invalid private key: Contains non-hexadecimal characters', {
+        if (!/^[0-9a-fA-F]{64}$/.test(hexPart)) {
+          toast.error('Invalid private key: Must contain exactly 64 hexadecimal characters after "0x"', {
             description: 'Private key should only contain 0-9 and a-f after "0x"',
             duration: 5000,
           });
