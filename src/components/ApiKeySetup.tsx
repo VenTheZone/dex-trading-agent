@@ -252,11 +252,17 @@ export function ApiKeySetup({ onComplete }: ApiKeySetupProps) {
                     className="bg-black/50 border-cyan-500/30 text-cyan-100 font-mono focus:border-cyan-500"
                   />
                   <div className="bg-cyan-500/10 p-2 rounded border border-cyan-500/30">
-                    <p className="text-xs text-cyan-300 font-mono">
-                      ℹ️ This is YOUR main wallet address that you use to login to Hyperliquid
+                    <p className="text-xs text-cyan-300 font-mono font-bold">
+                      💰 This is YOUR main wallet address - where you receive and hold your coins
                     </p>
                     <p className="text-xs text-gray-400 font-mono mt-1">
-                      Find it: Top right corner when connected to app.hyperliquid.xyz
+                      • The address you use to login to Hyperliquid
+                    </p>
+                    <p className="text-xs text-gray-400 font-mono">
+                      • Where your funds are stored
+                    </p>
+                    <p className="text-xs text-yellow-300 font-mono mt-1">
+                      📍 Find it: Top right corner when connected to app.hyperliquid.xyz
                     </p>
                   </div>
                 </div>
