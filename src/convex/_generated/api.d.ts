@@ -18,6 +18,7 @@ import type * as auth from "../auth.js";
 import type * as balanceHistory from "../balanceHistory.js";
 import type * as http from "../http.js";
 import type * as hyperliquid from "../hyperliquid.js";
+import type * as marketData from "../marketData.js";
 import type * as trading from "../trading.js";
 import type * as tradingLogs from "../tradingLogs.js";
 import type * as users from "../users.js";
@@ -36,6 +37,7 @@ declare const fullApi: ApiFromModules<{
   balanceHistory: typeof balanceHistory;
   http: typeof http;
   hyperliquid: typeof hyperliquid;
+  marketData: typeof marketData;
   trading: typeof trading;
   tradingLogs: typeof tradingLogs;
   users: typeof users;

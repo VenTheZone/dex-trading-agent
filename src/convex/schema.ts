@@ -50,6 +50,40 @@ const schema = defineSchema(
       balance: v.number(),
       mode: v.union(v.literal("paper"), v.literal("live")),
     }).index("by_user", ["userId"]),
+
+    // Paper trading positions table
+    paperPositions: defineTable({
+      userId: v.id("users"),
+      symbol: v.string(),
+      side: v.union(v.literal("long"), v.literal("short")),
+      size: v.number(),
+      entryPrice: v.number(),
+      currentPrice: v.number(),
+      unrealizedPnl: v.number(),
+      realizedPnl: v.number(),
+      stopLoss: v.optional(v.number()),
+      takeProfit: v.optional(v.number()),
+      leverage: v.number(),
+    }).index("by_user", ["userId"])
+      .index("by_user_and_symbol", ["userId", "symbol"]),
+
+    // Paper trading orders table
+    paperOrders: defineTable({
+      userId: v.id("users"),
+      symbol: v.string(),
+      side: v.union(v.literal("buy"), v.literal("sell")),
+      type: v.union(v.literal("market"), v.literal("limit")),
+      price: v.number(),
+      size: v.number(),
+      filled: v.number(),
+      status: v.union(
+        v.literal("open"),
+        v.literal("filled"),
+        v.literal("cancelled"),
+        v.literal("partial")
+      ),
+    }).index("by_user", ["userId"])
+      .index("by_user_and_status", ["userId", "status"]),
   },
   {
     schemaValidation: false,

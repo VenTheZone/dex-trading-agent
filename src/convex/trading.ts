@@ -79,6 +79,37 @@ Provide your analysis in JSON format with:
   },
 });
 
+export const executePaperTrade = action({
+  args: {
+    symbol: v.string(),
+    side: v.union(v.literal("buy"), v.literal("sell")),
+    size: v.number(),
+    price: v.number(),
+    type: v.union(v.literal("market"), v.literal("limit")),
+    stopLoss: v.optional(v.number()),
+    takeProfit: v.optional(v.number()),
+    leverage: v.number(),
+  },
+  handler: async (ctx, args) => {
+    // Log the paper trade
+    await ctx.runMutation(internal.tradingLogs.createLogInternal, {
+      action: `paper_${args.side}`,
+      symbol: args.symbol,
+      reason: `Paper ${args.type} order executed`,
+      price: args.price,
+      size: args.size,
+      side: args.side === "buy" ? "long" : "short",
+      details: `Leverage: ${args.leverage}x, SL: ${args.stopLoss || "N/A"}, TP: ${args.takeProfit || "N/A"}`,
+    });
+
+    return {
+      success: true,
+      orderId: `paper_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      message: "Paper trade executed successfully",
+    };
+  },
+});
+
 export const executeTradeAction = internalAction({
   args: {
     action: v.string(),

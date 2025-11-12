@@ -119,6 +119,9 @@ importers:
       axios:
         specifier: ^1.9.0
         version: 1.9.0
+      ccxt:
+        specifier: ^4.5.18
+        version: 4.5.18
       class-variance-authority:
         specifier: ^0.7.1
         version: 0.7.1
@@ -2127,6 +2130,10 @@ packages:
 
   caniuse-lite@1.0.30001720:
     resolution: {integrity: sha512-Ec/2yV2nNPwb4DnTANEV99ZWwm3ZWfdlfkQbWSDDt+PsXEVYwlhPH8tdMaPunYTKKmz7AnHi2oNEi1GcmKCD8g==}
+
+  ccxt@4.5.18:
+    resolution: {integrity: sha512-RFgIME4CjuD1+WmKrySD8GLVc+v8tnJcxvpCEs67ahZ1hkYScXWe6EebTQqBtsZumrPa+4kocbKSfsJv70Zv5g==}
+    engines: {node: '>=15.0.0'}
 
   chalk@4.1.2:
     resolution: {integrity: sha512-oKnbhFyRIXpUuez8iBMmyEa4nbj4IOQyuhc/wy9kY7/WVPcwIO9VA668Pu8RkO7+0G76SLROeyw9CpQ061i4mA==}
@@ -5188,6 +5195,13 @@ snapshots:
       three: 0.177.0
 
   caniuse-lite@1.0.30001720: {}
+
+  ccxt@4.5.18:
+    dependencies:
+      ws: 8.18.3
+    transitivePeerDependencies:
+      - bufferutil
+      - utf-8-validate
 
   chalk@4.1.2:
     dependencies:
