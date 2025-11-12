@@ -63,6 +63,13 @@ This guide covers deploying the DeX Trading Agent locally using Docker for devel
 
 ## Quick Start
 
-### 1. Create Environment File
+### 1. Set Up Convex Backend
 
-Create a `.env.local` file in the project root:
+Before using Docker, you need to deploy your Convex backend:
+
+1. Go to your Convex Dashboard (https://dashboard.convex.dev)
+2. Select your project
+3. Click "Deploy" to deploy your Convex backend
+4. Wait for deployment to complete
+
+Once your Convex backend is deployed, you can proceed with the Docker setup.

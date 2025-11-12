@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/use-auth";
 import { useNavigate } from "react-router";
 import { TradingBackground } from "@/components/CyberpunkBackground";
-import { Activity, Brain, Shield, TrendingUp, Zap, Eye, Github } from "lucide-react";
+import { Activity, Brain, Shield, TrendingUp, Zap, Eye } from "lucide-react";
 import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
