@@ -93,13 +93,17 @@ export function ApiKeySetup({ onComplete }: ApiKeySetupProps) {
                     <strong className="text-cyan-400">Step 4:</strong> Create a new API key with trading permissions
                   </p>
                   <p className="font-mono text-sm">
-                    <strong className="text-cyan-400">Step 5:</strong> Copy your API Key (public) and API Secret (private key)
+                    <strong className="text-cyan-400">Step 5:</strong> Copy your API Key (public)
+                  </p>
+                  <p className="font-mono text-sm">
+                    <strong className="text-cyan-400">Step 6:</strong> For the API Secret, use your wallet's private key (the one you use to sign transactions)
                   </p>
                   <Alert className="bg-red-500/10 border-red-500/50 mt-3">
                     <AlertTriangle className="h-4 w-4 text-red-500" />
                     <AlertDescription className="text-red-200 text-xs">
-                      <strong>IMPORTANT:</strong> Your API Secret is your private key. Never share it with anyone. 
-                      It should start with "0x" and be 66 characters long.
+                      <strong>CRITICAL SECURITY:</strong> The API Secret is your wallet's private key (starts with "0x", 66 characters). 
+                      This key has FULL CONTROL over your funds. Never share it with anyone. 
+                      It's the same private key you exported from MetaMask or your wallet provider.
                     </AlertDescription>
                   </Alert>
                 </div>
