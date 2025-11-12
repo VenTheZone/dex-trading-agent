@@ -272,10 +272,28 @@ export function useTrading() {
         customPrompt,
       });
       
-      toast.success("✅ AI analysis complete");
+      toast.success(`✅ AI analysis complete: ${analysis.action.toUpperCase()}`);
+      
+      // Log the AI decision for transparency
+      await createLog({
+        action: "ai_analysis",
+        symbol,
+        reason: `AI Decision: ${analysis.action} (Confidence: ${analysis.confidence}%)`,
+        details: analysis.reasoning,
+      });
+      
       return analysis;
     } catch (error: any) {
-      toast.error(`AI Analysis failed: ${error.message}`);
+      toast.error(`❌ AI Analysis failed: ${error.message}`);
+      
+      // Log the error for debugging
+      await createLog({
+        action: "ai_error",
+        symbol,
+        reason: `AI Analysis Error: ${error.message}`,
+        details: `Model: ${aiModel}, Demo: ${storage.isDemoMode()}`,
+      });
+      
       throw error;
     }
   };
@@ -304,7 +322,7 @@ export function useTrading() {
       );
 
       if (filteredCharts.length === 0) {
-        toast.error("No allowed coins selected for trading");
+        toast.error("❌ No allowed coins selected for trading");
         return null;
       }
 
@@ -330,10 +348,28 @@ export function useTrading() {
         customPrompt,
       });
       
-      toast.success("✅ Multi-chart AI analysis complete");
+      toast.success(`✅ Multi-chart AI analysis complete: ${analysis.action.toUpperCase()}`);
+      
+      // Log the AI decision for transparency
+      await createLog({
+        action: "ai_multi_analysis",
+        symbol: analysis.recommendedSymbol || "MULTI",
+        reason: `AI Decision: ${analysis.action} on ${analysis.recommendedSymbol} (Confidence: ${analysis.confidence}%)`,
+        details: `${analysis.reasoning}\n\nMarket Context: ${analysis.marketContext || 'N/A'}`,
+      });
+      
       return analysis;
     } catch (error: any) {
-      toast.error(`Multi-chart AI Analysis failed: ${error.message}`);
+      toast.error(`❌ Multi-chart AI Analysis failed: ${error.message}`);
+      
+      // Log the error for debugging
+      await createLog({
+        action: "ai_error",
+        symbol: "MULTI",
+        reason: `Multi-chart AI Analysis Error: ${error.message}`,
+        details: `Model: ${aiModel}, Demo: ${storage.isDemoMode()}, Charts: ${charts.length}`,
+      });
+      
       throw error;
     }
   };
@@ -433,21 +469,34 @@ export function useTrading() {
     const runAutoTrading = async () => {
       try {
         const isDemoMode = storage.isDemoMode();
+        const allowedCoins = settings.allowedCoins || [];
+        
+        // Validation checks with detailed feedback
+        if (allowedCoins.length === 0) {
+          toast.error("❌ Auto-trading paused: No coins selected", {
+            description: "Please select at least 1 coin in Trading Controls",
+            duration: 5000,
+          });
+          
+          await createLog({
+            action: "auto_pause",
+            symbol: "SYSTEM",
+            reason: "Auto-trading paused: No allowed coins selected",
+            details: "User must select at least one coin for AI trading",
+          });
+          
+          setAutoTrading(false);
+          return;
+        }
         
         // Demo mode: Use real AI with DeepSeek V3.1 (free tier or paid if API key provided)
         if (isDemoMode) {
           const keys = storage.getApiKeys();
           const hasOpenRouterKey = keys?.openRouter && keys.openRouter !== 'DEMO_MODE';
           
-          const allowedCoins = settings.allowedCoins || [];
-          if (allowedCoins.length === 0) {
-            console.log("[DEMO] No allowed coins selected, skipping auto-trading");
-            return;
-          }
-          
-          if (hasOpenRouterKey) {
-            toast.info("[DEMO] Using your OpenRouter API key for enhanced AI analysis");
-          }
+          toast.info(`[DEMO] 🔄 Auto-trading cycle started (${allowedCoins.length} coins)`, {
+            description: hasOpenRouterKey ? "Using your OpenRouter key" : "Using DeepSeek Free tier",
+          });
 
           // Fetch real market data for demo mode
           const chartData = await Promise.all(
@@ -463,6 +512,7 @@ export function useTrading() {
                 };
               } catch (error) {
                 console.error(`[DEMO] Failed to fetch price for ${symbol}:`, error);
+                toast.warning(`⚠️ Failed to fetch ${symbol} price`);
                 return null;
               }
             })
@@ -474,7 +524,18 @@ export function useTrading() {
           }>;
 
           if (validCharts.length === 0) {
-            console.log("[DEMO] No valid market data, skipping auto-trading");
+            toast.error("❌ Auto-trading paused: No market data available", {
+              description: "Failed to fetch prices from Binance API",
+              duration: 5000,
+            });
+            
+            await createLog({
+              action: "auto_pause",
+              symbol: "SYSTEM",
+              reason: "Auto-trading paused: No valid market data",
+              details: "Failed to fetch prices for all selected coins",
+            });
+            
             return;
           }
 
@@ -482,13 +543,19 @@ export function useTrading() {
           const analysis = await runMultiChartAIAnalysis(validCharts);
 
           if (!analysis) {
-            console.log("[DEMO] AI analysis returned no recommendation");
+            toast.warning("⚠️ AI returned no recommendation", {
+              description: "Waiting for next cycle...",
+            });
             return;
           }
 
           // Execute simulated trade based on AI recommendation
           if (analysis.action === "open_long" || analysis.action === "open_short") {
             const side = analysis.action === "open_long" ? "long" : "short";
+            
+            toast.info(`[DEMO] 📊 AI recommends ${side.toUpperCase()} on ${analysis.recommendedSymbol}`, {
+              description: `Confidence: ${analysis.confidence}%`,
+            });
             
             await executeTrade(
               analysis.recommendedSymbol || validCharts[0].symbol,
@@ -502,6 +569,10 @@ export function useTrading() {
               true
             );
           } else if (analysis.action === "close" && position) {
+            toast.info(`[DEMO] 📊 AI recommends closing ${position.symbol}`, {
+              description: `Confidence: ${analysis.confidence}%`,
+            });
+            
             await executeTrade(
               position.symbol,
               "close_position",
@@ -513,6 +584,10 @@ export function useTrading() {
               `[DEMO] ${analysis.reasoning}`,
               true
             );
+          } else {
+            toast.info(`[DEMO] 📊 AI recommends: ${analysis.action.toUpperCase()}`, {
+              description: analysis.reasoning.substring(0, 100) + "...",
+            });
           }
           
           return;
@@ -521,18 +596,23 @@ export function useTrading() {
         // Live/Paper mode: Requires OpenRouter API key
         const keys = storage.getApiKeys();
         if (!keys?.openRouter || keys.openRouter === 'DEMO_MODE') {
-          console.log("OpenRouter API key not configured for live/paper trading, skipping auto-trading");
-          toast.warning("⚠️ OpenRouter API key required for auto-trading in live/paper mode");
+          toast.error("❌ Auto-trading paused: OpenRouter API key required", {
+            description: "Configure your API key in Settings",
+            duration: 5000,
+          });
+          
+          await createLog({
+            action: "auto_pause",
+            symbol: "SYSTEM",
+            reason: "Auto-trading paused: OpenRouter API key not configured",
+            details: "Live/Paper mode requires a valid OpenRouter API key",
+          });
+          
           setAutoTrading(false);
           return;
         }
 
-        // Get current prices for all allowed coins
-        const allowedCoins = settings.allowedCoins || [];
-        if (allowedCoins.length === 0) {
-          console.log("No allowed coins selected, skipping auto-trading");
-          return;
-        }
+        toast.info(`🔄 Auto-trading cycle started (${allowedCoins.length} coins)`);
 
         // Fetch current market data for allowed coins
         const chartData = await Promise.all(
@@ -548,6 +628,7 @@ export function useTrading() {
               };
             } catch (error) {
               console.error(`Failed to fetch price for ${symbol}:`, error);
+              toast.warning(`⚠️ Failed to fetch ${symbol} price`);
               return null;
             }
           })
@@ -559,7 +640,18 @@ export function useTrading() {
         }>;
 
         if (validCharts.length === 0) {
-          console.log("No valid market data, skipping auto-trading");
+          toast.error("❌ Auto-trading paused: No market data available", {
+            description: "Failed to fetch prices from Binance API",
+            duration: 5000,
+          });
+          
+          await createLog({
+            action: "auto_pause",
+            symbol: "SYSTEM",
+            reason: "Auto-trading paused: No valid market data",
+            details: "Failed to fetch prices for all selected coins",
+          });
+          
           return;
         }
 
@@ -567,13 +659,19 @@ export function useTrading() {
         const analysis = await runMultiChartAIAnalysis(validCharts);
 
         if (!analysis) {
-          console.log("AI analysis returned no recommendation");
+          toast.warning("⚠️ AI returned no recommendation", {
+            description: "Waiting for next cycle...",
+          });
           return;
         }
 
         // Execute trade based on AI recommendation
         if (analysis.action === "open_long" || analysis.action === "open_short") {
           const side = analysis.action === "open_long" ? "long" : "short";
+          
+          toast.info(`📊 AI recommends ${side.toUpperCase()} on ${analysis.recommendedSymbol}`, {
+            description: `Confidence: ${analysis.confidence}%`,
+          });
           
           await executeTrade(
             analysis.recommendedSymbol || validCharts[0].symbol,
@@ -586,6 +684,10 @@ export function useTrading() {
             analysis.reasoning
           );
         } else if (analysis.action === "close" && position) {
+          toast.info(`📊 AI recommends closing ${position.symbol}`, {
+            description: `Confidence: ${analysis.confidence}%`,
+          });
+          
           await executeTrade(
             position.symbol,
             "close_position",
@@ -596,9 +698,23 @@ export function useTrading() {
             undefined,
             analysis.reasoning
           );
+        } else {
+          toast.info(`📊 AI recommends: ${analysis.action.toUpperCase()}`, {
+            description: analysis.reasoning.substring(0, 100) + "...",
+          });
         }
-      } catch (error) {
-        console.error("Auto-trading error:", error);
+      } catch (error: any) {
+        toast.error(`❌ Auto-trading error: ${error.message}`, {
+          description: "Check Trading Logs for details",
+          duration: 5000,
+        });
+        
+        await createLog({
+          action: "auto_error",
+          symbol: "SYSTEM",
+          reason: `Auto-trading error: ${error.message}`,
+          details: `Stack: ${error.stack || 'N/A'}`,
+        });
       }
     };
 
@@ -609,7 +725,7 @@ export function useTrading() {
     const interval = setInterval(runAutoTrading, 2 * 60 * 1000);
 
     return () => clearInterval(interval);
-  }, [isAutoTrading, user, settings.allowedCoins, position, balance, settings, chartType, chartInterval, mode, network]);
+  }, [isAutoTrading, user, settings.allowedCoins, position, balance, settings, chartType, chartInterval, mode, network, aiModel, customPrompt]);
 
   return {
     runAIAnalysis,

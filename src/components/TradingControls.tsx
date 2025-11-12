@@ -17,7 +17,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { DEFAULT_PROMPT } from '@/store/tradingStore';
 
 export function TradingControls() {
-  const { settings, updateSettings, chartInterval, setChartInterval, chartType, setChartType, isAutoTrading, setAutoTrading, position, aiModel, setAiModel, customPrompt, setCustomPrompt, resetPromptToDefault } = useTradingStore();
+  const { settings, updateSettings, chartInterval, setChartInterval, chartType, setChartType, isAutoTrading, setAutoTrading, position, aiModel, setAiModel, customPrompt, setCustomPrompt, resetPromptToDefault, mode } = useTradingStore();
   const [localSettings, setLocalSettings] = useState(settings);
   const [localPrompt, setLocalPrompt] = useState(customPrompt);
   const { closePosition, closeAllPositions } = useTrading();
@@ -59,9 +59,13 @@ export function TradingControls() {
     
     if (newState) {
       const keys = storage.getApiKeys();
-      if (!keys?.openRouter) {
+      const isDemoMode = storage.isDemoMode();
+      
+      // Validation checks
+      if (!isDemoMode && (!keys?.openRouter || keys.openRouter === 'DEMO_MODE')) {
         toast.error('❌ OpenRouter API key required', {
-          description: 'Configure your API key to enable AI trading',
+          description: 'Configure your API key in Settings or use Demo mode',
+          duration: 5000,
         });
         return;
       }
@@ -69,12 +73,17 @@ export function TradingControls() {
       if ((localSettings.allowedCoins || []).length === 0) {
         toast.error('❌ No coins selected', {
           description: 'Please select at least one coin for AI trading',
+          duration: 5000,
         });
         return;
       }
       
-      toast.success('🤖 AI Auto-Trading Enabled', {
-        description: 'Analyzing market every 2 minutes',
+      const coinCount = (localSettings.allowedCoins || []).length;
+      const modeText = isDemoMode ? '[DEMO]' : mode.toUpperCase();
+      
+      toast.success(`🤖 AI Auto-Trading Enabled ${modeText}`, {
+        description: `Analyzing ${coinCount} coin${coinCount > 1 ? 's' : ''} every 2 minutes`,
+        duration: 5000,
       });
     } else {
       toast.success('🛑 AI Auto-Trading Disabled', {
