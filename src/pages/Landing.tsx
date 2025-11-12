@@ -3,11 +3,14 @@ import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/use-auth";
 import { useNavigate } from "react-router";
 import { TradingBackground } from "@/components/CyberpunkBackground";
-import { Activity, Brain, Shield, TrendingUp, Zap } from "lucide-react";
+import { Activity, Brain, Shield, TrendingUp, Zap, Eye } from "lucide-react";
+import { useState } from "react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 export default function Landing() {
   const { isAuthenticated } = useAuth();
   const navigate = useNavigate();
+  const [showPreview, setShowPreview] = useState(false);
 
   return (
     <div className="min-h-screen bg-black text-cyan-100">
@@ -81,6 +84,16 @@ export default function Landing() {
                 <Zap className="mr-2 h-6 w-6" />
                 {isAuthenticated ? 'ENTER DASHBOARD' : 'GET STARTED'}
               </Button>
+              
+              <Button
+                size="lg"
+                variant="outline"
+                onClick={() => setShowPreview(true)}
+                className="text-xl px-8 py-6 border-2 border-cyan-500 text-cyan-400 hover:bg-cyan-500/20 font-bold font-mono shadow-[0_0_20px_rgba(0,255,255,0.4)]"
+              >
+                <Eye className="mr-2 h-6 w-6" />
+                PREVIEW DASHBOARD
+              </Button>
             </motion.div>
           </motion.div>
           
@@ -113,6 +126,147 @@ export default function Landing() {
             ))}
           </motion.div>
         </motion.div>
+        
+        {/* Preview Modal */}
+        <Dialog open={showPreview} onOpenChange={setShowPreview}>
+          <DialogContent className="max-w-[95vw] max-h-[95vh] bg-black/95 border-cyan-500/50 p-0 overflow-hidden">
+            <DialogHeader className="p-6 border-b border-cyan-500/30">
+              <DialogTitle className="text-cyan-400 font-mono text-2xl flex items-center gap-2">
+                <Eye className="h-6 w-6" />
+                Dashboard Preview
+              </DialogTitle>
+            </DialogHeader>
+            
+            <div className="relative w-full h-[80vh] overflow-auto custom-scrollbar">
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 0.3 }}
+                className="p-6"
+              >
+                {/* Preview Content - Simulated Dashboard */}
+                <div className="space-y-6">
+                  {/* Header Preview */}
+                  <div className="border border-cyan-500/30 bg-black/80 backdrop-blur-sm rounded-lg p-4">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-4">
+                        <div className="w-10 h-10 bg-cyan-500/20 rounded-lg" />
+                        <h1 className="text-2xl font-bold text-cyan-400 font-mono">
+                          DeX TRADING AGENT
+                        </h1>
+                      </div>
+                      <div className="flex items-center gap-4">
+                        <div className="px-4 py-2 bg-purple-500/20 text-purple-400 border border-purple-500 rounded font-mono">
+                          🟣 MAINNET
+                        </div>
+                        <div className="px-4 py-2 bg-cyan-500/20 text-cyan-400 border border-cyan-500 rounded font-mono">
+                          📄 PAPER TRADING
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  {/* Stats Preview */}
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    {[
+                      { label: 'Balance', value: '$10,000', icon: '💰' },
+                      { label: 'P&L', value: '+$250.00', color: 'text-green-400', icon: '📈' },
+                      { label: 'Status', value: 'READY', icon: '⚡' }
+                    ].map((stat, i) => (
+                      <div key={i} className="bg-black/80 border border-cyan-500/50 rounded-lg p-4 shadow-[0_0_20px_rgba(0,255,255,0.2)]">
+                        <div className="text-sm font-mono text-cyan-400 mb-2">{stat.icon} {stat.label}</div>
+                        <div className={`text-2xl font-bold font-mono ${stat.color || 'text-cyan-100'}`}>
+                          {stat.value}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                  
+                  {/* Charts Preview */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {['BTC/USD', 'ETH/USD', 'SOL/USD', 'AVAX/USD'].map((symbol, i) => (
+                      <div key={i} className="bg-black/80 border border-cyan-500/30 rounded-lg p-4 h-64 flex items-center justify-center relative overflow-hidden">
+                        <div className="absolute inset-0 opacity-20" style={{
+                          backgroundImage: `linear-gradient(#00ffff 1px, transparent 1px), linear-gradient(90deg, #00ffff 1px, transparent 1px)`,
+                          backgroundSize: '20px 20px'
+                        }} />
+                        <div className="relative z-10 text-center">
+                          <div className="text-cyan-400 font-mono font-bold text-xl mb-2">{symbol}</div>
+                          <div className="text-gray-500 font-mono text-sm">TradingView Chart</div>
+                          <div className="mt-4 text-cyan-100 font-mono">📊</div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                  
+                  {/* Controls Preview */}
+                  <div className="bg-gradient-to-br from-black/90 to-black/80 border border-cyan-500/50 rounded-lg p-6 shadow-[0_0_30px_rgba(0,255,255,0.2)]">
+                    <div className="flex items-center justify-between mb-6">
+                      <h3 className="text-cyan-400 font-mono font-bold flex items-center gap-2">
+                        ✨ Trading Controls
+                      </h3>
+                      <div className="px-4 py-2 bg-green-500 text-black font-bold font-mono rounded shadow-[0_0_20px_rgba(34,197,94,0.5)]">
+                        🤖 AI ON
+                      </div>
+                    </div>
+                    
+                    <div className="space-y-4">
+                      <div>
+                        <div className="text-cyan-400 font-mono text-sm mb-2">Allowed Coins (3/5 selected)</div>
+                        <div className="flex gap-2 flex-wrap">
+                          {['BTC', 'ETH', 'SOL'].map((coin) => (
+                            <div key={coin} className="px-3 py-1 bg-cyan-500 text-black font-mono text-sm rounded shadow-[0_0_15px_rgba(0,255,255,0.4)]">
+                              {coin}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                      
+                      <div>
+                        <div className="text-cyan-400 font-mono text-sm mb-2">Leverage: 5x</div>
+                        <div className="h-2 bg-black/50 rounded-full overflow-hidden border border-cyan-500/30">
+                          <div className="h-full w-1/2 bg-cyan-500" />
+                        </div>
+                      </div>
+                      
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <div className="text-cyan-400 font-mono text-sm mb-2">Take Profit (%)</div>
+                          <div className="bg-black/50 border border-cyan-500/30 rounded px-3 py-2 text-cyan-100 font-mono">
+                            5.0
+                          </div>
+                        </div>
+                        <div>
+                          <div className="text-cyan-400 font-mono text-sm mb-2">Stop Loss (%)</div>
+                          <div className="bg-black/50 border border-cyan-500/30 rounded px-3 py-2 text-cyan-100 font-mono">
+                            2.0
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="text-center py-8">
+                    <p className="text-cyan-400 font-mono mb-4">
+                      This is a preview of the trading dashboard interface
+                    </p>
+                    <Button
+                      size="lg"
+                      onClick={() => {
+                        setShowPreview(false);
+                        navigate(isAuthenticated ? '/dashboard' : '/auth');
+                      }}
+                      className="bg-cyan-500 hover:bg-cyan-600 text-black font-bold font-mono shadow-[0_0_20px_rgba(0,255,255,0.4)]"
+                    >
+                      <Zap className="mr-2 h-5 w-5" />
+                      {isAuthenticated ? 'Go to Dashboard' : 'Get Started Now'}
+                    </Button>
+                  </div>
+                </div>
+              </motion.div>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   );
