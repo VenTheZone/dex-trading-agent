@@ -4,7 +4,18 @@ import { v } from "convex/values";
 import { action, internalAction } from "./_generated/server";
 import { internal } from "./_generated/api";
 
-export const analyzeMarket = action({
+/**
+ * Analyzes market data for a single symbol using AI
+ * @param symbol - Trading pair symbol (e.g., "BTCUSD")
+ * @param chartData - Serialized chart data for analysis
+ * @param userBalance - Current user balance
+ * @param settings - Trading risk settings
+ * @param isDemoMode - Whether to use free tier API
+ * @param aiModel - AI model to use for analysis
+ * @param customPrompt - Custom prompt for AI analysis
+ * @returns AI trading recommendation with entry/exit points
+ */
+export const analyzeSingleMarket = action({
   args: {
     symbol: v.string(),
     chartData: v.string(),
@@ -34,23 +45,7 @@ export const analyzeMarket = action({
 
     const basePrompt = args.customPrompt || `You are an expert crypto trading analyst. Analyze the following market data and provide a trading recommendation.`;
 
-    const prompt = `${basePrompt}
-
-Symbol: ${args.symbol}
-Current Balance: ${args.userBalance}
-Chart Data: ${args.chartData}
-Risk Settings: TP ${args.settings.takeProfitPercent}%, SL ${args.settings.stopLossPercent}%
-
-Provide your analysis in JSON format with:
-{
-  "action": "open_long" | "open_short" | "close" | "hold",
-  "confidence": 0-100,
-  "reasoning": "detailed explanation",
-  "entryPrice": number,
-  "stopLoss": number,
-  "takeProfit": number,
-  "positionSize": number
-}`;
+    const prompt = `${basePrompt}\n\nSymbol: ${args.symbol}\nCurrent Balance: ${args.userBalance}\nChart Data: ${args.chartData}\nRisk Settings: TP ${args.settings.takeProfitPercent}%, SL ${args.settings.stopLossPercent}%\n\nProvide your analysis in JSON format with:\n{\n  "action": "open_long" | "open_short" | "close" | "hold",\n  "confidence": 0-100,\n  "reasoning": "detailed explanation",\n  "entryPrice": number,\n  "stopLoss": number,\n  "takeProfit": number,\n  "positionSize": number\n}`;
 
     try {
       const headers: Record<string, string> = {
@@ -100,7 +95,17 @@ Provide your analysis in JSON format with:
   },
 });
 
-export const analyzeMultiChart = action({
+/**
+ * Analyzes multiple charts simultaneously for correlation-based trading decisions
+ * @param charts - Array of chart data with symbols and prices
+ * @param userBalance - Current user balance
+ * @param settings - Trading risk settings including leverage
+ * @param isDemoMode - Whether to use free tier API
+ * @param aiModel - AI model to use for analysis
+ * @param customPrompt - Custom prompt for AI analysis
+ * @returns AI recommendation with best trading opportunity across all charts
+ */
+export const analyzeMultipleCharts = action({
   args: {
     charts: v.array(v.object({
       symbol: v.string(),
@@ -135,34 +140,7 @@ export const analyzeMultiChart = action({
 
     const basePrompt = args.customPrompt || `You are an expert crypto trading analyst with multi-chart analysis capabilities.`;
 
-    const prompt = `${basePrompt}
-
-MULTI-CHART ANALYSIS:
-${chartsDescription}
-
-Current Balance: $${args.userBalance}
-Leverage: ${args.settings.leverage}x ${args.settings.allowAILeverage ? '(AI can adjust)' : '(fixed)'}
-Risk Settings: TP ${args.settings.takeProfitPercent}%, SL ${args.settings.stopLossPercent}%
-
-Consider:
-1. Correlation between assets (BTC dominance, altcoin movements)
-2. Market-wide trends and sentiment
-3. Relative strength across different assets
-4. Risk diversification opportunities
-5. Best risk/reward setup among all charts
-
-Provide your analysis in JSON format with:
-{
-  "recommendedSymbol": "symbol to trade",
-  "action": "open_long" | "open_short" | "close" | "hold",
-  "confidence": 0-100,
-  "reasoning": "detailed multi-chart analysis explanation",
-  "entryPrice": number,
-  "stopLoss": number,
-  "takeProfit": number,
-  "positionSize": number,
-  "marketContext": "overall market analysis across all charts"
-}`;
+    const prompt = `${basePrompt}\n\nMULTI-CHART ANALYSIS:\n${chartsDescription}\n\nCurrent Balance: $${args.userBalance}\nLeverage: ${args.settings.leverage}x ${args.settings.allowAILeverage ? '(AI can adjust)' : '(fixed)'}\nRisk Settings: TP ${args.settings.takeProfitPercent}%, SL ${args.settings.stopLossPercent}%\n\nConsider:\n1. Correlation between assets (BTC dominance, altcoin movements)\n2. Market-wide trends and sentiment\n3. Relative strength across different assets\n4. Risk diversification opportunities\n5. Best risk/reward setup among all charts\n\nProvide your analysis in JSON format with:\n{\n  "recommendedSymbol": "symbol to trade",\n  "action": "open_long" | "open_short" | "close" | "hold",\n  "confidence": 0-100,\n  "reasoning": "detailed multi-chart analysis explanation",\n  "entryPrice": number,\n  "stopLoss": number,\n  "takeProfit": number,\n  "positionSize": number,\n  "marketContext": "overall market analysis across all charts"\n}`;
 
     try {
       const multiHeaders: Record<string, string> = {
@@ -210,7 +188,20 @@ Provide your analysis in JSON format with:
   },
 });
 
-export const executeLiveTrade = action({
+/**
+ * Executes a live trade on Hyperliquid exchange
+ * @param apiSecret - Hyperliquid private key
+ * @param symbol - Trading pair symbol
+ * @param side - Buy or sell
+ * @param size - Position size
+ * @param price - Entry price
+ * @param stopLoss - Stop loss price (optional)
+ * @param takeProfit - Take profit price (optional)
+ * @param leverage - Leverage multiplier
+ * @param isTestnet - Whether to use testnet
+ * @returns Execution result with order details
+ */
+export const executeHyperliquidTrade = action({
   args: {
     apiSecret: v.string(),
     symbol: v.string(),
@@ -312,7 +303,14 @@ export const executeLiveTrade = action({
   },
 });
 
-export const getHyperliquidPositions = action({
+/**
+ * Fetches current positions from Hyperliquid exchange
+ * @param apiSecret - Hyperliquid private key
+ * @param walletAddress - User's wallet address
+ * @param isTestnet - Whether to use testnet
+ * @returns Current positions and account state
+ */
+export const fetchHyperliquidPositions = action({
   args: {
     apiSecret: v.string(),
     walletAddress: v.string(),
@@ -337,6 +335,18 @@ export const getHyperliquidPositions = action({
   },
 });
 
+/**
+ * Executes a simulated paper trade (no real funds)
+ * @param symbol - Trading pair symbol
+ * @param side - Buy or sell
+ * @param size - Position size
+ * @param price - Entry price
+ * @param type - Market or limit order
+ * @param stopLoss - Stop loss price (optional)
+ * @param takeProfit - Take profit price (optional)
+ * @param leverage - Leverage multiplier
+ * @returns Simulated order ID and confirmation
+ */
 export const executePaperTrade = action({
   args: {
     symbol: v.string(),
@@ -368,7 +378,11 @@ export const executePaperTrade = action({
   },
 });
 
-export const executeTradeAction = internalAction({
+/**
+ * Internal action to log trade execution
+ * @internal
+ */
+export const logTradeExecution = internalAction({
   args: {
     action: v.string(),
     symbol: v.string(),
@@ -397,7 +411,11 @@ export const executeTradeAction = internalAction({
   },
 });
 
-export const updateStopLoss = internalAction({
+/**
+ * Internal action to update stop loss for a position
+ * @internal
+ */
+export const updatePositionStopLoss = internalAction({
   args: {
     symbol: v.string(),
     newStopLoss: v.number(),
@@ -420,7 +438,11 @@ export const updateStopLoss = internalAction({
   },
 });
 
-export const scheduledAIAnalysis = internalAction({
+/**
+ * Scheduled cron job handler for automated AI analysis
+ * @internal
+ */
+export const runScheduledAIAnalysis = internalAction({
   args: {},
   handler: async (ctx) => {
     // This will be called by the cron job every 5 minutes
@@ -434,3 +456,12 @@ export const scheduledAIAnalysis = internalAction({
     return { success: true, message: "Scheduled analysis complete" };
   },
 });
+
+// Legacy exports for backward compatibility
+export const analyzeMarket = analyzeSingleMarket;
+export const analyzeMultiChart = analyzeMultipleCharts;
+export const executeLiveTrade = executeHyperliquidTrade;
+export const getHyperliquidPositions = fetchHyperliquidPositions;
+export const executeTradeAction = logTradeExecution;
+export const updateStopLoss = updatePositionStopLoss;
+export const scheduledAIAnalysis = runScheduledAIAnalysis;

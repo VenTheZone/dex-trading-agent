@@ -2,7 +2,18 @@ import { v } from "convex/values";
 import { mutation, query, internalMutation } from "./_generated/server";
 import { getAuthUserId } from "@convex-dev/auth/server";
 
-export const createLog = mutation({
+/**
+ * Creates a new trading log entry for the current user
+ * @param action - Action type (e.g., "open_long", "close_position")
+ * @param symbol - Trading pair symbol
+ * @param reason - Reason for the action
+ * @param details - Additional details (optional)
+ * @param price - Execution price (optional)
+ * @param size - Position size (optional)
+ * @param side - Position side (optional)
+ * @returns Log entry ID
+ */
+export const createTradingLog = mutation({
   args: {
     action: v.string(),
     symbol: v.string(),
@@ -31,6 +42,10 @@ export const createLog = mutation({
   },
 });
 
+/**
+ * Internal mutation to create trading log (for server-side use)
+ * @internal
+ */
 export const createLogInternal = internalMutation({
   args: {
     action: v.string(),
@@ -60,7 +75,12 @@ export const createLogInternal = internalMutation({
   },
 });
 
-export const getUserLogs = query({
+/**
+ * Fetches trading logs for the current user
+ * @param limit - Maximum number of logs to return (default: 50)
+ * @returns Array of trading log entries, most recent first
+ */
+export const fetchUserTradingLogs = query({
   args: {
     limit: v.optional(v.number()),
   },
@@ -80,7 +100,11 @@ export const getUserLogs = query({
   },
 });
 
-export const clearUserLogs = mutation({
+/**
+ * Clears all trading logs for the current user
+ * @returns void
+ */
+export const clearAllUserLogs = mutation({
   args: {},
   handler: async (ctx) => {
     const userId = await getAuthUserId(ctx);
@@ -98,3 +122,8 @@ export const clearUserLogs = mutation({
     }
   },
 });
+
+// Legacy exports for backward compatibility
+export const createLog = createTradingLog;
+export const getUserLogs = fetchUserTradingLogs;
+export const clearUserLogs = clearAllUserLogs;

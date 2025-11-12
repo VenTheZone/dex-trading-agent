@@ -7,7 +7,13 @@ import { action } from "./_generated/server";
 const priceCache: Record<string, { price: number; timestamp: number }> = {};
 const CACHE_DURATION = 5000; // 5 seconds
 
-export const fetchMarketData = action({
+/**
+ * Fetches comprehensive market data for a trading symbol
+ * @param symbol - Trading pair symbol (e.g., "BTC/USD")
+ * @param exchange - Exchange name (optional, defaults to Binance)
+ * @returns Market data including price, volume, high/low, and 24h change
+ */
+export const fetchSymbolMarketData = action({
   args: {
     symbol: v.string(),
     exchange: v.optional(v.string()),
@@ -44,7 +50,13 @@ export const fetchMarketData = action({
   },
 });
 
-export const fetchPriceWithFallback = action({
+/**
+ * Fetches current price with automatic fallback to backup API
+ * Includes caching to reduce API calls
+ * @param symbol - Trading pair symbol (e.g., "BTCUSD")
+ * @returns Current price as number
+ */
+export const fetchCurrentPrice = action({
   args: {
     symbol: v.string(),
   },
@@ -107,7 +119,12 @@ export const fetchPriceWithFallback = action({
   },
 });
 
-export const fetchMultiplePrices = action({
+/**
+ * Fetches prices for multiple symbols in parallel
+ * @param symbols - Array of trading pair symbols
+ * @returns Object mapping symbols to their current prices
+ */
+export const fetchBulkPrices = action({
   args: {
     symbols: v.array(v.string()),
   },
@@ -190,7 +207,14 @@ export const fetchMultiplePrices = action({
   },
 });
 
-export const fetchOrderBook = action({
+/**
+ * Fetches order book data (bids and asks) for a symbol
+ * @param symbol - Trading pair symbol
+ * @param limit - Number of price levels to return (default: 20)
+ * @param exchange - Exchange name (optional)
+ * @returns Order book with top bids and asks
+ */
+export const fetchSymbolOrderBook = action({
   args: {
     symbol: v.string(),
     limit: v.optional(v.number()),
@@ -222,3 +246,9 @@ export const fetchOrderBook = action({
     }
   },
 });
+
+// Legacy exports for backward compatibility
+export const fetchMarketData = fetchSymbolMarketData;
+export const fetchPriceWithFallback = fetchCurrentPrice;
+export const fetchMultiplePrices = fetchBulkPrices;
+export const fetchOrderBook = fetchSymbolOrderBook;
