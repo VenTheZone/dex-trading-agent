@@ -246,7 +246,8 @@ MIT License - see LICENSE file for details
 
 ## Comment
 
-inspired by Nof1's Alpha Arena
+inspired by Nof1's Alpha Arena 
+https://nof1.ai/
 
 I saw how well DeepSeek V3.1 and Qwen3 Max did during the competition...
 
