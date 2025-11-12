@@ -49,7 +49,7 @@ The landing page features a cyberpunk-themed design with:
 - **Animations**: Framer Motion
 - **Backend**: Convex (serverless backend & database)
 - **Authentication**: Convex Auth with Email OTP
-- **AI**: Both DeepSeek Qwen3 Max via OpenRouter API
+- **AI**: Both DeepSeek and Qwen3 Max via OpenRouter API
 - **Trading**: Hyperliquid SDK (@nktkas/hyperliquid)
 - **State Management**: Zustand
 
