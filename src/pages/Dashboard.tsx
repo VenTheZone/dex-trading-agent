@@ -12,7 +12,7 @@ import { TradingControls } from '@/components/TradingControls';
 import { LogoDropdown } from '@/components/LogoDropdown';
 import { storage } from '@/lib/storage';
 import { useTradingStore } from '@/store/tradingStore';
-import { Activity, DollarSign, TrendingUp, Settings, Loader2, LineChart } from 'lucide-react';
+import { Activity, DollarSign, TrendingUp, Settings, Loader2, LineChart, Network } from 'lucide-react';
 import { toast } from 'sonner';
 import { TradingLogs } from '@/components/TradingLogs';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -23,7 +23,7 @@ export default function Dashboard() {
   const { isLoading, isAuthenticated } = useAuth();
   const navigate = useNavigate();
   const [hasApiKeys, setHasApiKeys] = useState(false);
-  const { mode, setMode, balance, position } = useTradingStore();
+  const { mode, setMode, network, setNetwork, balance, position } = useTradingStore();
   
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
@@ -51,6 +51,20 @@ export default function Dashboard() {
     }
     setMode(newMode);
     toast.success(`Switched to ${newMode.toUpperCase()} trading mode`);
+  };
+
+  const handleNetworkToggle = () => {
+    const newNetwork = network === 'mainnet' ? 'testnet' : 'mainnet';
+    const confirmed = window.confirm(
+      `Switch to Hyperliquid ${newNetwork.toUpperCase()}?\n\n` +
+      (newNetwork === 'testnet' 
+        ? 'Testnet uses test funds and is safe for experimentation.' 
+        : '⚠️ MAINNET uses real funds. Ensure you understand the risks.')
+    );
+    if (!confirmed) return;
+    
+    setNetwork(newNetwork);
+    toast.success(`Switched to Hyperliquid ${newNetwork.toUpperCase()}`);
   };
   
   if (isLoading) {
@@ -120,6 +134,19 @@ export default function Dashboard() {
                   </div>
                 </SheetContent>
               </Sheet>
+
+              <Badge 
+                variant="outline"
+                className={`text-lg px-4 py-2 font-mono cursor-pointer ${
+                  network === 'mainnet' 
+                    ? 'bg-purple-500/20 text-purple-400 border-purple-500' 
+                    : 'bg-blue-500/20 text-blue-400 border-blue-500'
+                }`}
+                onClick={handleNetworkToggle}
+              >
+                <Network className="mr-2 h-4 w-4" />
+                {network === 'mainnet' ? '🟣 MAINNET' : '🔵 TESTNET'}
+              </Badge>
               
               <Badge 
                 variant={mode === 'paper' ? 'secondary' : 'destructive'}

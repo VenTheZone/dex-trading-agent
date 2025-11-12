@@ -14,7 +14,7 @@ export function useTrading() {
   const analyzeMultiChart = useAction(api.trading.analyzeMultiChart);
   const executeLiveTrade = useAction(api.trading.executeLiveTrade);
   const getHyperliquidPositions = useAction(api.trading.getHyperliquidPositions);
-  const { balance, settings, mode, chartType, chartInterval, setBalance, setPosition, isAutoTrading, setAutoTrading } = useTradingStore();
+  const { balance, settings, mode, network, chartType, chartInterval, setBalance, setPosition, isAutoTrading, setAutoTrading } = useTradingStore();
   const { user } = useAuth();
   const lastRecordedBalance = useRef(balance);
   const marginWarningShown = useRef(false);
@@ -41,6 +41,7 @@ export function useTrading() {
         const result = await getHyperliquidPositions({
           apiSecret: keys.hyperliquid.apiSecret,
           walletAddress: keys.hyperliquid.walletAddress,
+          isTestnet: network === 'testnet',
         });
 
         if (result.success && result.positions) {
@@ -134,7 +135,7 @@ export function useTrading() {
     pollPositions(); // Initial fetch
 
     return () => clearInterval(interval);
-  }, [mode, user, getHyperliquidPositions, setBalance, setPosition, isAutoTrading, setAutoTrading, createLog, recordPositionSnapshot, settings.leverage]);
+  }, [mode, network, user, getHyperliquidPositions, setBalance, setPosition, isAutoTrading, setAutoTrading, createLog, recordPositionSnapshot, settings.leverage]);
 
   const runAIAnalysis = async (symbol: string, currentPrice: number) => {
     try {
@@ -233,7 +234,7 @@ export function useTrading() {
           return;
         }
 
-        toast.info("📡 Executing live trade...");
+        toast.info(`📡 Executing live trade on ${network}...`);
         
         const result = await executeLiveTrade({
           apiSecret: keys.hyperliquid.apiSecret,
@@ -244,13 +245,14 @@ export function useTrading() {
           stopLoss,
           takeProfit,
           leverage: settings.leverage,
+          isTestnet: network === 'testnet',
         });
 
         if (!result.success) {
           throw new Error(result.error || "Trade execution failed");
         }
 
-        toast.success("✅ Live trade executed");
+        toast.success(`✅ Live trade executed on ${network}`);
       } else {
         // Paper trading
         toast.info("📄 Executing paper trade...");
@@ -265,8 +267,8 @@ export function useTrading() {
         size,
         reason: reasoning,
         details: stopLoss 
-          ? `SL: ${stopLoss}, TP: ${takeProfit}, Leverage: ${settings.leverage}x, Chart: ${chartType} ${chartInterval}` 
-          : `Leverage: ${settings.leverage}x, Chart: ${chartType} ${chartInterval}`,
+          ? `SL: ${stopLoss}, TP: ${takeProfit}, Leverage: ${settings.leverage}x, Network: ${network}, Chart: ${chartType} ${chartInterval}` 
+          : `Leverage: ${settings.leverage}x, Network: ${network}, Chart: ${chartType} ${chartInterval}`,
       });
 
       toast.success(`Trade executed: ${action.toUpperCase()}`);

@@ -183,13 +183,14 @@ export const executeLiveTrade = action({
     stopLoss: v.optional(v.number()),
     takeProfit: v.optional(v.number()),
     leverage: v.number(),
+    isTestnet: v.optional(v.boolean()),
   },
   handler: async (ctx, args) => {
     try {
       const hl = await import("@nktkas/hyperliquid");
       const { privateKeyToAccount } = await import("viem/accounts");
 
-      const transport = new hl.HttpTransport({ isTestnet: false });
+      const transport = new hl.HttpTransport({ isTestnet: args.isTestnet ?? false });
       const account = privateKeyToAccount(args.apiSecret as `0x${string}`);
       const exchClient = new hl.ExchangeClient({ wallet: account, transport });
       const infoClient = new hl.InfoClient({ transport });
@@ -278,12 +279,13 @@ export const getHyperliquidPositions = action({
   args: {
     apiSecret: v.string(),
     walletAddress: v.string(),
+    isTestnet: v.optional(v.boolean()),
   },
   handler: async (ctx, args) => {
     try {
       const hl = await import("@nktkas/hyperliquid");
 
-      const transport = new hl.HttpTransport({ isTestnet: false });
+      const transport = new hl.HttpTransport({ isTestnet: args.isTestnet ?? false });
       const infoClient = new hl.InfoClient({ transport });
 
       const state = await infoClient.clearinghouseState({
