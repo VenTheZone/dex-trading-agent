@@ -156,7 +156,6 @@ export function useTrading() {
         return null;
       }
 
-      // Prepare chart data description for AI
       const chartData = `
         Chart Type: ${chartType === 'range' ? 'Range Chart' : 'Time-based Chart'}
         Interval: ${chartInterval}
@@ -197,7 +196,6 @@ export function useTrading() {
         return null;
       }
 
-      // Filter charts based on allowed coins
       const allowedCoins = settings.allowedCoins || [];
       const filteredCharts = charts.filter(chart => 
         allowedCoins.length === 0 || allowedCoins.includes(chart.symbol)
@@ -208,7 +206,6 @@ export function useTrading() {
         return null;
       }
 
-      // Prepare multi-chart data for AI
       const multiChartData = filteredCharts.map(chart => ({
         symbol: chart.symbol,
         currentPrice: chart.currentPrice,
@@ -244,14 +241,34 @@ export function useTrading() {
     size: number,
     stopLoss: number | undefined,
     takeProfit: number | undefined,
-    reasoning: string
+    reasoning: string,
+    skipConfirmation: boolean = false
   ) => {
     try {
-      // Check if coin is allowed
       const allowedCoins = settings.allowedCoins || [];
       if (allowedCoins.length > 0 && !allowedCoins.includes(symbol)) {
         toast.error(`${symbol} is not in your allowed coins list`);
         return;
+      }
+
+      // Return trade details for confirmation modal if not skipping
+      if (!skipConfirmation) {
+        return {
+          requiresConfirmation: true,
+          tradeDetails: {
+            symbol,
+            action,
+            side,
+            price,
+            size,
+            stopLoss,
+            takeProfit,
+            leverage: settings.leverage,
+            mode,
+            network,
+            reasoning,
+          },
+        };
       }
 
       if (mode === "live") {
@@ -281,11 +298,9 @@ export function useTrading() {
 
         toast.success(`✅ Live trade executed on ${network}`);
       } else {
-        // Paper trading
         toast.info("📄 Executing paper trade...");
       }
 
-      // Log the trade
       await createLog({
         action,
         symbol,
@@ -299,6 +314,7 @@ export function useTrading() {
       });
 
       toast.success(`Trade executed: ${action.toUpperCase()}`);
+      return { success: true };
     } catch (error: any) {
       toast.error(`Trade execution failed: ${error.message}`);
       throw error;

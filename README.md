@@ -26,6 +26,19 @@ The landing page features a cyberpunk-themed design with:
 - Dynamic CTA button that adapts based on authentication status
 - Responsive design optimized for all screen sizes
 
+## 🔔 Trade Confirmation & History
+
+- **Trade Confirmation Modal**: Every trade requires explicit confirmation before execution
+  - Displays complete trade details including symbol, action, price, size, leverage, and total value
+  - Shows stop loss and take profit levels
+  - Clear visual warnings for live trading vs paper trading
+  - Network indicator (Mainnet/Testnet)
+- **Trade History Logging**: Comprehensive logging system tracks all trading activity
+  - Real-time trade logs with timestamps
+  - Detailed information including entry/exit prices, P&L, and reasoning
+  - Filterable and searchable trade history
+  - Export capabilities for analysis
+
 ## 🛠️ Tech Stack
 
 - **Frontend**: React 19, TypeScript, Vite
