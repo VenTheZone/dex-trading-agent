@@ -42,6 +42,11 @@
 - Value: [Your OpenRouter API Key]
 - Environment: **Production, Preview, Development**
 
+**CryptoPanic API Key (All Environments):**
+- Variable Name: `CRYPTOPANIC_AUTH_TOKEN`
+- Value: [Your CryptoPanic API Key]
+- Environment: **Production, Preview, Development**
+
 ### 3. Deploy to Vercel
 
 #### Option A: Using Vercel CLI
