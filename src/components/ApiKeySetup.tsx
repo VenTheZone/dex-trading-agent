@@ -272,8 +272,11 @@ export function ApiKeySetup({ onComplete }: ApiKeySetupProps) {
                     <p className="text-xs text-gray-400 font-mono">
                       • Where your funds are stored
                     </p>
+                    <p className="text-xs text-gray-400 font-mono">
+                      • Same as your MetaMask/connected wallet address
+                    </p>
                     <p className="text-xs text-yellow-300 font-mono mt-1">
-                      📍 Find it: Top right corner when connected to app.hyperliquid.xyz
+                      📍 Find it: Top right corner when connected to app.hyperliquid.xyz (or use the "Wallet" tab above)
                     </p>
                   </div>
                 </div>
@@ -336,11 +339,17 @@ export function ApiKeySetup({ onComplete }: ApiKeySetupProps) {
                     className="bg-black/50 border-cyan-500/30 text-cyan-100 font-mono focus:border-cyan-500"
                   />
                   <div className="bg-blue-500/10 p-2 rounded border border-blue-500/30">
-                    <p className="text-xs text-blue-300 font-mono">
-                      ℹ️ This is the NEW agent wallet address that Hyperliquid created (different from your main wallet)
+                    <p className="text-xs text-blue-300 font-mono font-bold">
+                      ℹ️ This is DIFFERENT from your main wallet address!
                     </p>
                     <p className="text-xs text-gray-400 font-mono mt-1">
-                      Optional: Only needed if you want to track this specific agent wallet
+                      • This is the NEW agent wallet address that Hyperliquid creates when you click "Generate"
+                    </p>
+                    <p className="text-xs text-gray-400 font-mono">
+                      • It's NOT the same as your main wallet address (Field 1)
+                    </p>
+                    <p className="text-xs text-gray-400 font-mono">
+                      • Optional: Only needed if you want to track this specific agent wallet
                     </p>
                   </div>
                 </div>
