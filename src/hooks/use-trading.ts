@@ -518,8 +518,10 @@ export function useTrading() {
 
         // Live/Paper mode: Requires OpenRouter API key
         const keys = storage.getApiKeys();
-        if (!keys?.openRouter) {
-          console.log("OpenRouter API key not configured, skipping auto-trading");
+        if (!keys?.openRouter || keys.openRouter === 'DEMO_MODE') {
+          console.log("OpenRouter API key not configured for live/paper trading, skipping auto-trading");
+          toast.warning("⚠️ OpenRouter API key required for auto-trading in live/paper mode");
+          setAutoTrading(false);
           return;
         }
 

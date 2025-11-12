@@ -24,7 +24,7 @@ export const analyzeMarket = action({
       throw new Error("OpenRouter API key not configured");
     }
 
-    const model = args.aiModel || (args.isDemoMode ? "deepseek/deepseek-chat:free" : "deepseek/deepseek-chat");
+    const model = args.aiModel || "deepseek/deepseek-chat";
 
     const prompt = `You are an expert crypto trading analyst. Analyze the following market data and provide a trading recommendation.
 
@@ -45,14 +45,20 @@ Provide your analysis in JSON format with:
 }`;
 
     try {
+      const headers: Record<string, string> = {
+        "Content-Type": "application/json",
+        "HTTP-Referer": "https://dex-trading-agent.vly.site",
+        "X-Title": args.isDemoMode ? "DeX Trading Agent Demo" : "DeX Trading Agent",
+      };
+      
+      // Only add Authorization header if not using free tier
+      if (!args.isDemoMode && apiKey) {
+        headers["Authorization"] = `Bearer ${apiKey}`;
+      }
+
       const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
         method: "POST",
-        headers: {
-          "Authorization": args.isDemoMode ? "" : `Bearer ${apiKey}`,
-          "Content-Type": "application/json",
-          "HTTP-Referer": "https://dex-trading-agent.vly.site",
-          "X-Title": args.isDemoMode ? "DeX Trading Agent Demo" : "DeX Trading Agent",
-        },
+        headers,
         body: JSON.stringify({
           model,
           messages: [
@@ -146,14 +152,20 @@ Provide your analysis in JSON format with:
 }`;
 
     try {
+      const multiHeaders: Record<string, string> = {
+        "Content-Type": "application/json",
+        "HTTP-Referer": "https://dex-trading-agent.vly.site",
+        "X-Title": args.isDemoMode ? "DeX Trading Agent Demo" : "DeX Trading Agent",
+      };
+      
+      // Only add Authorization header if not using free tier
+      if (!args.isDemoMode && apiKey) {
+        multiHeaders["Authorization"] = `Bearer ${apiKey}`;
+      }
+
       const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
         method: "POST",
-        headers: {
-          "Authorization": args.isDemoMode ? "" : `Bearer ${apiKey}`,
-          "Content-Type": "application/json",
-          "HTTP-Referer": "https://dex-trading-agent.vly.site",
-          "X-Title": args.isDemoMode ? "DeX Trading Agent Demo" : "DeX Trading Agent",
-        },
+        headers: multiHeaders,
         body: JSON.stringify({
           model,
           messages: [
