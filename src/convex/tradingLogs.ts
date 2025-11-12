@@ -1,8 +1,37 @@
 import { v } from "convex/values";
-import { mutation, query } from "./_generated/server";
+import { mutation, query, internalMutation } from "./_generated/server";
 import { getAuthUserId } from "@convex-dev/auth/server";
 
 export const createLog = mutation({
+  args: {
+    action: v.string(),
+    symbol: v.string(),
+    reason: v.string(),
+    details: v.optional(v.string()),
+    price: v.optional(v.number()),
+    size: v.optional(v.number()),
+    side: v.optional(v.union(v.literal("long"), v.literal("short"))),
+  },
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) {
+      throw new Error("Not authenticated");
+    }
+
+    return await ctx.db.insert("tradingLogs", {
+      userId,
+      action: args.action,
+      symbol: args.symbol,
+      reason: args.reason,
+      details: args.details,
+      price: args.price,
+      size: args.size,
+      side: args.side,
+    });
+  },
+});
+
+export const createLogInternal = internalMutation({
   args: {
     action: v.string(),
     symbol: v.string(),

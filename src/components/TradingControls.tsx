@@ -8,9 +8,10 @@ import { useTradingStore } from '@/store/tradingStore';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
 import { motion } from 'framer-motion';
+import { Bot, BotOff } from 'lucide-react';
 
 export function TradingControls() {
-  const { settings, updateSettings, chartInterval, setChartInterval, chartType, setChartType } = useTradingStore();
+  const { settings, updateSettings, chartInterval, setChartInterval, chartType, setChartType, isAutoTrading, setAutoTrading } = useTradingStore();
   const [localSettings, setLocalSettings] = useState(settings);
   
   const timeIntervals = ['1m', '5m', '15m', '1h', '4h', '1d'];
@@ -21,10 +22,30 @@ export function TradingControls() {
     toast.success('Risk settings updated');
   };
   
+  const handleToggleAutoTrading = () => {
+    const newState = !isAutoTrading;
+    setAutoTrading(newState);
+    toast.success(newState ? 'AI Auto-Trading Enabled' : 'AI Auto-Trading Disabled');
+  };
+  
   return (
     <Card className="bg-black/90 border-cyan-500/50">
       <CardHeader>
-        <CardTitle className="text-cyan-400 font-mono">Trading Controls</CardTitle>
+        <CardTitle className="text-cyan-400 font-mono flex items-center justify-between">
+          Trading Controls
+          <Button
+            variant={isAutoTrading ? 'default' : 'outline'}
+            size="sm"
+            onClick={handleToggleAutoTrading}
+            className={isAutoTrading 
+              ? 'bg-green-500 hover:bg-green-600 text-black' 
+              : 'border-cyan-500/30 text-cyan-400'
+            }
+          >
+            {isAutoTrading ? <Bot className="h-4 w-4 mr-1" /> : <BotOff className="h-4 w-4 mr-1" />}
+            {isAutoTrading ? 'AI ON' : 'AI OFF'}
+          </Button>
+        </CardTitle>
       </CardHeader>
       
       <CardContent className="space-y-6">
