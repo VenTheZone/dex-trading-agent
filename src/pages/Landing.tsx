@@ -32,7 +32,7 @@ export default function Landing() {
           >
             {/* Logo */}
             <motion.img
-              src="./logo.svg"
+              src="https://harmless-tapir-303.convex.cloud/api/storage/b7ba95ac-6c56-4e04-96fe-ae867834e202"
               alt="DeX Agent"
               width={120}
               height={120}
