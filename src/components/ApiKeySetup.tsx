@@ -205,10 +205,45 @@ export function ApiKeySetup({ onComplete }: ApiKeySetupProps) {
                   </AlertDescription>
                 </Alert>
 
+                <Alert className="bg-purple-500/10 border-purple-500/50 mb-4">
+                  <Info className="h-4 w-4 text-purple-500" />
+                  <AlertDescription className="text-purple-200">
+                    <strong>📋 STEP-BY-STEP: What Goes Where</strong>
+                    <div className="mt-3 space-y-3 text-sm">
+                      <div className="bg-black/30 p-3 rounded border border-cyan-500/30">
+                        <p className="font-bold text-cyan-400 mb-1">STEP 1: Get Your Main Wallet Address</p>
+                        <p className="text-gray-300">• Go to <a href="https://app.hyperliquid.xyz" target="_blank" rel="noopener noreferrer" className="text-cyan-400 hover:underline">app.hyperliquid.xyz</a></p>
+                        <p className="text-gray-300">• Connect your wallet (MetaMask, etc.)</p>
+                        <p className="text-gray-300">• Copy your wallet address (top right corner)</p>
+                        <p className="text-yellow-300 mt-1">👉 Paste this in "Master Account Address" below</p>
+                      </div>
+                      
+                      <div className="bg-black/30 p-3 rounded border border-green-500/30">
+                        <p className="font-bold text-green-400 mb-1">STEP 2: Generate Agent Wallet</p>
+                        <p className="text-gray-300">• Go to <a href="https://app.hyperliquid.xyz/API" target="_blank" rel="noopener noreferrer" className="text-cyan-400 hover:underline">app.hyperliquid.xyz/API</a></p>
+                        <p className="text-gray-300">• Click "Generate" to create an agent wallet</p>
+                        <p className="text-gray-300">• Set validity (up to 180 days)</p>
+                        <p className="text-gray-300">• <strong className="text-red-400">IMPORTANT:</strong> Copy the Private Key (shown only once!)</p>
+                        <p className="text-gray-300">• Click "Authorize" to complete</p>
+                        <p className="text-yellow-300 mt-1">👉 Paste the Private Key in "Agent Wallet Private Key" below</p>
+                      </div>
+                      
+                      <div className="bg-black/30 p-3 rounded border border-blue-500/30">
+                        <p className="font-bold text-blue-400 mb-1">STEP 3: (Optional) Agent Wallet Address</p>
+                        <p className="text-gray-300">• This is the NEW address Hyperliquid created when you clicked "Generate"</p>
+                        <p className="text-gray-300">• It's different from your main wallet address</p>
+                        <p className="text-gray-300">• Only needed for tracking purposes</p>
+                      </div>
+                    </div>
+                  </AlertDescription>
+                </Alert>
+
                 <div className="space-y-2">
-                  <Label className="text-cyan-400 font-mono">Master Account Address (Your Main Wallet) *</Label>
+                  <Label className="text-cyan-400 font-mono text-base font-bold">
+                    1️⃣ Master Account Address (Your Main Wallet) *
+                  </Label>
                   <Input
-                    placeholder="0x... (Your main wallet address)"
+                    placeholder="Example: 0x1234...5678 (YOUR wallet address from app.hyperliquid.xyz)"
                     value={keys.hyperliquid.apiKey}
                     onChange={(e) => setKeys({
                       ...keys,
@@ -216,16 +251,23 @@ export function ApiKeySetup({ onComplete }: ApiKeySetupProps) {
                     })}
                     className="bg-black/50 border-cyan-500/30 text-cyan-100 font-mono focus:border-cyan-500"
                   />
-                  <p className="text-xs text-gray-500 font-mono">
-                    Your main wallet address (used for info requests)
-                  </p>
+                  <div className="bg-cyan-500/10 p-2 rounded border border-cyan-500/30">
+                    <p className="text-xs text-cyan-300 font-mono">
+                      ℹ️ This is YOUR main wallet address that you use to login to Hyperliquid
+                    </p>
+                    <p className="text-xs text-gray-400 font-mono mt-1">
+                      Find it: Top right corner when connected to app.hyperliquid.xyz
+                    </p>
+                  </div>
                 </div>
                 
                 <div className="space-y-2">
-                  <Label className="text-cyan-400 font-mono">Agent Wallet Private Key (API Secret) *</Label>
+                  <Label className="text-cyan-400 font-mono text-base font-bold">
+                    2️⃣ Agent Wallet Private Key (From Hyperliquid API Page) *
+                  </Label>
                   <Input
                     type="password"
-                    placeholder="0x... (Agent wallet private key from Hyperliquid)"
+                    placeholder="Example: 0xabcd...ef01 (66 characters - from API page)"
                     value={keys.hyperliquid.apiSecret}
                     onChange={(e) => setKeys({
                       ...keys,
@@ -233,25 +275,27 @@ export function ApiKeySetup({ onComplete }: ApiKeySetupProps) {
                     })}
                     className="bg-black/50 border-cyan-500/30 text-cyan-100 font-mono focus:border-cyan-500"
                   />
-                  <div className="space-y-1">
-                    <p className="text-xs text-gray-500 font-mono">
-                      Format: 0x + 64 hexadecimal characters (total 66 chars)
+                  <div className="bg-green-500/10 p-2 rounded border border-green-500/30">
+                    <p className="text-xs text-green-300 font-mono">
+                      🔒 This is the PRIVATE KEY shown when you clicked "Generate" at app.hyperliquid.xyz/API
                     </p>
-                    <p className="text-xs text-green-400 font-mono">
-                      🔒 This agent wallet can trade but cannot withdraw funds
+                    <p className="text-xs text-yellow-300 font-mono mt-1">
+                      ⚠️ Must be exactly 66 characters (0x + 64 hex digits)
                     </p>
                     {keys.hyperliquid.apiSecret && (
-                      <p className="text-xs text-cyan-400 font-mono">
-                        Current length: {keys.hyperliquid.apiSecret.trim().length} characters
+                      <p className={`text-xs font-mono mt-1 ${keys.hyperliquid.apiSecret.trim().length === 66 ? 'text-green-400' : 'text-red-400'}`}>
+                        Current length: {keys.hyperliquid.apiSecret.trim().length} characters {keys.hyperliquid.apiSecret.trim().length === 66 ? '✅' : '❌'}
                       </p>
                     )}
                   </div>
                 </div>
                 
                 <div className="space-y-2">
-                  <Label className="text-cyan-400 font-mono">Agent Wallet Address (Optional)</Label>
+                  <Label className="text-cyan-400 font-mono text-base">
+                    3️⃣ Agent Wallet Address (Optional - For Tracking Only)
+                  </Label>
                   <Input
-                    placeholder="0x... (Agent wallet address for tracking)"
+                    placeholder="Example: 0x9876...4321 (NEW address created by Hyperliquid)"
                     value={keys.hyperliquid.walletAddress}
                     onChange={(e) => setKeys({
                       ...keys,
@@ -259,7 +303,14 @@ export function ApiKeySetup({ onComplete }: ApiKeySetupProps) {
                     })}
                     className="bg-black/50 border-cyan-500/30 text-cyan-100 font-mono focus:border-cyan-500"
                   />
-                  <p className="text-xs text-gray-500 font-mono">The agent wallet address generated by Hyperliquid (optional for tracking)</p>
+                  <div className="bg-blue-500/10 p-2 rounded border border-blue-500/30">
+                    <p className="text-xs text-blue-300 font-mono">
+                      ℹ️ This is the NEW agent wallet address that Hyperliquid created (different from your main wallet)
+                    </p>
+                    <p className="text-xs text-gray-400 font-mono mt-1">
+                      Optional: Only needed if you want to track this specific agent wallet
+                    </p>
+                  </div>
                 </div>
                 
                 <div className="space-y-2">
