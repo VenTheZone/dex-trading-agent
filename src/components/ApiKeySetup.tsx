@@ -31,6 +31,16 @@ export function ApiKeySetup({ onComplete }: ApiKeySetupProps) {
   };
 
   const handleDemoMode = () => {
+    // Get initial balance from input
+    const balanceInput = document.getElementById('demo-initial-balance') as HTMLInputElement;
+    const initialBalance = balanceInput ? parseFloat(balanceInput.value) || 10000 : 10000;
+    
+    // Validate balance
+    if (initialBalance < 100 || initialBalance > 1000000) {
+      toast.error('Initial balance must be between $100 and $1,000,000');
+      return;
+    }
+    
     // Preserve OpenRouter key if provided, otherwise use DEMO_MODE
     const openRouterKey = keys.openRouter && keys.openRouter.trim() !== '' ? keys.openRouter : 'DEMO_MODE';
     
@@ -39,10 +49,16 @@ export function ApiKeySetup({ onComplete }: ApiKeySetupProps) {
       openRouter: openRouterKey,
     });
     
+    // Set initial balance in store
+    import('@/store/tradingStore').then(m => {
+      const { setInitialBalance } = m.useTradingStore.getState();
+      setInitialBalance(initialBalance);
+    });
+    
     if (openRouterKey !== 'DEMO_MODE') {
-      toast.success('Demo mode activated - Using your OpenRouter API key for real AI analysis');
+      toast.success(`Demo mode activated with ${initialBalance.toLocaleString()} - Using your OpenRouter API key for real AI analysis`);
     } else {
-      toast.success('Demo mode activated - Using DeepSeek free tier');
+      toast.success(`Demo mode activated with ${initialBalance.toLocaleString()} - Using DeepSeek free tier`);
     }
     onComplete();
   };
@@ -253,15 +269,33 @@ export function ApiKeySetup({ onComplete }: ApiKeySetupProps) {
                   <li>✅ View live market charts</li>
                   <li>✅ Test AI trading analysis</li>
                   <li>✅ Practice with paper trading</li>
+                  <li>✅ Simulate perpetual futures trading</li>
                   <li>✅ Explore all dashboard features</li>
                   <li>✅ Learn risk management strategies</li>
                 </ul>
                 <p className="text-yellow-400 text-sm font-mono mt-4">
-                  ⚠️ Note: Demo mode uses simulated data. No real trades will be executed.
+                  ⚠️ Note: Demo mode uses simulated perpetual futures. No real trades will be executed.
                 </p>
               </div>
 
               <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label className="text-cyan-400 font-mono">Initial Balance (USD)</Label>
+                  <Input
+                    type="number"
+                    placeholder="10000"
+                    defaultValue="10000"
+                    min="100"
+                    max="1000000"
+                    step="1000"
+                    id="demo-initial-balance"
+                    className="bg-black/50 border-cyan-500/30 text-cyan-100 font-mono focus:border-cyan-500"
+                  />
+                  <p className="text-xs text-gray-500 font-mono">
+                    Set your starting capital for demo trading simulation
+                  </p>
+                </div>
+=======
                 <div className="space-y-2">
                   <Label className="text-cyan-400 font-mono">OpenRouter API Key (Optional)</Label>
                   <Input

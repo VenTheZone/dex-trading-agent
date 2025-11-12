@@ -25,7 +25,7 @@ export default function Dashboard() {
   const { isLoading, isAuthenticated } = useAuth();
   const navigate = useNavigate();
   const [hasApiKeys, setHasApiKeys] = useState(false);
-  const { mode, setMode, network, setNetwork, balance, position } = useTradingStore();
+  const { mode, setMode, network, setNetwork, balance, position, initialBalance, resetBalance } = useTradingStore();
   const { closePosition, closeAllPositions } = useTrading();
   
   useEffect(() => {
@@ -229,11 +229,24 @@ export default function Dashboard() {
             <Card className="bg-black/80 border-cyan-500/50 shadow-[0_0_20px_rgba(0,255,255,0.2)]">
               <CardContent className="p-4">
                 <div className="flex items-center justify-between">
-                  <div>
+                  <div className="flex-1">
                     <p className="text-xs font-mono text-cyan-400 mb-1">Balance</p>
                     <div className="text-xl font-bold text-cyan-100 font-mono">
                       ${balance.toLocaleString()}
                     </div>
+                    {mode === 'demo' && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => {
+                          resetBalance();
+                          toast.success(`Balance reset to $${initialBalance.toLocaleString()}`);
+                        }}
+                        className="text-xs text-cyan-400 hover:text-cyan-300 hover:bg-cyan-500/20 font-mono mt-1 h-6 px-2"
+                      >
+                        Reset
+                      </Button>
+                    )}
                   </div>
                   <DollarSign className="h-5 w-5 text-cyan-400" />
                 </div>

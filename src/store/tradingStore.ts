@@ -15,6 +15,7 @@ interface Position {
 
 interface TradingState {
   balance: number;
+  initialBalance: number;
   position: Position | null;
   mode: 'paper' | 'live' | 'demo';
   network: 'mainnet' | 'testnet';
@@ -26,6 +27,8 @@ interface TradingState {
   aiModel: 'deepseek/deepseek-chat' | 'qwen/qwen-2.5-72b-instruct';
   customPrompt: string;
   setBalance: (balance: number) => void;
+  setInitialBalance: (balance: number) => void;
+  resetBalance: () => void;
   setPosition: (position: Position | null) => void;
   setMode: (mode: 'paper' | 'live' | 'demo') => void;
   setNetwork: (network: 'mainnet' | 'testnet') => void;
@@ -67,8 +70,9 @@ Provide your analysis in JSON format with:
 
 export const useTradingStore = create<TradingState>()(
   persist(
-    (set) => ({
+    (set, get) => ({
       balance: 10000,
+      initialBalance: 10000,
       position: null,
       mode: 'paper',
       network: 'mainnet',
@@ -91,6 +95,8 @@ export const useTradingStore = create<TradingState>()(
       isAutoTrading: false,
       customPrompt: DEFAULT_PROMPT,
       setBalance: (balance) => set({ balance }),
+      setInitialBalance: (balance) => set({ initialBalance: balance, balance }),
+      resetBalance: () => set((state) => ({ balance: state.initialBalance, position: null })),
       setPosition: (position) => set({ position }),
       setMode: (mode) => set({ mode }),
       setNetwork: (network) => set({ network }),
