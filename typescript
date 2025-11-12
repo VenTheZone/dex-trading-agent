@@ -1,0 +1,13 @@
+   // This code places REAL orders on Hyperliquid
+   const orderResult = await exchClient.order({
+     orders: [{
+       a: assetIndex,
+       b: args.side === "buy",
+       p: args.price.toString(),
+       s: args.size.toString(),
+       r: false,
+       t: { limit: { tif: "Gtc" } },
+     }],
+     grouping: "na",
+   });
+   
