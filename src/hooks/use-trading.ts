@@ -148,12 +148,12 @@ export function useTrading() {
 
   const runAIAnalysis = async (symbol: string, currentPrice: number) => {
     try {
-      toast.info("🤖 AI analyzing market...");
+      const isDemoMode = storage.isDemoMode();
       
-      const keys = storage.getApiKeys();
-      if (!keys?.openRouter) {
-        toast.error("OpenRouter API key not configured");
-        return null;
+      if (isDemoMode) {
+        toast.info("[DEMO] 🤖 AI analyzing market with DeepSeek V3.1...");
+      } else {
+        toast.info("🤖 AI analyzing market...");
       }
 
       const chartData = `
@@ -176,6 +176,7 @@ export function useTrading() {
           stopLossPercent: settings.stopLossPercent,
           useAdvancedStrategy: settings.useAdvancedStrategy,
         },
+        isDemoMode,
       });
       
       toast.success("✅ AI analysis complete");
@@ -188,14 +189,14 @@ export function useTrading() {
 
   const runMultiChartAIAnalysis = async (charts: Array<{ symbol: string; currentPrice: number }>) => {
     try {
-      toast.info("🤖 AI analyzing multiple charts...");
+      const isDemoMode = storage.isDemoMode();
       
-      const keys = storage.getApiKeys();
-      if (!keys?.openRouter) {
-        toast.error("OpenRouter API key not configured");
-        return null;
+      if (isDemoMode) {
+        toast.info("[DEMO] 🤖 AI analyzing multiple charts with DeepSeek V3.1...");
+      } else {
+        toast.info("🤖 AI analyzing multiple charts...");
       }
-
+      
       const allowedCoins = settings.allowedCoins || [];
       const filteredCharts = charts.filter(chart => 
         allowedCoins.length === 0 || allowedCoins.includes(chart.symbol)
@@ -223,6 +224,7 @@ export function useTrading() {
           leverage: settings.leverage,
           allowAILeverage: settings.allowAILeverage,
         },
+        isDemoMode,
       });
       
       toast.success("✅ Multi-chart AI analysis complete");
@@ -327,6 +329,86 @@ export function useTrading() {
 
     const runAutoTrading = async () => {
       try {
+        const isDemoMode = storage.isDemoMode();
+        
+        // Demo mode: Use real AI with DeepSeek V3.1 free tier
+        if (isDemoMode) {
+          const allowedCoins = settings.allowedCoins || [];
+          if (allowedCoins.length === 0) {
+            console.log("[DEMO] No allowed coins selected, skipping auto-trading");
+            return;
+          }
+
+          // Fetch real market data for demo mode
+          const chartData = await Promise.all(
+            allowedCoins.map(async (symbol) => {
+              try {
+                const response = await fetch(
+                  `https://api.binance.com/api/v3/ticker/price?symbol=${symbol.replace('USD', 'USDT')}`
+                );
+                const data = await response.json();
+                return {
+                  symbol,
+                  currentPrice: parseFloat(data.price),
+                };
+              } catch (error) {
+                console.error(`[DEMO] Failed to fetch price for ${symbol}:`, error);
+                return null;
+              }
+            })
+          );
+
+          const validCharts = chartData.filter((chart) => chart !== null) as Array<{
+            symbol: string;
+            currentPrice: number;
+          }>;
+
+          if (validCharts.length === 0) {
+            console.log("[DEMO] No valid market data, skipping auto-trading");
+            return;
+          }
+
+          // Run real AI analysis with DeepSeek V3.1 free tier
+          const analysis = await runMultiChartAIAnalysis(validCharts);
+
+          if (!analysis) {
+            console.log("[DEMO] AI analysis returned no recommendation");
+            return;
+          }
+
+          // Execute simulated trade based on AI recommendation
+          if (analysis.action === "open_long" || analysis.action === "open_short") {
+            const side = analysis.action === "open_long" ? "long" : "short";
+            
+            await executeTrade(
+              analysis.recommendedSymbol || validCharts[0].symbol,
+              analysis.action,
+              side,
+              analysis.entryPrice,
+              analysis.positionSize,
+              analysis.stopLoss,
+              analysis.takeProfit,
+              `[DEMO] ${analysis.reasoning}`,
+              true
+            );
+          } else if (analysis.action === "close" && position) {
+            await executeTrade(
+              position.symbol,
+              "close_position",
+              position.side,
+              position.currentPrice,
+              position.size,
+              undefined,
+              undefined,
+              `[DEMO] ${analysis.reasoning}`,
+              true
+            );
+          }
+          
+          return;
+        }
+
+        // Live/Paper mode: Requires OpenRouter API key
         const keys = storage.getApiKeys();
         if (!keys?.openRouter) {
           console.log("OpenRouter API key not configured, skipping auto-trading");
@@ -344,7 +426,6 @@ export function useTrading() {
         const chartData = await Promise.all(
           allowedCoins.map(async (symbol) => {
             try {
-              // Use a simple price fetch - in production you'd want more sophisticated data
               const response = await fetch(
                 `https://api.binance.com/api/v3/ticker/price?symbol=${symbol.replace('USD', 'USDT')}`
               );
@@ -393,7 +474,6 @@ export function useTrading() {
             analysis.reasoning
           );
         } else if (analysis.action === "close" && position) {
-          // Close existing position
           await executeTrade(
             position.symbol,
             "close_position",
@@ -407,7 +487,6 @@ export function useTrading() {
         }
       } catch (error) {
         console.error("Auto-trading error:", error);
-        // Don't spam toast notifications for auto-trading errors
       }
     };
 

@@ -14,18 +14,19 @@ export const analyzeMarket = action({
       stopLossPercent: v.number(),
       useAdvancedStrategy: v.boolean(),
     }),
+    isDemoMode: v.optional(v.boolean()),
   },
   handler: async (ctx, args) => {
     const apiKey = process.env.OPENROUTER_API_KEY;
     
-    if (!apiKey) {
+    if (!apiKey && !args.isDemoMode) {
       throw new Error("OpenRouter API key not configured");
     }
 
     const prompt = `You are an expert crypto trading analyst. Analyze the following market data and provide a trading recommendation.
 
 Symbol: ${args.symbol}
-Current Balance: $${args.userBalance}
+Current Balance: ${args.userBalance}
 Chart Data: ${args.chartData}
 Risk Settings: TP ${args.settings.takeProfitPercent}%, SL ${args.settings.stopLossPercent}%
 
@@ -44,11 +45,13 @@ Provide your analysis in JSON format with:
       const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
         method: "POST",
         headers: {
-          "Authorization": `Bearer ${apiKey}`,
+          "Authorization": args.isDemoMode ? "" : `Bearer ${apiKey}`,
           "Content-Type": "application/json",
+          "HTTP-Referer": "https://dex-trading-agent.vly.site",
+          "X-Title": args.isDemoMode ? "DeX Trading Agent Demo" : "DeX Trading Agent",
         },
         body: JSON.stringify({
-          model: "deepseek/deepseek-chat",
+          model: args.isDemoMode ? "deepseek/deepseek-chat:free" : "deepseek/deepseek-chat",
           messages: [
             {
               role: "system",
@@ -94,11 +97,12 @@ export const analyzeMultiChart = action({
       leverage: v.number(),
       allowAILeverage: v.boolean(),
     }),
+    isDemoMode: v.optional(v.boolean()),
   },
   handler: async (ctx, args) => {
     const apiKey = process.env.OPENROUTER_API_KEY;
     
-    if (!apiKey) {
+    if (!apiKey && !args.isDemoMode) {
       throw new Error("OpenRouter API key not configured");
     }
 
@@ -139,11 +143,13 @@ Provide your analysis in JSON format with:
       const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
         method: "POST",
         headers: {
-          "Authorization": `Bearer ${apiKey}`,
+          "Authorization": args.isDemoMode ? "" : `Bearer ${apiKey}`,
           "Content-Type": "application/json",
+          "HTTP-Referer": "https://dex-trading-agent.vly.site",
+          "X-Title": args.isDemoMode ? "DeX Trading Agent Demo" : "DeX Trading Agent",
         },
         body: JSON.stringify({
-          model: "deepseek/deepseek-chat",
+          model: args.isDemoMode ? "deepseek/deepseek-chat:free" : "deepseek/deepseek-chat",
           messages: [
             {
               role: "system",
