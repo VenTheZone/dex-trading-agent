@@ -81,12 +81,12 @@ export function TradingControls() {
           <div className="flex items-center justify-between">
             <Label className="text-cyan-400 font-mono">Allowed Coins</Label>
             <span className="text-xs text-gray-500 font-mono">
-              {localSettings.allowedCoins?.length || 0}/5 selected
+              {(localSettings.allowedCoins || []).length}/5 selected
             </span>
           </div>
           <div className="grid grid-cols-2 gap-2 max-h-[300px] overflow-y-auto pr-2">
             {availableCoins.map((coin) => {
-              const isSelected = localSettings.allowedCoins?.includes(coin);
+              const isSelected = (localSettings.allowedCoins || []).includes(coin);
               const isMeme = ['DOGEUSD', 'SHIBUSD', 'PEPEUSD', 'WIFUSD', 'BONKUSD'].includes(coin);
               return (
                 <Button

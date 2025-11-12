@@ -18,14 +18,22 @@ export function useTrading() {
   const { user } = useAuth();
   const lastRecordedBalance = useRef(balance);
   const marginWarningShown = useRef(false);
+  const isRecordingBalance = useRef(false);
 
-  // Record balance changes
+  // Record balance changes with debouncing to prevent race conditions
   useEffect(() => {
-    if (user && balance !== lastRecordedBalance.current) {
-      recordBalance({ balance, mode }).catch((error) => {
-        console.error("Failed to record balance:", error);
-      });
-      lastRecordedBalance.current = balance;
+    if (user && balance !== lastRecordedBalance.current && !isRecordingBalance.current) {
+      isRecordingBalance.current = true;
+      recordBalance({ balance, mode })
+        .then(() => {
+          lastRecordedBalance.current = balance;
+        })
+        .catch((error) => {
+          console.error("Failed to record balance:", error);
+        })
+        .finally(() => {
+          isRecordingBalance.current = false;
+        });
     }
   }, [balance, mode, user, recordBalance]);
 
@@ -127,6 +135,7 @@ export function useTrading() {
         }
       } catch (error) {
         console.error("Failed to fetch positions:", error);
+        // Don't show toast on every poll error to avoid spam
       }
     };
 

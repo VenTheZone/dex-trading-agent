@@ -1,6 +1,7 @@
 "use node";
 
 import * as hl from "@nktkas/hyperliquid";
+import { privateKeyToAccount } from "viem/accounts";
 
 export interface HyperliquidConfig {
   privateKey: string;
@@ -34,17 +35,16 @@ export class HyperliquidService {
       isTestnet: config.isTestnet ?? false,
     });
 
+    // Properly derive wallet address from private key
+    const account = privateKeyToAccount(config.privateKey as `0x${string}`);
+    this.walletAddress = account.address;
+
     this.exchangeClient = new hl.ExchangeClient({
-      wallet: config.privateKey,
+      wallet: account,
       transport,
     });
 
     this.infoClient = new hl.InfoClient({ transport });
-    
-    // Derive wallet address from private key
-    this.walletAddress = config.privateKey.startsWith("0x") 
-      ? config.privateKey.slice(0, 42) 
-      : `0x${config.privateKey.slice(0, 40)}`;
   }
 
   async getAssetIndex(symbol: string): Promise<number> {

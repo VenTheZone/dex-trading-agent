@@ -26,6 +26,15 @@ export function ApiKeySetup({ onComplete }: ApiKeySetupProps) {
       return;
     }
     
+    // Validate private key format
+    if (keys.hyperliquid.apiSecret) {
+      const privateKey = keys.hyperliquid.apiSecret.trim();
+      if (!privateKey.startsWith('0x') || privateKey.length !== 66) {
+        toast.error('Invalid private key format. Must start with "0x" and be 66 characters long.');
+        return;
+      }
+    }
+    
     storage.saveApiKeys(keys);
     toast.success('API keys saved securely in browser storage');
     onComplete();
