@@ -6,6 +6,7 @@ import { Switch } from '@/components/ui/switch';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useTradingStore } from '@/store/tradingStore';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { toast } from 'sonner';
 import { motion } from 'framer-motion';
 import { Bot, BotOff, Sparkles } from 'lucide-react';
@@ -200,154 +201,180 @@ export function TradingControls() {
           </div>
         </motion.div>
         
-        {/* Leverage Control */}
+        {/* Leverage Settings - Dialog */}
         <motion.div 
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3 }}
-          className="space-y-4 pt-4 border-t border-cyan-500/30"
+          className="pt-4 border-t border-cyan-500/30"
         >
-          <h3 className="text-cyan-400 font-mono font-bold flex items-center gap-2">
-            <Sparkles className="h-4 w-4" />
-            Leverage Settings
-          </h3>
-          
-          <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <Label className="text-cyan-400 font-mono">Leverage</Label>
-              <span className="text-cyan-100 font-mono font-bold text-lg bg-black/50 px-3 py-1 rounded border border-cyan-500/30">
-                {localSettings.leverage}x
-              </span>
-            </div>
-            <Input
-              type="range"
-              min="1"
-              max={localSettings.maxLeverage}
-              step="1"
-              value={localSettings.leverage}
-              onChange={(e) => setLocalSettings({
-                ...localSettings,
-                leverage: Number(e.target.value)
-              })}
-              className="bg-black/50 border-cyan-500/30 accent-cyan-500"
-            />
-            <div className="flex justify-between text-xs text-gray-500 font-mono">
-              <span>1x</span>
-              <span>{localSettings.maxLeverage}x</span>
-            </div>
-          </div>
-          
-          <div className="space-y-2">
-            <Label className="text-cyan-400 font-mono">Max Leverage</Label>
-            <Input
-              type="number"
-              min="1"
-              max="100"
-              value={localSettings.maxLeverage}
-              onChange={(e) => {
-                const maxLev = Number(e.target.value);
-                setLocalSettings({
-                  ...localSettings,
-                  maxLeverage: maxLev,
-                  leverage: Math.min(localSettings.leverage, maxLev)
-                });
-              }}
-              className="bg-black/50 border-cyan-500/30 text-cyan-100 font-mono"
-            />
-          </div>
-          
-          <div className="flex items-center justify-between bg-black/50 p-3 rounded border border-cyan-500/30">
-            <Label className="text-cyan-400 font-mono">Allow AI to Use Leverage</Label>
-            <Switch
-              checked={localSettings.allowAILeverage}
-              onCheckedChange={(checked) => setLocalSettings({
-                ...localSettings,
-                allowAILeverage: checked
-              })}
-            />
-          </div>
+          <Sheet>
+            <SheetTrigger asChild>
+              <Button
+                variant="outline"
+                className="w-full border-cyan-500/30 text-cyan-400 hover:bg-cyan-500/20 font-mono"
+              >
+                <Sparkles className="mr-2 h-4 w-4" />
+                Leverage Settings ({localSettings.leverage}x)
+              </Button>
+            </SheetTrigger>
+            <SheetContent side="bottom" className="bg-black/95 border-cyan-500/50">
+              <SheetHeader>
+                <SheetTitle className="text-cyan-400 font-mono">Leverage Settings</SheetTitle>
+              </SheetHeader>
+              <div className="space-y-4 mt-6">
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <Label className="text-cyan-400 font-mono">Leverage</Label>
+                    <span className="text-cyan-100 font-mono font-bold text-lg bg-black/50 px-3 py-1 rounded border border-cyan-500/30">
+                      {localSettings.leverage}x
+                    </span>
+                  </div>
+                  <Input
+                    type="range"
+                    min="1"
+                    max={localSettings.maxLeverage}
+                    step="1"
+                    value={localSettings.leverage}
+                    onChange={(e) => setLocalSettings({
+                      ...localSettings,
+                      leverage: Number(e.target.value)
+                    })}
+                    className="bg-black/50 border-cyan-500/30 accent-cyan-500"
+                  />
+                  <div className="flex justify-between text-xs text-gray-500 font-mono">
+                    <span>1x</span>
+                    <span>{localSettings.maxLeverage}x</span>
+                  </div>
+                </div>
+                
+                <div className="space-y-2">
+                  <Label className="text-cyan-400 font-mono">Max Leverage</Label>
+                  <Input
+                    type="number"
+                    min="1"
+                    max="100"
+                    value={localSettings.maxLeverage}
+                    onChange={(e) => {
+                      const maxLev = Number(e.target.value);
+                      setLocalSettings({
+                        ...localSettings,
+                        maxLeverage: maxLev,
+                        leverage: Math.min(localSettings.leverage, maxLev)
+                      });
+                    }}
+                    className="bg-black/50 border-cyan-500/30 text-cyan-100 font-mono"
+                  />
+                </div>
+                
+                <div className="flex items-center justify-between bg-black/50 p-3 rounded border border-cyan-500/30">
+                  <Label className="text-cyan-400 font-mono">Allow AI to Use Leverage</Label>
+                  <Switch
+                    checked={localSettings.allowAILeverage}
+                    onCheckedChange={(checked) => setLocalSettings({
+                      ...localSettings,
+                      allowAILeverage: checked
+                    })}
+                  />
+                </div>
+              </div>
+            </SheetContent>
+          </Sheet>
         </motion.div>
         
-        {/* Risk Management */}
+        {/* Risk Management - Dialog */}
         <motion.div 
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.4 }}
           className="space-y-4 pt-4 border-t border-cyan-500/30"
         >
-          <h3 className="text-cyan-400 font-mono font-bold flex items-center gap-2">
-            <Sparkles className="h-4 w-4" />
-            Risk Management
-          </h3>
-          
-          <div className="space-y-2">
-            <Label className="text-cyan-400 font-mono">Take Profit (%)</Label>
-            <Input
-              type="number"
-              value={localSettings.takeProfitPercent}
-              onChange={(e) => setLocalSettings({
-                ...localSettings,
-                takeProfitPercent: Number(e.target.value)
-              })}
-              className="bg-black/50 border-cyan-500/30 text-cyan-100 font-mono"
-            />
-          </div>
-          
-          <div className="space-y-2">
-            <Label className="text-cyan-400 font-mono">Stop Loss (%)</Label>
-            <Input
-              type="number"
-              value={localSettings.stopLossPercent}
-              onChange={(e) => setLocalSettings({
-                ...localSettings,
-                stopLossPercent: Number(e.target.value)
-              })}
-              className="bg-black/50 border-cyan-500/30 text-cyan-100 font-mono"
-            />
-          </div>
-          
-          <div className="flex items-center justify-between bg-black/50 p-3 rounded border border-cyan-500/30">
-            <Label className="text-cyan-400 font-mono">Advanced Strategy</Label>
-            <Switch
-              checked={localSettings.useAdvancedStrategy}
-              onCheckedChange={(checked) => setLocalSettings({
-                ...localSettings,
-                useAdvancedStrategy: checked
-              })}
-            />
-          </div>
-          
-          {localSettings.useAdvancedStrategy && (
-            <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: 'auto' }}
-              className="space-y-4 pl-4 border-l-2 border-cyan-500/50"
-            >
-              <div className="space-y-2">
-                <Label className="text-cyan-400 font-mono text-sm">Partial Profit (%)</Label>
-                <Input
-                  type="number"
-                  value={localSettings.partialProfitPercent}
-                  onChange={(e) => setLocalSettings({
-                    ...localSettings,
-                    partialProfitPercent: Number(e.target.value)
-                  })}
-                  className="bg-black/50 border-cyan-500/30 text-cyan-100 font-mono"
-                />
+          <Sheet>
+            <SheetTrigger asChild>
+              <Button
+                variant="outline"
+                className="w-full border-cyan-500/30 text-cyan-400 hover:bg-cyan-500/20 font-mono"
+              >
+                <Sparkles className="mr-2 h-4 w-4" />
+                Risk Management (TP: {localSettings.takeProfitPercent}% / SL: {localSettings.stopLossPercent}%)
+              </Button>
+            </SheetTrigger>
+            <SheetContent side="bottom" className="bg-black/95 border-cyan-500/50">
+              <SheetHeader>
+                <SheetTitle className="text-cyan-400 font-mono">Risk Management</SheetTitle>
+              </SheetHeader>
+              <div className="space-y-4 mt-6">
+                <div className="space-y-2">
+                  <Label className="text-cyan-400 font-mono">Take Profit (%)</Label>
+                  <Input
+                    type="number"
+                    value={localSettings.takeProfitPercent}
+                    onChange={(e) => setLocalSettings({
+                      ...localSettings,
+                      takeProfitPercent: Number(e.target.value)
+                    })}
+                    className="bg-black/50 border-cyan-500/30 text-cyan-100 font-mono"
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label className="text-cyan-400 font-mono">Stop Loss (%)</Label>
+                  <Input
+                    type="number"
+                    value={localSettings.stopLossPercent}
+                    onChange={(e) => setLocalSettings({
+                      ...localSettings,
+                      stopLossPercent: Number(e.target.value)
+                    })}
+                    className="bg-black/50 border-cyan-500/30 text-cyan-100 font-mono"
+                  />
+                </div>
+                
+                <div className="flex items-center justify-between bg-black/50 p-3 rounded border border-cyan-500/30">
+                  <Label className="text-cyan-400 font-mono">Advanced Strategy</Label>
+                  <Switch
+                    checked={localSettings.useAdvancedStrategy}
+                    onCheckedChange={(checked) => setLocalSettings({
+                      ...localSettings,
+                      useAdvancedStrategy: checked
+                    })}
+                  />
+                </div>
+                
+                {localSettings.useAdvancedStrategy && (
+                  <motion.div
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: 'auto' }}
+                    className="space-y-4 pl-4 border-l-2 border-cyan-500/50"
+                  >
+                    <div className="space-y-2">
+                      <Label className="text-cyan-400 font-mono text-sm">Partial Profit (%)</Label>
+                      <Input
+                        type="number"
+                        value={localSettings.partialProfitPercent}
+                        onChange={(e) => setLocalSettings({
+                          ...localSettings,
+                          partialProfitPercent: Number(e.target.value)
+                        })}
+                        className="bg-black/50 border-cyan-500/30 text-cyan-100 font-mono"
+                      />
+                    </div>
+                    
+                    <div className="flex items-center justify-between bg-black/50 p-3 rounded border border-cyan-500/30">
+                      <Label className="text-cyan-400 font-mono text-sm">Trailing Stop</Label>
+                      <Switch
+                        checked={localSettings.useTrailingStop}
+                        onCheckedChange={(checked) => setLocalSettings({
+                          ...localSettings,
+                          useTrailingStop: checked
+                        })}
+                      />
+                    </div>
+                  </motion.div>
+                )}
               </div>
-              
-              <div className="flex items-center justify-between bg-black/50 p-3 rounded border border-cyan-500/30">
-                <Label className="text-cyan-400 font-mono text-sm">Trailing Stop</Label>
-                <Switch
-                  checked={localSettings.useTrailingStop}
-                  onCheckedChange={(checked) => setLocalSettings({
-                    ...localSettings,
-                    useTrailingStop: checked
-                  })}
-                />
-              </div>
-            </motion.div>
-          )}
+            </SheetContent>
+          </Sheet>
           
           <Button
             onClick={handleSaveSettings}

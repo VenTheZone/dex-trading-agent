@@ -178,107 +178,109 @@ export default function Dashboard() {
         
         {/* Main Content */}
         <div className="container mx-auto px-4 py-6 space-y-6">
-          {/* Stats Row */}
+          {/* Stats Row - Compact */}
           <motion.div
             initial={{ y: 20, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{ delay: 0.1 }}
-            className="grid grid-cols-1 md:grid-cols-3 gap-4"
+            className="grid grid-cols-1 md:grid-cols-3 gap-3"
           >
             <Card className="bg-black/80 border-cyan-500/50 shadow-[0_0_20px_rgba(0,255,255,0.2)]">
-              <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-sm font-mono text-cyan-400">Balance</CardTitle>
-                <DollarSign className="h-4 w-4 text-cyan-400" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold text-cyan-100 font-mono">
-                  ${balance.toLocaleString()}
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-xs font-mono text-cyan-400 mb-1">Balance</p>
+                    <div className="text-xl font-bold text-cyan-100 font-mono">
+                      ${balance.toLocaleString()}
+                    </div>
+                  </div>
+                  <DollarSign className="h-5 w-5 text-cyan-400" />
                 </div>
-                {mode === 'live' && (
-                  <p className="text-xs text-gray-400 mt-1">Live Account</p>
-                )}
               </CardContent>
             </Card>
             
             <Card className="bg-black/80 border-cyan-500/50 shadow-[0_0_20px_rgba(0,255,255,0.2)]">
-              <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-sm font-mono text-cyan-400">P&L</CardTitle>
-                <TrendingUp className={`h-4 w-4 ${pnl >= 0 ? 'text-green-400' : 'text-red-400'}`} />
-              </CardHeader>
-              <CardContent>
-                <div className={`text-2xl font-bold font-mono ${pnl >= 0 ? 'text-green-400' : 'text-red-400'}`}>
-                  {pnl >= 0 ? '+' : ''}${pnl.toFixed(2)}
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-xs font-mono text-cyan-400 mb-1">P&L</p>
+                    <div className={`text-xl font-bold font-mono ${pnl >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                      {pnl >= 0 ? '+' : ''}${pnl.toFixed(2)} ({pnl >= 0 ? '+' : ''}{pnlPercent}%)
+                    </div>
+                  </div>
+                  <TrendingUp className={`h-5 w-5 ${pnl >= 0 ? 'text-green-400' : 'text-red-400'}`} />
                 </div>
-                <p className={`text-xs mt-1 ${pnl >= 0 ? 'text-green-400' : 'text-red-400'}`}>
-                  {pnl >= 0 ? '+' : ''}{pnlPercent}%
-                </p>
               </CardContent>
             </Card>
             
             <Card className="bg-black/80 border-cyan-500/50 shadow-[0_0_20px_rgba(0,255,255,0.2)]">
-              <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-sm font-mono text-cyan-400">Status</CardTitle>
-                <Activity className="h-4 w-4 text-cyan-400" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold text-cyan-100 font-mono">
-                  {position ? 'IN POSITION' : 'READY'}
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-xs font-mono text-cyan-400 mb-1">Status</p>
+                    <div className="text-xl font-bold text-cyan-100 font-mono">
+                      {position ? 'IN POSITION' : 'READY'}
+                    </div>
+                  </div>
+                  <Activity className="h-5 w-5 text-cyan-400" />
                 </div>
-                {position && (
-                  <p className="text-xs text-gray-400 mt-1">
-                    {position.side.toUpperCase()} {position.size} {position.symbol}
-                  </p>
-                )}
               </CardContent>
             </Card>
           </motion.div>
           
-          {/* Charts and Controls */}
-          <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-            {/* Charts Grid */}
-            <motion.div
-              initial={{ y: 20, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              transition={{ delay: 0.2 }}
-              className="lg:col-span-3 grid grid-cols-1 md:grid-cols-2 gap-4"
-            >
-              <TradingChart symbol="BTCUSD" chartId={1} />
-              <TradingChart symbol="ETHUSD" chartId={2} />
-              <TradingChart symbol="SOLUSD" chartId={3} />
-              <TradingChart symbol="AVAXUSD" chartId={4} />
-            </motion.div>
-            
-            {/* Controls and Logs Sidebar */}
-            <motion.div
-              initial={{ x: 20, opacity: 0 }}
-              animate={{ x: 0, opacity: 1 }}
-              transition={{ delay: 0.3 }}
-              className="lg:col-span-1"
-            >
-              <Tabs defaultValue="controls" className="w-full">
-                <TabsList className="grid w-full grid-cols-2 bg-black/50">
-                  <TabsTrigger 
-                    value="controls" 
-                    className="data-[state=active]:bg-cyan-500 data-[state=active]:text-black font-mono"
-                  >
-                    Controls
-                  </TabsTrigger>
-                  <TabsTrigger 
-                    value="logs" 
-                    className="data-[state=active]:bg-cyan-500 data-[state=active]:text-black font-mono"
-                  >
-                    Logs
-                  </TabsTrigger>
-                </TabsList>
-                <TabsContent value="controls" className="mt-4">
-                  <TradingControls />
-                </TabsContent>
-                <TabsContent value="logs" className="mt-4">
-                  <TradingLogs />
-                </TabsContent>
-              </Tabs>
-            </motion.div>
-          </div>
+          {/* Charts - Full Width */}
+          <motion.div
+            initial={{ y: 20, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ delay: 0.2 }}
+            className="grid grid-cols-1 md:grid-cols-2 gap-4"
+          >
+            <TradingChart symbol="BTCUSD" chartId={1} />
+            <TradingChart symbol="ETHUSD" chartId={2} />
+            <TradingChart symbol="SOLUSD" chartId={3} />
+            <TradingChart symbol="AVAXUSD" chartId={4} />
+          </motion.div>
+          
+          {/* Sliding Controls Panel */}
+          <Sheet>
+            <SheetTrigger asChild>
+              <Button
+                className="fixed bottom-6 right-6 z-20 bg-cyan-500 hover:bg-cyan-600 text-black font-bold font-mono shadow-[0_0_30px_rgba(0,255,255,0.6)] h-14 w-14 rounded-full"
+                size="icon"
+              >
+                <Settings className="h-6 w-6" />
+              </Button>
+            </SheetTrigger>
+            <SheetContent side="right" className="w-[400px] bg-black/95 border-cyan-500/50 overflow-y-auto">
+              <SheetHeader>
+                <SheetTitle className="text-cyan-400 font-mono">Trading Controls</SheetTitle>
+              </SheetHeader>
+              <div className="mt-6">
+                <Tabs defaultValue="controls" className="w-full">
+                  <TabsList className="grid w-full grid-cols-2 bg-black/50">
+                    <TabsTrigger 
+                      value="controls" 
+                      className="data-[state=active]:bg-cyan-500 data-[state=active]:text-black font-mono"
+                    >
+                      Controls
+                    </TabsTrigger>
+                    <TabsTrigger 
+                      value="logs" 
+                      className="data-[state=active]:bg-cyan-500 data-[state=active]:text-black font-mono"
+                    >
+                      Logs
+                    </TabsTrigger>
+                  </TabsList>
+                  <TabsContent value="controls" className="mt-4">
+                    <TradingControls />
+                  </TabsContent>
+                  <TabsContent value="logs" className="mt-4">
+                    <TradingLogs />
+                  </TabsContent>
+                </Tabs>
+              </div>
+            </SheetContent>
+          </Sheet>
         </div>
         
         {/* Footer Credit */}
