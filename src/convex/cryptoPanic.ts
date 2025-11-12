@@ -31,19 +31,14 @@ interface CryptoPanicPost {
 
 export const fetchCryptoNews = action({
   args: {
-    authToken: v.optional(v.string()),
     filter: v.optional(v.string()),
     currencies: v.optional(v.array(v.string())),
     limit: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
     try {
-      // Build query parameters
+      // Build query parameters for public API access
       const params = new URLSearchParams();
-      
-      if (args.authToken) {
-        params.append('auth_token', args.authToken);
-      }
       
       params.append('public', 'true');
       
