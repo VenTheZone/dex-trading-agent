@@ -81,6 +81,14 @@ Install Convex CLI globally (if not already installed)
 ```
 pnpm add -g convex
 ```
+
+If convex fails to start try
+```
+export PNPM_HOME="~/.local/share/pnpm"
+export PATH="$PNPM_HOME:$PATH"
+pnpm add -g convex
+```
+
 Initialize and deploy Convex backend
 ```
 npx convex dev
