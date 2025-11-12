@@ -2,7 +2,7 @@ import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/use-auth";
 import { useNavigate } from "react-router";
-import { CyberpunkBackground } from "@/components/CyberpunkBackground";
+import { TradingBackground } from "@/components/CyberpunkBackground";
 import { Activity, Brain, Shield, TrendingUp, Zap } from "lucide-react";
 
 export default function Landing() {
@@ -11,7 +11,7 @@ export default function Landing() {
 
   return (
     <div className="min-h-screen bg-black text-cyan-100">
-      <CyberpunkBackground />
+      <TradingBackground />
       
       <div className="relative z-10">
         {/* Hero Section */}
@@ -59,7 +59,7 @@ export default function Landing() {
             </h1>
             
             <p className="text-xl md:text-2xl text-cyan-300 font-mono">
-              Cyberpunk AI-Powered Trading System
+              AI-Powered Trading System
             </p>
             
             <p className="text-lg text-gray-400 max-w-2xl mx-auto">

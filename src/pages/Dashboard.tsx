@@ -5,7 +5,7 @@ import { useNavigate } from 'react-router';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { CyberpunkBackground } from '@/components/CyberpunkBackground';
+import { TradingBackground } from '@/components/CyberpunkBackground';
 import { ApiKeySetup } from '@/components/ApiKeySetup';
 import { TradingChart } from '@/components/TradingChart';
 import { TradingControls } from '@/components/TradingControls';
@@ -58,7 +58,7 @@ export default function Dashboard() {
   if (!hasApiKeys) {
     return (
       <div className="min-h-screen bg-black">
-        <CyberpunkBackground />
+        <TradingBackground />
         <div className="relative z-10">
           <div className="p-4">
             <LogoDropdown />
@@ -71,7 +71,7 @@ export default function Dashboard() {
   
   return (
     <div className="min-h-screen bg-black text-cyan-100">
-      <CyberpunkBackground />
+        <TradingBackground />
       
       <div className="relative z-10">
         {/* Header */}

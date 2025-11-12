@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion';
 
-export function CyberpunkBackground() {
+export function TradingBackground() {
   return (
     <div className="fixed inset-0 -z-10 overflow-hidden pointer-events-none">
       {/* Grid pattern */}
