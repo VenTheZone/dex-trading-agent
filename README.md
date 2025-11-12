@@ -52,5 +52,3 @@ You'll also need API keys for:
 ## 🚀 Local Deployment Instructions
 
 ### 1. Clone the Repository
-
-
