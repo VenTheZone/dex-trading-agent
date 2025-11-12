@@ -117,6 +117,12 @@ In a new terminal (keep Convex dev running):
 pnpm dev
 ```
 
+Within VITE, in order to show the webapp
+```
+--host
+```
+
+
 The application will be available at `http://localhost:5173`
 
 ### 6. Configure API Keys (In-App)
