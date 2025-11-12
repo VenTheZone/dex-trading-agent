@@ -41,18 +41,21 @@ export const fetchCryptoNews = action({
       const validFilters = ['hot', 'bullish', 'bearish', 'important', 'saved', 'lol'];
       const filter = args.filter && validFilters.includes(args.filter) ? args.filter : undefined;
       
-      // Limit currencies to prevent abuse
-      const currencies = args.currencies?.slice(0, 10).map(c => c.toUpperCase().slice(0, 10));
+      // Limit currencies to prevent abuse (max 10)
+      const currencies = args.currencies?.slice(0, 10).map(c => {
+        const sanitized = String(c).toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 10);
+        return sanitized;
+      }).filter(c => c.length > 0);
       
-      // Limit results to prevent DoS
-      const limit = Math.min(args.limit || 20, 50);
+      // Limit results to prevent DoS (max 50)
+      const limit = Math.max(1, Math.min(args.limit || 20, 50));
       
       // Build query parameters
       const params = new URLSearchParams();
       
       // CryptoPanic requires auth_token even for public access
-      // Using a placeholder that triggers public mode
-      params.append('auth_token', 'free');
+      const authToken = process.env.CRYPTOPANIC_AUTH_TOKEN || 'free';
+      params.append('auth_token', authToken);
       params.append('public', 'true');
       
       if (filter) {
@@ -67,42 +70,54 @@ export const fetchCryptoNews = action({
       
       const response = await fetch(url, {
         signal: AbortSignal.timeout(10000),
+        headers: {
+          'Accept': 'application/json',
+        },
       });
 
       if (!response.ok) {
-        throw new Error(`CryptoPanic API error: ${response.statusText}`);
+        throw new Error(`CryptoPanic API error: ${response.status} ${response.statusText}`);
       }
 
       const data = await response.json();
       
-      // Sanitize response data
-      const posts = (data.results || []).slice(0, limit).map((post: any) => ({
-        id: String(post.id || '').slice(0, 50),
-        title: String(post.title || '').slice(0, 300),
-        url: String(post.url || '').slice(0, 500),
-        created_at: String(post.created_at || ''),
-        domain: String(post.domain || '').slice(0, 100),
-        votes: {
-          positive: Math.max(0, Math.min(Number(post.votes?.positive) || 0, 999999)),
-          negative: Math.max(0, Math.min(Number(post.votes?.negative) || 0, 999999)),
-          important: Math.max(0, Math.min(Number(post.votes?.important) || 0, 999999)),
-        },
-        currencies: (post.currencies || []).slice(0, 5).map((c: any) => ({
-          code: String(c.code || '').slice(0, 10),
-          title: String(c.title || '').slice(0, 50),
-        })),
-      }));
+      // Validate response structure
+      if (!data || typeof data !== 'object' || !Array.isArray(data.results)) {
+        throw new Error('Invalid API response structure');
+      }
+      
+      // Sanitize response data with strict validation
+      const posts = (data.results || []).slice(0, limit).map((post: any) => {
+        if (!post || typeof post !== 'object') return null;
+        
+        return {
+          id: String(post.id || '').replace(/[^a-zA-Z0-9-_]/g, '').slice(0, 50),
+          title: String(post.title || '').replace(/<[^>]*>/g, '').slice(0, 300),
+          url: String(post.url || '').slice(0, 500),
+          created_at: String(post.created_at || ''),
+          domain: String(post.domain || '').replace(/[^a-zA-Z0-9.-]/g, '').slice(0, 100),
+          votes: {
+            positive: Math.max(0, Math.min(Number(post.votes?.positive) || 0, 999999)),
+            negative: Math.max(0, Math.min(Number(post.votes?.negative) || 0, 999999)),
+            important: Math.max(0, Math.min(Number(post.votes?.important) || 0, 999999)),
+          },
+          currencies: (Array.isArray(post.currencies) ? post.currencies : []).slice(0, 5).map((c: any) => ({
+            code: String(c?.code || '').replace(/[^A-Z0-9]/g, '').slice(0, 10),
+            title: String(c?.title || '').replace(/<[^>]*>/g, '').slice(0, 50),
+          })).filter((c: any) => c.code.length > 0),
+        };
+      }).filter((post: any) => post !== null && post.id && post.title && post.url);
 
       return {
         success: true,
         posts,
-        count: data.count,
+        count: Math.min(data.count || 0, 999999),
       };
     } catch (error: any) {
       console.error('Error fetching CryptoPanic news:', error);
       return {
         success: false,
-        error: error.message,
+        error: error.message || 'Unknown error',
         posts: [],
         count: 0,
       };
