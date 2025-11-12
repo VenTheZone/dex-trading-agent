@@ -31,11 +31,19 @@ export function ApiKeySetup({ onComplete }: ApiKeySetupProps) {
   };
 
   const handleDemoMode = () => {
+    // Preserve OpenRouter key if provided, otherwise use DEMO_MODE
+    const openRouterKey = keys.openRouter && keys.openRouter.trim() !== '' ? keys.openRouter : 'DEMO_MODE';
+    
     storage.saveApiKeys({
       hyperliquid: { apiKey: 'DEMO_MODE', apiSecret: 'DEMO_MODE', walletAddress: 'DEMO_MODE' },
-      openRouter: 'DEMO_MODE',
+      openRouter: openRouterKey,
     });
-    toast.success('Demo mode activated - Using simulated data');
+    
+    if (openRouterKey !== 'DEMO_MODE') {
+      toast.success('Demo mode activated - Using your OpenRouter API key for real AI analysis');
+    } else {
+      toast.success('Demo mode activated - Using DeepSeek free tier');
+    }
     onComplete();
   };
 
