@@ -4,11 +4,11 @@
 
 ## 🚀 Overview
 
-DeX Trading Agent is an advanced AI-driven trading system for Hyperliquid perpetual futures. It features live and paper trading modes, dynamic multi-chart analysis, interactive risk management, and secure browser-based API key storage. The system leverages DeepSeek AI for intelligent market analysis and supports both mainnet and testnet trading.
+DeX Trading Agent is an advanced AI-driven trading system for Hyperliquid perpetual futures. It features live and paper trading modes, dynamic multi-chart analysis, interactive risk management, and secure browser-based API key storage. The system leverages DeepSeek and Qwen3 Max AI for intelligent market analysis and supports both mainnet and testnet trading.
 
 ## ✨ Key Features
 
-- **🤖 AI-Powered Analysis**: DeepSeek V3.1 powered market decisions with multi-chart correlation analysis
+- **🤖 AI-Powered Analysis**: DeepSeek V3.1 / Qwen3 Max, powered market decisions with multi-chart correlation analysis
 - **📊 Multi-Chart Trading**: 4 TradingView charts with time-based and range-based analysis
 - **🔒 Secure Storage**: Browser-only API key storage - keys never leave your device
 - **⚡ Risk Control**: Advanced TP/SL management with trailing stops and partial profit taking
@@ -47,7 +47,7 @@ The landing page features a cyberpunk-themed design with:
 - **Animations**: Framer Motion
 - **Backend**: Convex (serverless backend & database)
 - **Authentication**: Convex Auth with Email OTP
-- **AI**: DeepSeek via OpenRouter API
+- **AI**: Both DeepSeek Qwen3 Max via OpenRouter API
 - **Trading**: Hyperliquid SDK (@nktkas/hyperliquid)
 - **State Management**: Zustand
 
