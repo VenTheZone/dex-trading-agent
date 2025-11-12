@@ -206,9 +206,16 @@ export default function Dashboard() {
                 size="icon"
                 className="border-cyan-500/30 text-cyan-400 hover:bg-cyan-500/20"
                 onClick={() => {
-                  storage.clearAll();
-                  setHasApiKeys(false);
-                  toast.success('API keys cleared');
+                  const confirmed = window.confirm(
+                    '⚠️ Clear all API keys and settings?\n\n' +
+                    'This will remove all stored API keys and reset your configuration.\n\n' +
+                    'Are you sure you want to continue?'
+                  );
+                  if (confirmed) {
+                    storage.clearAll();
+                    setHasApiKeys(false);
+                    toast.success('API keys cleared');
+                  }
                 }}
               >
                 <Settings className="h-5 w-5" />
