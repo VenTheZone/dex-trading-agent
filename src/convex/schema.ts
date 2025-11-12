@@ -43,6 +43,13 @@ const schema = defineSchema(
       size: v.optional(v.number()),
       side: v.optional(v.union(v.literal("long"), v.literal("short"))),
     }).index("by_user", ["userId"]),
+
+    // Balance history table
+    balanceHistory: defineTable({
+      userId: v.id("users"),
+      balance: v.number(),
+      mode: v.union(v.literal("paper"), v.literal("live")),
+    }).index("by_user", ["userId"]),
   },
   {
     schemaValidation: false,

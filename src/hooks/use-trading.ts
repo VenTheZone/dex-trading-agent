@@ -4,12 +4,25 @@ import { useAuth } from "@/hooks/use-auth";
 import { storage } from "@/lib/storage";
 import { useTradingStore } from "@/store/tradingStore";
 import { toast } from "sonner";
+import { useEffect, useRef } from "react";
 
 export function useTrading() {
   const createLog = useMutation(api.tradingLogs.createLog);
+  const recordBalance = useMutation(api.balanceHistory.recordBalance);
   const analyzeMarket = useAction(api.trading.analyzeMarket);
-  const { balance, settings, mode, chartType, chartInterval } = useTradingStore();
+  const { balance, settings, mode, chartType, chartInterval, setBalance } = useTradingStore();
   const { user } = useAuth();
+  const lastRecordedBalance = useRef(balance);
+
+  // Record balance changes
+  useEffect(() => {
+    if (user && balance !== lastRecordedBalance.current) {
+      recordBalance({ balance, mode }).catch((error) => {
+        console.error("Failed to record balance:", error);
+      });
+      lastRecordedBalance.current = balance;
+    }
+  }, [balance, mode, user, recordBalance]);
 
   const runAIAnalysis = async (symbol: string, currentPrice: number) => {
     try {

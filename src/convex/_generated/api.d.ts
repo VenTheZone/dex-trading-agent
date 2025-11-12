@@ -15,6 +15,7 @@ import type {
 } from "convex/server";
 import type * as auth_emailOtp from "../auth/emailOtp.js";
 import type * as auth from "../auth.js";
+import type * as balanceHistory from "../balanceHistory.js";
 import type * as http from "../http.js";
 import type * as hyperliquid from "../hyperliquid.js";
 import type * as trading from "../trading.js";
@@ -32,6 +33,7 @@ import type * as users from "../users.js";
 declare const fullApi: ApiFromModules<{
   "auth/emailOtp": typeof auth_emailOtp;
   auth: typeof auth;
+  balanceHistory: typeof balanceHistory;
   http: typeof http;
   hyperliquid: typeof hyperliquid;
   trading: typeof trading;

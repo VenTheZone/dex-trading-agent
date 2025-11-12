@@ -12,10 +12,12 @@ import { TradingControls } from '@/components/TradingControls';
 import { LogoDropdown } from '@/components/LogoDropdown';
 import { storage } from '@/lib/storage';
 import { useTradingStore } from '@/store/tradingStore';
-import { Activity, DollarSign, TrendingUp, Settings, Loader2 } from 'lucide-react';
+import { Activity, DollarSign, TrendingUp, Settings, Loader2, LineChart } from 'lucide-react';
 import { toast } from 'sonner';
 import { TradingLogs } from '@/components/TradingLogs';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
+import { BalanceChart } from '@/components/BalanceChart';
 
 export default function Dashboard() {
   const { isLoading, isAuthenticated } = useAuth();
@@ -95,6 +97,26 @@ export default function Dashboard() {
             </div>
             
             <div className="flex items-center gap-4">
+              <Sheet>
+                <SheetTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    className="border-cyan-500/30 text-cyan-400 hover:bg-cyan-500/20"
+                  >
+                    <LineChart className="h-5 w-5" />
+                  </Button>
+                </SheetTrigger>
+                <SheetContent side="right" className="w-[600px] bg-black/95 border-cyan-500/50">
+                  <SheetHeader>
+                    <SheetTitle className="text-cyan-400 font-mono">Balance History</SheetTitle>
+                  </SheetHeader>
+                  <div className="mt-6">
+                    <BalanceChart />
+                  </div>
+                </SheetContent>
+              </Sheet>
+              
               <Badge 
                 variant={mode === 'paper' ? 'secondary' : 'destructive'}
                 className={`text-lg px-4 py-2 font-mono cursor-pointer ${
