@@ -1,4 +1,4 @@
-# DeX CyberAgent - AI-Powered Trading System
+# DeX Trading Agent - AI-Powered Trading System
 
 ![DeX CyberAgent](./public/logo.svg)
 
