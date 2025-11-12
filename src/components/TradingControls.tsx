@@ -9,14 +9,17 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { toast } from 'sonner';
 import { motion } from 'framer-motion';
-import { Bot, BotOff, Sparkles, X, Brain, AlertTriangle } from 'lucide-react';
+import { Bot, BotOff, Sparkles, X, Brain, AlertTriangle, FileText, RotateCcw } from 'lucide-react';
 import { storage } from '@/lib/storage';
 import { useTrading } from '@/hooks/use-trading';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Textarea } from '@/components/ui/textarea';
+import { DEFAULT_PROMPT } from '@/store/tradingStore';
 
 export function TradingControls() {
-  const { settings, updateSettings, chartInterval, setChartInterval, chartType, setChartType, isAutoTrading, setAutoTrading, position, aiModel, setAiModel } = useTradingStore();
+  const { settings, updateSettings, chartInterval, setChartInterval, chartType, setChartType, isAutoTrading, setAutoTrading, position, aiModel, setAiModel, customPrompt, setCustomPrompt, resetPromptToDefault } = useTradingStore();
   const [localSettings, setLocalSettings] = useState(settings);
+  const [localPrompt, setLocalPrompt] = useState(customPrompt);
   const { closePosition, closeAllPositions } = useTrading();
   
   const timeIntervals = ['1m', '5m', '15m', '1h', '4h', '1d'];
@@ -545,6 +548,100 @@ export function TradingControls() {
             Apply Settings
           </Button>
         </motion.div>
+        
+        {/* AI Prompt Template Editor */}
+        <motion.div 
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.5 }}
+          className="space-y-4 pt-4 border-t border-cyan-500/30"
+        >
+          <Sheet>
+            <SheetTrigger asChild>
+              <Button
+                variant="outline"
+                className="w-full border-cyan-500/30 text-cyan-400 hover:bg-cyan-500/20 font-mono"
+              >
+                <FileText className="mr-2 h-4 w-4" />
+                AI Prompt Template
+              </Button>
+            </SheetTrigger>
+            <SheetContent side="bottom" className="bg-black/95 border-cyan-500/50 h-[80vh] overflow-y-auto">
+              <SheetHeader>
+                <SheetTitle className="text-cyan-400 font-mono flex items-center justify-between">
+                  <span className="flex items-center gap-2">
+                    <FileText className="h-5 w-5" />
+                    Customize AI Trading Strategy
+                  </span>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      setLocalPrompt(DEFAULT_PROMPT);
+                      toast.info('Prompt reset to default template');
+                    }}
+                    className="border-cyan-500/30 text-cyan-400 hover:bg-cyan-500/20 font-mono"
+                  >
+                    <RotateCcw className="mr-2 h-4 w-4" />
+                    Reset to Default
+                  </Button>
+                </SheetTitle>
+              </SheetHeader>
+              
+              <div className="space-y-4 mt-6">
+                <Alert className="bg-cyan-500/10 border-cyan-500/50">
+                  <Brain className="h-4 w-4 text-cyan-500" />
+                  <AlertDescription className="text-cyan-200 text-xs">
+                    <strong>Customize Your AI Strategy:</strong> Edit the prompt below to define how the AI should analyze markets and make trading decisions. The AI will follow your instructions when analyzing charts and generating trade signals.
+                  </AlertDescription>
+                </Alert>
+                
+                <div className="space-y-2">
+                  <Label className="text-cyan-400 font-mono">AI Prompt Template</Label>
+                  <Textarea
+                    value={localPrompt}
+                    onChange={(e) => setLocalPrompt(e.target.value)}
+                    className="bg-black/50 border-cyan-500/30 text-cyan-100 font-mono min-h-[400px] text-sm"
+                    placeholder="Enter your custom AI trading strategy prompt..."
+                  />
+                  <p className="text-xs text-gray-500 font-mono">
+                    The AI will use this prompt as the foundation for all market analysis. Include your preferred indicators, risk tolerance, and trading style.
+                  </p>
+                </div>
+                
+                <div className="bg-black/50 border border-cyan-500/30 rounded p-4 space-y-2">
+                  <h4 className="text-cyan-400 font-mono font-bold text-sm">Prompt Guidelines:</h4>
+                  <ul className="text-xs text-gray-400 font-mono space-y-1">
+                    <li>• Define your preferred technical indicators (RSI, MACD, etc.)</li>
+                    <li>• Specify risk management rules and position sizing</li>
+                    <li>• Include market conditions you want to trade (trending, ranging, etc.)</li>
+                    <li>• Set confidence thresholds for trade execution</li>
+                    <li>• Describe your preferred entry/exit strategies</li>
+                  </ul>
+                </div>
+                
+                <Button
+                  onClick={() => {
+                    setCustomPrompt(localPrompt);
+                    toast.success('✅ AI prompt template updated', {
+                      description: 'Your custom strategy will be used for all future analysis',
+                    });
+                  }}
+                  className="w-full bg-cyan-500 hover:bg-cyan-600 text-black font-bold font-mono shadow-[0_0_20px_rgba(0,255,255,0.4)] transition-all"
+                >
+                  Save Custom Prompt
+                </Button>
+              </div>
+            </SheetContent>
+          </Sheet>
+        </motion.div>
+        
+        <Button
+          onClick={handleSaveSettings}
+          className="w-full bg-cyan-500 hover:bg-cyan-600 text-black font-bold font-mono shadow-[0_0_20px_rgba(0,255,255,0.4)] transition-all"
+        >
+          Apply Settings
+        </Button>
       </CardContent>
     </Card>
   );

@@ -16,6 +16,7 @@ export const analyzeMarket = action({
     }),
     isDemoMode: v.optional(v.boolean()),
     aiModel: v.optional(v.string()),
+    customPrompt: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     const apiKey = process.env.OPENROUTER_API_KEY;
@@ -26,7 +27,9 @@ export const analyzeMarket = action({
 
     const model = args.aiModel || "deepseek/deepseek-chat";
 
-    const prompt = `You are an expert crypto trading analyst. Analyze the following market data and provide a trading recommendation.
+    const basePrompt = args.customPrompt || `You are an expert crypto trading analyst. Analyze the following market data and provide a trading recommendation.`;
+
+    const prompt = `${basePrompt}
 
 Symbol: ${args.symbol}
 Current Balance: ${args.userBalance}
@@ -108,6 +111,7 @@ export const analyzeMultiChart = action({
     }),
     isDemoMode: v.optional(v.boolean()),
     aiModel: v.optional(v.string()),
+    customPrompt: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     const apiKey = process.env.OPENROUTER_API_KEY;
@@ -122,7 +126,9 @@ export const analyzeMultiChart = action({
       `${chart.symbol}: $${chart.currentPrice} (${chart.chartType} chart, ${chart.chartInterval})`
     ).join('\n');
 
-    const prompt = `You are an expert crypto trading analyst with multi-chart analysis capabilities. Analyze the following market data across multiple assets and provide a trading recommendation.
+    const basePrompt = args.customPrompt || `You are an expert crypto trading analyst with multi-chart analysis capabilities.`;
+
+    const prompt = `${basePrompt}
 
 MULTI-CHART ANALYSIS:
 ${chartsDescription}

@@ -14,7 +14,7 @@ export function useTrading() {
   const analyzeMultiChart = useAction((api as any).trading.analyzeMultiChart);
   const executeLiveTrade = useAction((api as any).trading.executeLiveTrade);
   const getHyperliquidPositions = useAction((api as any).trading.getHyperliquidPositions);
-  const { balance, settings, mode, network, chartType, chartInterval, setBalance, setPosition, position, isAutoTrading, setAutoTrading, aiModel } = useTradingStore();
+  const { balance, settings, mode, network, chartType, chartInterval, setBalance, setPosition, position, isAutoTrading, setAutoTrading, aiModel, customPrompt } = useTradingStore();
   const { user } = useAuth();
   const lastRecordedBalance = useRef(balance);
   const marginWarningShown = useRef(false);
@@ -269,6 +269,7 @@ export function useTrading() {
         },
         isDemoMode,
         aiModel,
+        customPrompt,
       });
       
       toast.success("✅ AI analysis complete");
@@ -326,6 +327,7 @@ export function useTrading() {
         },
         isDemoMode,
         aiModel,
+        customPrompt,
       });
       
       toast.success("✅ Multi-chart AI analysis complete");

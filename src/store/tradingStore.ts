@@ -24,6 +24,7 @@ interface TradingState {
   isAutoTrading: boolean;
   connectionMode: 'wallet' | 'api' | 'demo';
   aiModel: 'deepseek/deepseek-chat' | 'qwen/qwen-2.5-72b-instruct';
+  customPrompt: string;
   setBalance: (balance: number) => void;
   setPosition: (position: Position | null) => void;
   setMode: (mode: 'paper' | 'live' | 'demo') => void;
@@ -34,7 +35,35 @@ interface TradingState {
   setAutoTrading: (enabled: boolean) => void;
   setConnectionMode: (mode: 'wallet' | 'api' | 'demo') => void;
   setAiModel: (model: 'deepseek/deepseek-chat' | 'qwen/qwen-2.5-72b-instruct') => void;
+  setCustomPrompt: (prompt: string) => void;
+  resetPromptToDefault: () => void;
 }
+
+export const DEFAULT_PROMPT = `You are an expert crypto trading analyst. Analyze the following market data and provide a trading recommendation.
+
+ANALYSIS GUIDELINES:
+1. Technical Analysis: Evaluate price action, support/resistance levels, and trend direction
+2. Risk Management: Consider position sizing relative to account balance and leverage
+3. Market Context: Factor in overall market sentiment and correlation with major assets
+4. Entry/Exit Strategy: Provide clear entry price, stop loss, and take profit levels
+5. Confidence Level: Rate your confidence (0-100) based on signal strength
+
+RISK CONSIDERATIONS:
+- Never risk more than 2-5% of account balance per trade
+- Account for leverage when calculating position size
+- Set stop loss to limit downside risk
+- Consider market volatility and liquidity
+
+Provide your analysis in JSON format with:
+{
+  "action": "open_long" | "open_short" | "close" | "hold",
+  "confidence": 0-100,
+  "reasoning": "detailed explanation of your analysis",
+  "entryPrice": number,
+  "stopLoss": number,
+  "takeProfit": number,
+  "positionSize": number
+}`;
 
 export const useTradingStore = create<TradingState>()(
   persist(
@@ -60,6 +89,7 @@ export const useTradingStore = create<TradingState>()(
       chartType: 'time',
       chartInterval: '15',
       isAutoTrading: false,
+      customPrompt: DEFAULT_PROMPT,
       setBalance: (balance) => set({ balance }),
       setPosition: (position) => set({ position }),
       setMode: (mode) => set({ mode }),
@@ -73,6 +103,8 @@ export const useTradingStore = create<TradingState>()(
       setAutoTrading: (enabled) => set({ isAutoTrading: enabled }),
       setConnectionMode: (mode) => set({ connectionMode: mode }),
       setAiModel: (model) => set({ aiModel: model }),
+      setCustomPrompt: (prompt) => set({ customPrompt: prompt }),
+      resetPromptToDefault: () => set({ customPrompt: DEFAULT_PROMPT }),
     }),
     {
       name: 'trading-storage',
