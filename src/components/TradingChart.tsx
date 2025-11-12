@@ -36,7 +36,7 @@ export function TradingChart({ symbol, chartId }: TradingChartProps) {
           interval: chartInterval,
           timezone: 'Etc/UTC',
           theme: 'dark',
-          style: chartType === 'range' ? '3' : '1', // 3 = Range, 1 = Candles
+          style: chartType === 'range' ? '3' : '1',
           locale: 'en',
           toolbar_bg: '#0a0a0a',
           enable_publishing: false,
@@ -47,83 +47,28 @@ export function TradingChart({ symbol, chartId }: TradingChartProps) {
           gridColor: 'rgba(0, 255, 255, 0.1)',
           studies: chartType === 'range' ? ['Volume@tv-basicstudies'] : [],
           drawings_access: { type: 'black', tools: [{ name: 'LineToolHorzLine' }] },
-          // Enable data access for AI analysis
-          datafeed: undefined, // Use default TradingView datafeed
+          datafeed: undefined,
           library_path: undefined,
         });
 
-        // Listen for widget ready event
-        widgetRef.current.onChartReady(() => {
-          const chart = widgetRef.current.chart();
-          
-          // Store chart reference for data extraction
-          if (chartType === 'range') {
-            // Log that range chart is active for AI analysis
-            console.log(`Range chart active for ${symbol} with interval ${chartInterval}`);
-          }
-          
-          // Add position lines if there's an active position
-          if (position && position.symbol === symbol) {
-            // Entry line
-            chart.createShape(
-              { price: position.entryPrice },
-              {
-                shape: 'horizontal_line',
-                overrides: {
-                  linecolor: '#00ffff',
-                  linewidth: 2,
-                  linestyle: 0,
-                  showLabel: true,
-                  text: `Entry: $${position.entryPrice}`,
-                },
+        // Use iframe API to access chart when ready
+        if (widgetRef.current && widgetRef.current.headerReady) {
+          widgetRef.current.headerReady().then(() => {
+            const iframe = widgetRef.current.iframe;
+            if (iframe && iframe.contentWindow) {
+              // Chart is ready, but we can't directly manipulate it without advanced API
+              console.log(`Chart ready for ${symbol} with interval ${chartInterval}`);
+              
+              // Note: Drawing position lines requires TradingView's advanced charting library
+              // For now, we'll just log the position data
+              if (position && position.symbol === symbol) {
+                console.log('Active position:', position);
               }
-            );
-
-            // Stop loss line (draggable)
-            if (position.stopLoss) {
-              chart.createShape(
-                { price: position.stopLoss },
-                {
-                  shape: 'horizontal_line',
-                  lock: false,
-                  disableSelection: false,
-                  disableSave: false,
-                  overrides: {
-                    linecolor: '#ff0000',
-                    linewidth: 2,
-                    linestyle: 0,
-                    showLabel: true,
-                    text: `SL: $${position.stopLoss}`,
-                  },
-                }
-              );
-              
-              setStopLoss(position.stopLoss);
             }
-
-            // Take profit line (draggable)
-            if (position.takeProfit) {
-              chart.createShape(
-                { price: position.takeProfit },
-                {
-                  shape: 'horizontal_line',
-                  lock: false,
-                  disableSelection: false,
-                  disableSave: false,
-                  overrides: {
-                    linecolor: '#00ff00',
-                    linewidth: 2,
-                    linestyle: 0,
-                    showLabel: true,
-                    text: `TP: $${position.takeProfit}`,
-                  },
-                }
-              );
-              
-              setTakeProfit(position.takeProfit);
-            }
-          }
-        });
+          }).catch((err: any) => {
+            console.error('Chart initialization error:', err);
+          });
+        }
       }
     };
     
@@ -182,21 +127,17 @@ export function TradingChart({ symbol, chartId }: TradingChartProps) {
         style={{ minHeight: '400px' }}
       />
       
-      {position && position.symbol === symbol && stopLoss && (
+      {position && position.symbol === symbol && (
         <div className="absolute bottom-2 left-2 z-10 bg-black/80 border border-cyan-500/50 rounded p-2">
-          <p className="text-xs text-cyan-400 font-mono mb-1">Drag lines on chart to adjust</p>
-          <div className="flex gap-2">
-            <Button
-              size="sm"
-              variant="outline"
-              className="text-xs border-red-500/50 text-red-400"
-              onClick={() => {
-                const newSL = prompt(`Enter new stop loss price (current: $${stopLoss}):`, stopLoss.toString());
-                if (newSL) handleUpdateStopLoss(parseFloat(newSL));
-              }}
-            >
-              Update SL
-            </Button>
+          <p className="text-xs text-cyan-400 font-mono mb-1">Position Active</p>
+          <div className="flex gap-2 text-xs font-mono">
+            <span className="text-gray-400">Entry: ${position.entryPrice.toFixed(2)}</span>
+            {position.stopLoss && (
+              <span className="text-red-400">SL: ${position.stopLoss.toFixed(2)}</span>
+            )}
+            {position.takeProfit && (
+              <span className="text-green-400">TP: ${position.takeProfit.toFixed(2)}</span>
+            )}
           </div>
         </div>
       )}
