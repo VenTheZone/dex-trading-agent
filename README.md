@@ -4,7 +4,7 @@
 
 ## 🚀 Overview
 
-DeX CyberAgent is an advanced AI-driven trading system for Hyperliquid perpetual futures. It features live and paper trading modes, dynamic multi-chart analysis, interactive risk management, and secure browser-based API key storage. The system leverages DeepSeek AI for intelligent market analysis and supports both mainnet and testnet trading.
+DeX Trading Agent is an advanced AI-driven trading system for Hyperliquid perpetual futures. It features live and paper trading modes, dynamic multi-chart analysis, interactive risk management, and secure browser-based API key storage. The system leverages DeepSeek AI for intelligent market analysis and supports both mainnet and testnet trading.
 
 ## ✨ Key Features
 
