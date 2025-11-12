@@ -41,10 +41,11 @@ export function NewsFeed() {
         limit: 20,
       });
 
-      if (result.success) {
+      if (result.success && result.posts) {
         setNews(result.posts);
       } else {
-        toast.error('Failed to load news');
+        console.error('News fetch failed:', result.error);
+        toast.error('Failed to load news. CryptoPanic API may require authentication.');
       }
     } catch (error) {
       console.error('Error loading news:', error);

@@ -37,9 +37,12 @@ export const fetchCryptoNews = action({
   },
   handler: async (ctx, args) => {
     try {
-      // Build query parameters for public API access
+      // Build query parameters
       const params = new URLSearchParams();
       
+      // CryptoPanic requires auth_token even for public access
+      // Using a placeholder that triggers public mode
+      params.append('auth_token', 'free');
       params.append('public', 'true');
       
       if (args.filter) {
