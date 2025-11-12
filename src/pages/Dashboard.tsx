@@ -12,18 +12,20 @@ import { TradingControls } from '@/components/TradingControls';
 import { LogoDropdown } from '@/components/LogoDropdown';
 import { storage } from '@/lib/storage';
 import { useTradingStore } from '@/store/tradingStore';
-import { Activity, DollarSign, TrendingUp, Settings, Loader2, LineChart, Network } from 'lucide-react';
+import { Activity, DollarSign, TrendingUp, Settings, Loader2, LineChart, Network, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { TradingLogs } from '@/components/TradingLogs';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { BalanceChart } from '@/components/BalanceChart';
+import { useTrading } from '@/hooks/use-trading';
 
 export default function Dashboard() {
   const { isLoading, isAuthenticated } = useAuth();
   const navigate = useNavigate();
   const [hasApiKeys, setHasApiKeys] = useState(false);
   const { mode, setMode, network, setNetwork, balance, position } = useTradingStore();
+  const { closePosition, closeAllPositions } = useTrading();
   
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
@@ -65,6 +67,24 @@ export default function Dashboard() {
     
     setNetwork(newNetwork);
     toast.success(`Switched to Hyperliquid ${newNetwork.toUpperCase()}`);
+  };
+  
+  const handleClosePosition = async () => {
+    if (!position) return;
+    
+    try {
+      await closePosition(position);
+    } catch (error) {
+      console.error("Failed to close position:", error);
+    }
+  };
+
+  const handleCloseAllPositions = async () => {
+    try {
+      await closeAllPositions();
+    } catch (error) {
+      console.error("Failed to close all positions:", error);
+    }
   };
   
   if (isLoading) {
@@ -115,6 +135,18 @@ export default function Dashboard() {
             </div>
             
             <div className="flex items-center gap-4">
+              {position && (
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  onClick={handleCloseAllPositions}
+                  className="font-mono font-bold bg-red-500 hover:bg-red-600 shadow-[0_0_20px_rgba(239,68,68,0.5)]"
+                >
+                  <X className="mr-2 h-4 w-4" />
+                  Close All Positions
+                </Button>
+              )}
+
               <Sheet>
                 <SheetTrigger asChild>
                   <Button
@@ -216,13 +248,26 @@ export default function Dashboard() {
             <Card className="bg-black/80 border-cyan-500/50 shadow-[0_0_20px_rgba(0,255,255,0.2)]">
               <CardContent className="p-4">
                 <div className="flex items-center justify-between">
-                  <div>
+                  <div className="flex-1">
                     <p className="text-xs font-mono text-cyan-400 mb-1">Status</p>
                     <div className="text-xl font-bold text-cyan-100 font-mono">
                       {position ? 'IN POSITION' : 'READY'}
                     </div>
                   </div>
-                  <Activity className="h-5 w-5 text-cyan-400" />
+                  <div className="flex items-center gap-2">
+                    <Activity className="h-5 w-5 text-cyan-400" />
+                    {position && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={handleClosePosition}
+                        className="text-red-400 hover:text-red-300 hover:bg-red-500/20 font-mono text-xs"
+                      >
+                        <X className="h-4 w-4 mr-1" />
+                        Close
+                      </Button>
+                    )}
+                  </div>
                 </div>
               </CardContent>
             </Card>

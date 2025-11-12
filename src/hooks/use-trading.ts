@@ -146,6 +146,89 @@ export function useTrading() {
     return () => clearInterval(interval);
   }, [mode, network, user, getHyperliquidPositions, setBalance, setPosition, isAutoTrading, setAutoTrading, createLog, recordPositionSnapshot, settings.leverage]);
 
+  const closePosition = async (positionToClose: typeof position) => {
+    if (!positionToClose) {
+      toast.error("No position to close");
+      return;
+    }
+
+    try {
+      toast.info(`Closing ${positionToClose.symbol} position...`);
+
+      if (mode === "live") {
+        const keys = storage.getApiKeys();
+        if (!keys?.hyperliquid.apiSecret) {
+          toast.error("Hyperliquid API keys not configured");
+          return;
+        }
+
+        const result = await executeLiveTrade({
+          apiSecret: keys.hyperliquid.apiSecret,
+          symbol: positionToClose.symbol,
+          side: positionToClose.side === 'long' ? 'sell' : 'buy',
+          size: positionToClose.size,
+          price: positionToClose.currentPrice,
+          leverage: settings.leverage,
+          isTestnet: network === 'testnet',
+        });
+
+        if (!result.success) {
+          throw new Error(result.error || "Failed to close position");
+        }
+
+        toast.success(`✅ Position closed on ${network}`);
+      } else {
+        toast.success("📄 Paper position closed");
+      }
+
+      await createLog({
+        action: "close_position",
+        symbol: positionToClose.symbol,
+        side: positionToClose.side,
+        price: positionToClose.currentPrice,
+        size: positionToClose.size,
+        reason: "Manual close",
+        details: `P&L: $${positionToClose.pnl.toFixed(2)}, Mode: ${mode}, Network: ${network}`,
+      });
+
+      // Update balance with P&L
+      setBalance(balance + positionToClose.pnl);
+      setPosition(null);
+
+      return { success: true };
+    } catch (error: any) {
+      toast.error(`Failed to close position: ${error.message}`);
+      throw error;
+    }
+  };
+
+  const closeAllPositions = async () => {
+    try {
+      if (!position) {
+        toast.info("No open positions to close");
+        return;
+      }
+
+      const confirmed = window.confirm(
+        `⚠️ Close all positions?\n\n` +
+        `This will close your ${position.symbol} ${position.side} position.\n` +
+        `Current P&L: $${position.pnl.toFixed(2)}\n\n` +
+        `Are you sure?`
+      );
+
+      if (!confirmed) return;
+
+      toast.info("Closing all positions...");
+      await closePosition(position);
+      toast.success("✅ All positions closed");
+
+      return { success: true };
+    } catch (error: any) {
+      toast.error(`Failed to close all positions: ${error.message}`);
+      throw error;
+    }
+  };
+
   const runAIAnalysis = async (symbol: string, currentPrice: number) => {
     try {
       const isDemoMode = storage.isDemoMode();
@@ -503,5 +586,7 @@ export function useTrading() {
     runAIAnalysis,
     runMultiChartAIAnalysis,
     executeTrade,
+    closePosition,
+    closeAllPositions,
   };
 }

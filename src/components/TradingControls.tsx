@@ -9,12 +9,14 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { toast } from 'sonner';
 import { motion } from 'framer-motion';
-import { Bot, BotOff, Sparkles } from 'lucide-react';
+import { Bot, BotOff, Sparkles, X } from 'lucide-react';
 import { storage } from '@/lib/storage';
+import { useTrading } from '@/hooks/use-trading';
 
 export function TradingControls() {
-  const { settings, updateSettings, chartInterval, setChartInterval, chartType, setChartType, isAutoTrading, setAutoTrading } = useTradingStore();
+  const { settings, updateSettings, chartInterval, setChartInterval, chartType, setChartType, isAutoTrading, setAutoTrading, position } = useTradingStore();
   const [localSettings, setLocalSettings] = useState(settings);
+  const { closePosition, closeAllPositions } = useTrading();
   
   const timeIntervals = ['1m', '5m', '15m', '1h', '4h', '1d'];
   const rangeIntervals = ['1R', '10R', '100R', '$100'];
@@ -23,6 +25,23 @@ export function TradingControls() {
     'BTCUSD', 'ETHUSD', 'SOLUSD', 'AVAXUSD', 'BNBUSD', 'ADAUSD', 'DOTUSD', 'MATICUSD',
     'DOGEUSD', 'SHIBUSD', 'PEPEUSD', 'WIFUSD', 'BONKUSD'
   ];
+  
+  const handleClosePosition = async () => {
+    if (!position) return;
+    try {
+      await closePosition(position);
+    } catch (error) {
+      console.error("Failed to close position:", error);
+    }
+  };
+
+  const handleCloseAllPositions = async () => {
+    try {
+      await closeAllPositions();
+    } catch (error) {
+      console.error("Failed to close all positions:", error);
+    }
+  };
   
   const handleSaveSettings = () => {
     updateSettings(localSettings);
@@ -109,6 +128,57 @@ export function TradingControls() {
       </CardHeader>
       
       <CardContent className="space-y-6 pt-6">
+        {/* Position Management */}
+        {position && (
+          <motion.div 
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="space-y-3 pb-4 border-b border-cyan-500/30"
+          >
+            <Label className="text-cyan-400 font-mono font-bold">Active Position</Label>
+            <div className="bg-black/50 border border-cyan-500/30 rounded p-4 space-y-3">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-gray-400 font-mono">Symbol</p>
+                  <p className="text-lg font-bold text-cyan-100 font-mono">{position.symbol}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-gray-400 font-mono">Side</p>
+                  <p className={`text-lg font-bold font-mono ${position.side === 'long' ? 'text-green-400' : 'text-red-400'}`}>
+                    {position.side.toUpperCase()}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-sm text-gray-400 font-mono">P&L</p>
+                  <p className={`text-lg font-bold font-mono ${position.pnl >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                    ${position.pnl.toFixed(2)}
+                  </p>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  onClick={handleClosePosition}
+                  className="font-mono bg-red-500 hover:bg-red-600"
+                >
+                  <X className="mr-2 h-4 w-4" />
+                  Close Position
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleCloseAllPositions}
+                  className="font-mono border-red-500/50 text-red-400 hover:bg-red-500/20"
+                >
+                  <X className="mr-2 h-4 w-4" />
+                  Close All
+                </Button>
+              </div>
+            </div>
+          </motion.div>
+        )}
+        
         {/* Allowed Coins Selector */}
         <motion.div 
           initial={{ opacity: 0, y: 10 }}
