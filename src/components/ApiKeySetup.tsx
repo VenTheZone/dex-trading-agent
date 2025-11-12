@@ -72,8 +72,30 @@ export function ApiKeySetup({ onComplete }: ApiKeySetupProps) {
     // Validate private key format
     if (keys.hyperliquid.apiSecret && keys.hyperliquid.apiSecret !== 'DEMO_MODE') {
       const privateKey = keys.hyperliquid.apiSecret.trim();
-      if (!privateKey.startsWith('0x') || privateKey.length !== 66) {
-        toast.error('Invalid private key format. Must start with "0x" and be 66 characters long.');
+      
+      if (!privateKey.startsWith('0x')) {
+        toast.error('Invalid private key: Must start with "0x"', {
+          description: `Your key starts with: ${privateKey.substring(0, 4)}...`,
+          duration: 5000,
+        });
+        return;
+      }
+      
+      if (privateKey.length !== 66) {
+        toast.error(`Invalid private key length: ${privateKey.length} characters`, {
+          description: `Expected 66 characters (0x + 64 hex digits). You have ${privateKey.length}.`,
+          duration: 5000,
+        });
+        return;
+      }
+      
+      // Check if it contains only valid hex characters after 0x
+      const hexPart = privateKey.slice(2);
+      if (!/^[0-9a-fA-F]+$/.test(hexPart)) {
+        toast.error('Invalid private key: Contains non-hexadecimal characters', {
+          description: 'Private key should only contain 0-9 and a-f after "0x"',
+          duration: 5000,
+        });
         return;
       }
     }
@@ -184,15 +206,24 @@ export function ApiKeySetup({ onComplete }: ApiKeySetupProps) {
                   <Label className="text-cyan-400 font-mono">Hyperliquid API Secret (Private Key) *</Label>
                   <Input
                     type="password"
-                    placeholder="0x..."
+                    placeholder="0x1234567890abcdef..."
                     value={keys.hyperliquid.apiSecret}
                     onChange={(e) => setKeys({
                       ...keys,
-                      hyperliquid: { ...keys.hyperliquid, apiSecret: e.target.value }
+                      hyperliquid: { ...keys.hyperliquid, apiSecret: e.target.value.trim() }
                     })}
                     className="bg-black/50 border-cyan-500/30 text-cyan-100 font-mono focus:border-cyan-500"
                   />
-                  <p className="text-xs text-gray-500 font-mono">Should start with "0x" and be 66 characters long</p>
+                  <div className="space-y-1">
+                    <p className="text-xs text-gray-500 font-mono">
+                      Format: 0x + 64 hexadecimal characters (total 66 chars)
+                    </p>
+                    {keys.hyperliquid.apiSecret && (
+                      <p className="text-xs text-cyan-400 font-mono">
+                        Current length: {keys.hyperliquid.apiSecret.trim().length} characters
+                      </p>
+                    )}
+                  </div>
                 </div>
                 
                 <div className="space-y-2">
