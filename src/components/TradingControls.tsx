@@ -17,6 +17,8 @@ export function TradingControls() {
   const timeIntervals = ['1m', '5m', '15m', '1h', '4h', '1d'];
   const rangeIntervals = ['1R', '10R', '100R', '$100'];
   
+  const availableCoins = ['BTCUSD', 'ETHUSD', 'SOLUSD', 'AVAXUSD', 'BNBUSD', 'ADAUSD', 'DOTUSD', 'MATICUSD'];
+  
   const handleSaveSettings = () => {
     updateSettings(localSettings);
     toast.success('Risk settings updated');
@@ -26,6 +28,28 @@ export function TradingControls() {
     const newState = !isAutoTrading;
     setAutoTrading(newState);
     toast.success(newState ? 'AI Auto-Trading Enabled' : 'AI Auto-Trading Disabled');
+  };
+  
+  const handleToggleCoin = (coin: string) => {
+    const currentCoins = localSettings.allowedCoins || [];
+    
+    if (currentCoins.includes(coin)) {
+      // Remove coin
+      setLocalSettings({
+        ...localSettings,
+        allowedCoins: currentCoins.filter(c => c !== coin),
+      });
+    } else {
+      // Add coin (max 5)
+      if (currentCoins.length >= 5) {
+        toast.error('Maximum 5 coins allowed');
+        return;
+      }
+      setLocalSettings({
+        ...localSettings,
+        allowedCoins: [...currentCoins, coin],
+      });
+    }
   };
   
   return (
@@ -49,6 +73,39 @@ export function TradingControls() {
       </CardHeader>
       
       <CardContent className="space-y-6">
+        {/* Allowed Coins Selector */}
+        <div className="space-y-3 pb-4 border-b border-cyan-500/30">
+          <div className="flex items-center justify-between">
+            <Label className="text-cyan-400 font-mono">Allowed Coins</Label>
+            <span className="text-xs text-gray-500 font-mono">
+              {localSettings.allowedCoins?.length || 0}/5 selected
+            </span>
+          </div>
+          <div className="grid grid-cols-2 gap-2">
+            {availableCoins.map((coin) => {
+              const isSelected = localSettings.allowedCoins?.includes(coin);
+              return (
+                <Button
+                  key={coin}
+                  variant={isSelected ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => handleToggleCoin(coin)}
+                  className={`font-mono text-xs ${
+                    isSelected
+                      ? 'bg-cyan-500 text-black hover:bg-cyan-600'
+                      : 'border-cyan-500/30 text-cyan-400 hover:bg-cyan-500/20'
+                  }`}
+                >
+                  {coin.replace('USD', '')}
+                </Button>
+              );
+            })}
+          </div>
+          <p className="text-xs text-gray-500 font-mono">
+            AI will only trade selected coins (max 5)
+          </p>
+        </div>
+        
         {/* Chart Type Selector */}
         <div className="space-y-3">
           <Label className="text-cyan-400 font-mono">Chart Type</Label>

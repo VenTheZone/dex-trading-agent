@@ -20,6 +20,7 @@ export interface TradingSettings {
   leverage: number;
   maxLeverage: number;
   allowAILeverage: boolean;
+  allowedCoins: string[];
 }
 
 export const storage = {
@@ -50,6 +51,7 @@ export const storage = {
       leverage: 1,
       maxLeverage: 20,
       allowAILeverage: false,
+      allowedCoins: ['BTCUSD', 'ETHUSD', 'SOLUSD', 'AVAXUSD'],
     };
   },
   

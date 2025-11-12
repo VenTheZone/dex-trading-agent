@@ -49,6 +49,7 @@ export const useTradingStore = create<TradingState>()(
         leverage: 1,
         maxLeverage: 20,
         allowAILeverage: false,
+        allowedCoins: ['BTCUSD', 'ETHUSD', 'SOLUSD', 'AVAXUSD'],
       },
       chartType: 'time',
       chartInterval: '15',

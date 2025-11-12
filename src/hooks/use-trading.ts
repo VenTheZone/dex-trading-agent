@@ -188,8 +188,19 @@ export function useTrading() {
         return null;
       }
 
+      // Filter charts based on allowed coins
+      const allowedCoins = settings.allowedCoins || [];
+      const filteredCharts = charts.filter(chart => 
+        allowedCoins.length === 0 || allowedCoins.includes(chart.symbol)
+      );
+
+      if (filteredCharts.length === 0) {
+        toast.error("No allowed coins selected for trading");
+        return null;
+      }
+
       // Prepare multi-chart data for AI
-      const multiChartData = charts.map(chart => ({
+      const multiChartData = filteredCharts.map(chart => ({
         symbol: chart.symbol,
         currentPrice: chart.currentPrice,
         chartType: chartType,
@@ -227,6 +238,13 @@ export function useTrading() {
     reasoning: string
   ) => {
     try {
+      // Check if coin is allowed
+      const allowedCoins = settings.allowedCoins || [];
+      if (allowedCoins.length > 0 && !allowedCoins.includes(symbol)) {
+        toast.error(`${symbol} is not in your allowed coins list`);
+        return;
+      }
+
       if (mode === "live") {
         const keys = storage.getApiKeys();
         if (!keys?.hyperliquid.apiSecret) {
