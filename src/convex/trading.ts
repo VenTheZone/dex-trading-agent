@@ -313,7 +313,7 @@ export const executePaperTrade = action({
   },
   handler: async (ctx, args) => {
     // Log the paper trade
-    await ctx.runMutation(internal.tradingLogs.createLogInternal, {
+    await ctx.runMutation((internal as any).tradingLogs.createLogInternal, {
       action: `paper_${args.side}`,
       symbol: args.symbol,
       reason: `Paper ${args.type} order executed`,
@@ -344,7 +344,7 @@ export const executeTradeAction = internalAction({
   },
   handler: async (ctx, args) => {
     // Log the trade action
-    await ctx.runMutation(internal.tradingLogs.createLogInternal, {
+    await ctx.runMutation((internal as any).tradingLogs.createLogInternal, {
       action: args.action,
       symbol: args.symbol,
       reason: args.reasoning,
@@ -370,7 +370,7 @@ export const updateStopLoss = internalAction({
   },
   handler: async (ctx, args) => {
     // Log the stop loss update
-    await ctx.runMutation(internal.tradingLogs.createLogInternal, {
+    await ctx.runMutation((internal as any).tradingLogs.createLogInternal, {
       action: "update_stop_loss",
       symbol: args.symbol,
       reason: `Stop loss updated to $${args.newStopLoss}`,

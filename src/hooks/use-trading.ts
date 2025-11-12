@@ -7,13 +7,13 @@ import { toast } from "sonner";
 import { useEffect, useRef } from "react";
 
 export function useTrading() {
-  const createLog = useMutation(api.tradingLogs.createLog);
-  const recordBalance = useMutation(api.balanceHistory.recordBalance);
-  const recordPositionSnapshot = useMutation(api.positionSnapshots.recordSnapshot);
-  const analyzeMarket = useAction(api.trading.analyzeMarket);
-  const analyzeMultiChart = useAction(api.trading.analyzeMultiChart);
-  const executeLiveTrade = useAction(api.trading.executeLiveTrade);
-  const getHyperliquidPositions = useAction(api.trading.getHyperliquidPositions);
+  const createLog = useMutation((api as any).tradingLogs.createLog);
+  const recordBalance = useMutation((api as any).balanceHistory.recordBalance);
+  const recordPositionSnapshot = useMutation((api as any).positionSnapshots.recordSnapshot);
+  const analyzeMarket = useAction((api as any).trading.analyzeMarket);
+  const analyzeMultiChart = useAction((api as any).trading.analyzeMultiChart);
+  const executeLiveTrade = useAction((api as any).trading.executeLiveTrade);
+  const getHyperliquidPositions = useAction((api as any).trading.getHyperliquidPositions);
   const { balance, settings, mode, network, chartType, chartInterval, setBalance, setPosition, position, isAutoTrading, setAutoTrading } = useTradingStore();
   const { user } = useAuth();
   const lastRecordedBalance = useRef(balance);

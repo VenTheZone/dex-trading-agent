@@ -7,7 +7,7 @@ const crons = cronJobs();
 crons.interval(
   "ai_trading_analysis",
   { minutes: 5 },
-  internal.trading.scheduledAIAnalysis,
+  (internal as any).trading.scheduledAIAnalysis,
   {}
 );
 

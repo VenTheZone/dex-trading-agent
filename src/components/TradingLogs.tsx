@@ -9,8 +9,8 @@ import { toast } from 'sonner';
 import { motion } from 'framer-motion';
 
 export function TradingLogs() {
-  const logs = useQuery(api.tradingLogs.getUserLogs, { limit: 100 });
-  const clearLogs = useMutation(api.tradingLogs.clearUserLogs);
+  const logs = useQuery((api as any).tradingLogs.getUserLogs, { limit: 100 });
+  const clearLogs = useMutation((api as any).tradingLogs.clearUserLogs);
 
   const handleClearLogs = async () => {
     const confirmed = window.confirm('Are you sure you want to clear all logs?');
@@ -58,7 +58,7 @@ export function TradingLogs() {
             </div>
           ) : (
             <div className="space-y-3">
-              {logs.map((log, index) => (
+              {logs.map((log: any, index: number) => (
                 <motion.div
                   key={log._id}
                   initial={{ opacity: 0, x: -20 }}

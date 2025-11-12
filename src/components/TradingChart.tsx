@@ -18,7 +18,7 @@ export function TradingChart({ symbol, chartId }: TradingChartProps) {
   const { chartInterval, chartType, position, mode } = useTradingStore();
   const [stopLoss, setStopLoss] = useState<number | null>(null);
   const [takeProfit, setTakeProfit] = useState<number | null>(null);
-  const createLog = useMutation(api.tradingLogs.createLog);
+  const createLog = useMutation((api as any).tradingLogs.createLog);
   
   useEffect(() => {
     if (!containerRef.current) return;

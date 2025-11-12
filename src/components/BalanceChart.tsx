@@ -7,8 +7,8 @@ import { TrendingUp, DollarSign, Activity } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 export function BalanceChart() {
-  const balanceHistory = useQuery(api.balanceHistory.getBalanceHistory, { limit: 50 });
-  const positionHistory = useQuery(api.positionSnapshots.getPositionHistory, { limit: 50 });
+  const balanceHistory = useQuery((api as any).balanceHistory.getBalanceHistory, { limit: 50 });
+  const positionHistory = useQuery((api as any).positionSnapshots.getPositionHistory, { limit: 50 });
 
   if (!balanceHistory || balanceHistory.length === 0) {
     return (
@@ -28,7 +28,7 @@ export function BalanceChart() {
     );
   }
 
-  const balanceChartData = balanceHistory.map((entry) => ({
+  const balanceChartData = balanceHistory.map((entry: any) => ({
     time: new Date(entry._creationTime).toLocaleTimeString([], { 
       hour: '2-digit', 
       minute: '2-digit' 
@@ -37,7 +37,7 @@ export function BalanceChart() {
     fullTime: new Date(entry._creationTime).toLocaleString(),
   }));
 
-  const pnlChartData = positionHistory?.map((entry) => ({
+  const pnlChartData = positionHistory?.map((entry: any) => ({
     time: new Date(entry._creationTime).toLocaleTimeString([], { 
       hour: '2-digit', 
       minute: '2-digit' 
