@@ -26,12 +26,22 @@ export interface TradingSettings {
 export const storage = {
   // API Keys
   saveApiKeys: (keys: ApiKeys) => {
+    // Check if demo mode
+    if (keys.hyperliquid.apiKey === 'DEMO_MODE') {
+      localStorage.setItem(`${STORAGE_PREFIX}demo_mode`, 'true');
+    } else {
+      localStorage.removeItem(`${STORAGE_PREFIX}demo_mode`);
+    }
     localStorage.setItem(`${STORAGE_PREFIX}api_keys`, JSON.stringify(keys));
   },
   
   getApiKeys: (): ApiKeys | null => {
     const data = localStorage.getItem(`${STORAGE_PREFIX}api_keys`);
     return data ? JSON.parse(data) : null;
+  },
+
+  isDemoMode: (): boolean => {
+    return localStorage.getItem(`${STORAGE_PREFIX}demo_mode`) === 'true';
   },
   
   // Trading Settings

@@ -16,20 +16,22 @@ interface Position {
 interface TradingState {
   balance: number;
   position: Position | null;
-  mode: 'paper' | 'live';
+  mode: 'paper' | 'live' | 'demo';
   network: 'mainnet' | 'testnet';
   settings: TradingSettings;
   chartType: 'time' | 'range';
   chartInterval: string;
   isAutoTrading: boolean;
+  connectionMode: 'wallet' | 'api' | 'demo';
   setBalance: (balance: number) => void;
   setPosition: (position: Position | null) => void;
-  setMode: (mode: 'paper' | 'live') => void;
+  setMode: (mode: 'paper' | 'live' | 'demo') => void;
   setNetwork: (network: 'mainnet' | 'testnet') => void;
   updateSettings: (settings: Partial<TradingSettings>) => void;
   setChartType: (type: 'time' | 'range') => void;
   setChartInterval: (interval: string) => void;
   setAutoTrading: (enabled: boolean) => void;
+  setConnectionMode: (mode: 'wallet' | 'api' | 'demo') => void;
 }
 
 export const useTradingStore = create<TradingState>()(
@@ -39,6 +41,7 @@ export const useTradingStore = create<TradingState>()(
       position: null,
       mode: 'paper',
       network: 'mainnet',
+      connectionMode: 'demo',
       settings: {
         mode: 'paper',
         takeProfitPercent: 2,
@@ -65,6 +68,7 @@ export const useTradingStore = create<TradingState>()(
       setChartType: (type) => set({ chartType: type }),
       setChartInterval: (interval) => set({ chartInterval: interval }),
       setAutoTrading: (enabled) => set({ isAutoTrading: enabled }),
+      setConnectionMode: (mode) => set({ connectionMode: mode }),
     }),
     {
       name: 'trading-storage',
