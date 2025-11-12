@@ -20,11 +20,13 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/co
 import { BalanceChart } from '@/components/BalanceChart';
 import { useTrading } from '@/hooks/use-trading';
 import { Breadcrumb, BreadcrumbList, BreadcrumbItem, BreadcrumbLink, BreadcrumbSeparator, BreadcrumbPage } from '@/components/ui/breadcrumb';
+import { CloseAllPositionsDialog } from '@/components/CloseAllPositionsDialog';
 
 export default function Dashboard() {
   const { isLoading, isAuthenticated } = useAuth();
   const navigate = useNavigate();
   const [hasApiKeys, setHasApiKeys] = useState(false);
+  const [showCloseAllDialog, setShowCloseAllDialog] = useState(false);
   const { mode, setMode, network, setNetwork, balance, position, initialBalance, resetBalance } = useTradingStore();
   const { closePosition, closeAllPositions } = useTrading();
   
@@ -81,6 +83,11 @@ export default function Dashboard() {
   };
 
   const handleCloseAllPositions = async () => {
+    setShowCloseAllDialog(true);
+  };
+
+  const confirmCloseAllPositions = async () => {
+    setShowCloseAllDialog(false);
     try {
       await closeAllPositions();
     } catch (error) {
@@ -409,6 +416,14 @@ export default function Dashboard() {
           </div>
         </motion.footer>
       </div>
+
+      <CloseAllPositionsDialog
+        isOpen={showCloseAllDialog}
+        onClose={() => setShowCloseAllDialog(false)}
+        onConfirm={confirmCloseAllPositions}
+        positionCount={position ? 1 : 0}
+        mode={mode}
+      />
     </div>
   );
 }

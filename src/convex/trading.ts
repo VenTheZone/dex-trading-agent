@@ -22,7 +22,12 @@ export const analyzeMarket = action({
     const apiKey = process.env.OPENROUTER_API_KEY;
     
     if (!apiKey && !args.isDemoMode) {
-      throw new Error("OpenRouter API key not configured");
+      throw new Error("OpenRouter API key not configured. Please add OPENROUTER_API_KEY to your environment variables.");
+    }
+
+    // Validate API key format if provided
+    if (apiKey && !apiKey.startsWith('sk-or-v1-')) {
+      throw new Error("Invalid OpenRouter API key format. Key must start with 'sk-or-v1-'");
     }
 
     const model = args.aiModel || "deepseek/deepseek-chat";
@@ -79,7 +84,9 @@ Provide your analysis in JSON format with:
       });
 
       if (!response.ok) {
-        throw new Error(`OpenRouter API error: ${response.statusText}`);
+        const errorText = await response.text();
+        console.error('OpenRouter API error:', errorText);
+        throw new Error(`OpenRouter API error (${response.status}): ${response.statusText}`);
       }
 
       const data = await response.json();

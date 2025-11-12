@@ -69,6 +69,17 @@ export function ApiKeySetup({ onComplete }: ApiKeySetupProps) {
       return;
     }
 
+    // Validate OpenRouter API key format
+    if (keys.openRouter && keys.openRouter !== 'DEMO_MODE') {
+      if (!keys.openRouter.startsWith('sk-or-v1-')) {
+        toast.error('Invalid OpenRouter API key format', {
+          description: 'OpenRouter keys must start with "sk-or-v1-"',
+          duration: 5000,
+        });
+        return;
+      }
+    }
+
     // Validate private key format
     if (keys.hyperliquid.apiSecret && keys.hyperliquid.apiSecret !== 'DEMO_MODE') {
       let privateKey = keys.hyperliquid.apiSecret.trim();

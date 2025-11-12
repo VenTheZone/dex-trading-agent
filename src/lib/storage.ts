@@ -26,6 +26,13 @@ export interface TradingSettings {
 export const storage = {
   // API Keys
   saveApiKeys: (keys: ApiKeys) => {
+    // Validate OpenRouter key format if provided
+    if (keys.openRouter && keys.openRouter !== 'DEMO_MODE') {
+      if (!keys.openRouter.startsWith('sk-or-v1-')) {
+        throw new Error('Invalid OpenRouter API key format. Key must start with "sk-or-v1-"');
+      }
+    }
+
     // Check if demo mode
     if (keys.hyperliquid.apiKey === 'DEMO_MODE') {
       localStorage.setItem(`${STORAGE_PREFIX}demo_mode`, 'true');
