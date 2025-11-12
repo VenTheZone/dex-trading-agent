@@ -15,6 +15,14 @@ const NETWORKS = {
   ethereum: { id: '0x1', name: 'Ethereum Mainnet', chainId: 1 },
   arbitrum: { id: '0xa4b1', name: 'Arbitrum One', chainId: 42161 },
   arbitrumGoerli: { id: '0x66eed', name: 'Arbitrum Goerli', chainId: 421613 },
+  hyperliquidTestnet: { 
+    id: '0x3e6', 
+    name: 'Hyperliquid Testnet', 
+    chainId: 998,
+    rpcUrls: ['https://rpc.hyperliquid-testnet.xyz/evm'],
+    blockExplorerUrls: ['https://explorer.hyperliquid-testnet.xyz'],
+    nativeCurrency: { name: 'HYPE', symbol: 'HYPE', decimals: 18 }
+  },
 };
 
 export function WalletConnect({ onConnect }: WalletConnectProps) {
@@ -43,31 +51,34 @@ export function WalletConnect({ onConnect }: WalletConnectProps) {
       } catch (switchError: any) {
         // This error code indicates that the chain has not been added to MetaMask
         if (switchError.code === 4902) {
-          try {
-            await window.ethereum.request({
-              method: 'wallet_addEthereumChain',
-              params: [
-                {
+              try {
+                const chainParams: any = {
                   chainId: network.id,
                   chainName: network.name,
-                  rpcUrls: networkKey === 'arbitrum' 
-                    ? ['https://arb1.arbitrum.io/rpc']
-                    : networkKey === 'arbitrumGoerli'
-                    ? ['https://goerli-rollup.arbitrum.io/rpc']
-                    : ['https://mainnet.infura.io/v3/'],
-                  nativeCurrency: {
-                    name: 'ETH',
-                    symbol: 'ETH',
-                    decimals: 18,
-                  },
-                  blockExplorerUrls: networkKey === 'arbitrum'
-                    ? ['https://arbiscan.io']
-                    : networkKey === 'arbitrumGoerli'
-                    ? ['https://goerli.arbiscan.io']
-                    : ['https://etherscan.io'],
-                },
-              ],
-            });
+                };
+
+                if (networkKey === 'hyperliquidTestnet') {
+                  chainParams.rpcUrls = ['https://rpc.hyperliquid-testnet.xyz/evm'];
+                  chainParams.nativeCurrency = { name: 'HYPE', symbol: 'HYPE', decimals: 18 };
+                  chainParams.blockExplorerUrls = ['https://explorer.hyperliquid-testnet.xyz'];
+                } else if (networkKey === 'arbitrum') {
+                  chainParams.rpcUrls = ['https://arb1.arbitrum.io/rpc'];
+                  chainParams.nativeCurrency = { name: 'ETH', symbol: 'ETH', decimals: 18 };
+                  chainParams.blockExplorerUrls = ['https://arbiscan.io'];
+                } else if (networkKey === 'arbitrumGoerli') {
+                  chainParams.rpcUrls = ['https://goerli-rollup.arbitrum.io/rpc'];
+                  chainParams.nativeCurrency = { name: 'ETH', symbol: 'ETH', decimals: 18 };
+                  chainParams.blockExplorerUrls = ['https://goerli.arbiscan.io'];
+                } else {
+                  chainParams.rpcUrls = ['https://mainnet.infura.io/v3/'];
+                  chainParams.nativeCurrency = { name: 'ETH', symbol: 'ETH', decimals: 18 };
+                  chainParams.blockExplorerUrls = ['https://etherscan.io'];
+                }
+
+                await window.ethereum.request({
+                  method: 'wallet_addEthereumChain',
+                  params: [chainParams],
+                });
             setCurrentNetwork(network.name);
             toast.success(`Added and switched to ${network.name}`);
             return true;
@@ -142,14 +153,17 @@ export function WalletConnect({ onConnect }: WalletConnectProps) {
           <Alert className="bg-blue-500/10 border-blue-500/50">
             <Info className="h-4 w-4 text-blue-500" />
             <AlertDescription className="text-blue-200">
-              <strong>✅ You can now:</strong>
+              <strong>✅ Read-Only Wallet Connection:</strong>
               <ul className="mt-2 space-y-1 text-sm">
                 <li>• View your Hyperliquid positions</li>
                 <li>• Monitor your account balance</li>
                 <li>• Track P&L in real-time</li>
               </ul>
-              <p className="mt-3 text-xs text-cyan-300">
-                💡 For automated AI trading, switch to the "API Keys" tab
+              <p className="mt-3 text-xs text-yellow-300 font-bold">
+                ⚠️ Note: Hyperliquid is an independent Layer 1 blockchain (Chain ID 998)
+              </p>
+              <p className="mt-1 text-xs text-cyan-300">
+                💡 For automated AI trading, use the "API Keys" tab
               </p>
             </AlertDescription>
           </Alert>
@@ -171,6 +185,9 @@ export function WalletConnect({ onConnect }: WalletConnectProps) {
                     </SelectItem>
                     <SelectItem value="arbitrumGoerli" className="font-mono text-cyan-100">
                       🧪 Arbitrum Goerli (Testnet)
+                    </SelectItem>
+                    <SelectItem value="hyperliquidTestnet" className="font-mono text-cyan-100">
+                      🟣 Hyperliquid Testnet (L1)
                     </SelectItem>
                   </SelectContent>
                 </Select>

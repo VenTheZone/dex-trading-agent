@@ -6,6 +6,8 @@
 
 DeX Trading Agent is an advanced AI-driven trading system for Hyperliquid perpetual futures. It features live and paper trading modes, dynamic multi-chart analysis, interactive risk management, and secure browser-based API key storage. The system leverages DeepSeek and Qwen3 Max AI for intelligent market analysis and supports both mainnet and testnet trading.
 
+**Important:** Hyperliquid is an independent Layer 1 blockchain (Chain ID 998 for testnet, not Arbitrum or Ethereum). The platform uses its own consensus mechanism (HyperBFT) and native token (HYPE).
+
 ## ✨ Key Features
 
 - **🤖 AI-Powered Analysis**: DeepSeek V3.1 / Qwen3 Max, powered market decisions with multi-chart correlation analysis
@@ -59,8 +61,12 @@ Before you begin, ensure you have the following installed:
 - **Git**
 
 You'll also need API keys for:
-- **Hyperliquid** (API Key + Private Key for trading)
+- **Hyperliquid** (API Key + Private Key for trading on Hyperliquid L1)
 - **OpenRouter** (for AI analysis)
+
+**Network Information:**
+- **Hyperliquid Mainnet**: Independent L1 blockchain
+- **Hyperliquid Testnet**: Chain ID 998, RPC: https://rpc.hyperliquid-testnet.xyz/evm
 
 ## 🚀 Local Deployment Instructions
 
@@ -131,13 +137,22 @@ Once the app is running:
 
 1. Navigate to the application in your browser
 2. You'll be prompted to set up API keys on first launch
-3. Enter your:
-   - **Hyperliquid API Key** (from https://app.hyperliquid.xyz)
-   - **Hyperliquid API Secret** (your wallet's private key - starts with "0x", 66 characters)
-   - **Wallet Address** (optional, for position tracking)
-   - **OpenRouter API Key** (from https://openrouter.ai)
+3. Choose your connection method:
+   - **🔗 Wallet Connection** (Read-only): Connect MetaMask to view positions without exposing private keys
+     - Supports Ethereum, Arbitrum, and Hyperliquid Testnet (Chain ID 998)
+   - **🔑 API Keys** (Full Trading): Enter credentials for automated AI trading
+     - **Hyperliquid API Key** (from https://app.hyperliquid.xyz)
+     - **Hyperliquid API Secret** (your wallet's private key - starts with "0x", 66 characters)
+     - **Wallet Address** (optional, for position tracking)
+     - **OpenRouter API Key** (from https://openrouter.ai)
+   - **🎮 Demo Mode**: Try the platform with simulated perpetual futures trading
 
 **Security Note:** All API keys are stored locally in your browser's localStorage and never sent to any server.
+
+**Network Clarification:** 
+- Hyperliquid operates on its own Layer 1 blockchain, not on Ethereum or Arbitrum
+- Testnet Chain ID: 998
+- Mainnet and Testnet can be toggled in the Dashboard header
 
 ## 📦 Building for Production
 ```
