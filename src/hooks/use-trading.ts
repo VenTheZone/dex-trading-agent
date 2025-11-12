@@ -232,9 +232,15 @@ export function useTrading() {
   const runAIAnalysis = async (symbol: string, currentPrice: number) => {
     try {
       const isDemoMode = storage.isDemoMode();
+      const keys = storage.getApiKeys();
+      const hasOpenRouterKey = keys?.openRouter && keys.openRouter !== 'DEMO_MODE';
       
       if (isDemoMode) {
-        toast.info("[DEMO] 🤖 AI analyzing market with DeepSeek V3.1...");
+        if (hasOpenRouterKey) {
+          toast.info("[DEMO] 🤖 AI analyzing with your OpenRouter key (DeepSeek V3.1)...");
+        } else {
+          toast.info("[DEMO] 🤖 AI analyzing market with DeepSeek V3.1 Free...");
+        }
       } else {
         toast.info("🤖 AI analyzing market...");
       }
@@ -273,9 +279,15 @@ export function useTrading() {
   const runMultiChartAIAnalysis = async (charts: Array<{ symbol: string; currentPrice: number }>) => {
     try {
       const isDemoMode = storage.isDemoMode();
+      const keys = storage.getApiKeys();
+      const hasOpenRouterKey = keys?.openRouter && keys.openRouter !== 'DEMO_MODE';
       
       if (isDemoMode) {
-        toast.info("[DEMO] 🤖 AI analyzing multiple charts with DeepSeek V3.1...");
+        if (hasOpenRouterKey) {
+          toast.info("[DEMO] 🤖 AI analyzing multiple charts with your OpenRouter key...");
+        } else {
+          toast.info("[DEMO] 🤖 AI analyzing multiple charts with DeepSeek V3.1 Free...");
+        }
       } else {
         toast.info("🤖 AI analyzing multiple charts...");
       }
@@ -414,12 +426,19 @@ export function useTrading() {
       try {
         const isDemoMode = storage.isDemoMode();
         
-        // Demo mode: Use real AI with DeepSeek V3.1 free tier
+        // Demo mode: Use real AI with DeepSeek V3.1 (free tier or paid if API key provided)
         if (isDemoMode) {
+          const keys = storage.getApiKeys();
+          const hasOpenRouterKey = keys?.openRouter && keys.openRouter !== 'DEMO_MODE';
+          
           const allowedCoins = settings.allowedCoins || [];
           if (allowedCoins.length === 0) {
             console.log("[DEMO] No allowed coins selected, skipping auto-trading");
             return;
+          }
+          
+          if (hasOpenRouterKey) {
+            toast.info("[DEMO] Using your OpenRouter API key for enhanced AI analysis");
           }
 
           // Fetch real market data for demo mode

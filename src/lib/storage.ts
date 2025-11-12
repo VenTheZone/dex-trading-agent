@@ -29,10 +29,20 @@ export const storage = {
     // Check if demo mode
     if (keys.hyperliquid.apiKey === 'DEMO_MODE') {
       localStorage.setItem(`${STORAGE_PREFIX}demo_mode`, 'true');
+      // In demo mode, preserve OpenRouter key if provided for enhanced AI testing
+      if (keys.openRouter && keys.openRouter !== 'DEMO_MODE') {
+        const demoKeys = {
+          ...keys,
+          hyperliquid: { apiKey: 'DEMO_MODE', apiSecret: 'DEMO_MODE', walletAddress: 'DEMO_MODE' },
+        };
+        localStorage.setItem(`${STORAGE_PREFIX}api_keys`, JSON.stringify(demoKeys));
+      } else {
+        localStorage.setItem(`${STORAGE_PREFIX}api_keys`, JSON.stringify(keys));
+      }
     } else {
       localStorage.removeItem(`${STORAGE_PREFIX}demo_mode`);
+      localStorage.setItem(`${STORAGE_PREFIX}api_keys`, JSON.stringify(keys));
     }
-    localStorage.setItem(`${STORAGE_PREFIX}api_keys`, JSON.stringify(keys));
   },
   
   getApiKeys: (): ApiKeys | null => {

@@ -253,13 +253,29 @@ export function ApiKeySetup({ onComplete }: ApiKeySetupProps) {
                 </p>
               </div>
 
-              <Button
-                onClick={handleDemoMode}
-                className="w-full bg-gradient-to-r from-cyan-500 to-purple-500 hover:from-cyan-600 hover:to-purple-600 text-black font-bold font-mono shadow-[0_0_20px_rgba(0,255,255,0.5)]"
-              >
-                <Activity className="mr-2 h-4 w-4" />
-                Start Demo Mode
-              </Button>
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label className="text-cyan-400 font-mono">OpenRouter API Key (Optional)</Label>
+                  <Input
+                    type="password"
+                    placeholder="sk-or-v1-... (optional for enhanced AI)"
+                    value={keys.openRouter}
+                    onChange={(e) => setKeys({ ...keys, openRouter: e.target.value })}
+                    className="bg-black/50 border-cyan-500/30 text-cyan-100 font-mono focus:border-cyan-500"
+                  />
+                  <p className="text-xs text-gray-500 font-mono">
+                    Add your OpenRouter key to test real DeepSeek AI analysis in demo mode
+                  </p>
+                </div>
+
+                <Button
+                  onClick={handleDemoMode}
+                  className="w-full bg-gradient-to-r from-cyan-500 to-purple-500 hover:from-cyan-600 hover:to-purple-600 text-black font-bold font-mono shadow-[0_0_20px_rgba(0,255,255,0.5)]"
+                >
+                  <Activity className="mr-2 h-4 w-4" />
+                  Start Demo Mode
+                </Button>
+              </div>
             </CardContent>
           </Card>
         </TabsContent>
