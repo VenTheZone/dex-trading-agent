@@ -154,16 +154,16 @@ export function ApiKeySetup({ onComplete }: ApiKeySetupProps) {
             </CardHeader>
             
             <CardContent className="space-y-6">
-              <Alert className="bg-red-500/10 border-red-500/50">
-                <AlertTriangle className="h-4 w-4 text-red-500" />
-                <AlertDescription className="text-red-200">
-                  <strong>⚠️ CRITICAL SECURITY WARNING:</strong>
+              <Alert className="bg-green-500/10 border-green-500/50">
+                <Info className="h-4 w-4 text-green-500" />
+                <AlertDescription className="text-green-200">
+                  <strong>✅ RECOMMENDED: Use Hyperliquid API Wallet (Agent Wallet)</strong>
                   <ul className="mt-2 space-y-1 text-sm">
-                    <li>• Your private key has FULL CONTROL over your funds</li>
-                    <li>• Keys are stored in browser localStorage (vulnerable to XSS attacks)</li>
-                    <li>• NEVER share your private key with anyone</li>
-                    <li>• Consider using a separate wallet with limited funds for trading</li>
-                    <li>• This app is open-source - verify the code before use</li>
+                    <li>• Agent wallets can trade but CANNOT withdraw funds</li>
+                    <li>• Much safer than using your main wallet's private key</li>
+                    <li>• Generate at <a href="https://app.hyperliquid.xyz/API" target="_blank" rel="noopener noreferrer" className="text-cyan-400 hover:underline">app.hyperliquid.xyz/API</a></li>
+                    <li>• Valid for up to 180 days</li>
+                    <li>• Can be revoked anytime from the Hyperliquid dashboard</li>
                   </ul>
                 </AlertDescription>
               </Alert>
@@ -171,13 +171,13 @@ export function ApiKeySetup({ onComplete }: ApiKeySetupProps) {
               <Alert className="bg-yellow-500/10 border-yellow-500/50">
                 <AlertTriangle className="h-4 w-4 text-yellow-500" />
                 <AlertDescription className="text-yellow-200">
-                  <strong>💡 RECOMMENDED SECURITY PRACTICES:</strong>
+                  <strong>⚠️ SECURITY NOTES:</strong>
                   <ul className="mt-2 space-y-1 text-sm">
-                    <li>• Create a new wallet specifically for this trading bot</li>
-                    <li>• Only deposit funds you're willing to risk</li>
+                    <li>• Keys are stored in browser localStorage only</li>
+                    <li>• NEVER share your private keys with anyone</li>
                     <li>• Start with testnet to verify functionality</li>
                     <li>• Regularly monitor your positions and balance</li>
-                    <li>• Use hardware wallet for main funds storage</li>
+                    <li>• Agent wallet private key is shown only once - save it securely!</li>
                   </ul>
                 </AlertDescription>
               </Alert>
@@ -188,25 +188,44 @@ export function ApiKeySetup({ onComplete }: ApiKeySetupProps) {
               
               <div className="space-y-4">
                 {/* ... keep existing input fields ... */}
+                <Alert className="bg-blue-500/10 border-blue-500/50 mb-4">
+                  <Info className="h-4 w-4 text-blue-500" />
+                  <AlertDescription className="text-blue-200">
+                    <strong>🔐 Recommended: Use Hyperliquid API Wallet (Agent Wallet)</strong>
+                    <ol className="mt-2 space-y-1 text-sm list-decimal list-inside">
+                      <li>Go to <a href="https://app.hyperliquid.xyz/API" target="_blank" rel="noopener noreferrer" className="text-cyan-400 hover:underline">app.hyperliquid.xyz/API</a></li>
+                      <li>Click "Generate" to create an API wallet</li>
+                      <li>Set validity period (up to 180 days)</li>
+                      <li>Save the Agent Wallet Private Key (shown once!)</li>
+                      <li>Click "Authorize" to complete setup</li>
+                    </ol>
+                    <p className="mt-2 text-xs text-green-300 font-bold">
+                      ✅ Agent wallets can trade but CANNOT withdraw funds - much safer!
+                    </p>
+                  </AlertDescription>
+                </Alert>
+
                 <div className="space-y-2">
-                  <Label className="text-cyan-400 font-mono">Hyperliquid API Key *</Label>
+                  <Label className="text-cyan-400 font-mono">Master Account Address (Your Main Wallet) *</Label>
                   <Input
-                    type="password"
-                    placeholder="Enter Hyperliquid API Key"
+                    placeholder="0x... (Your main wallet address)"
                     value={keys.hyperliquid.apiKey}
                     onChange={(e) => setKeys({
                       ...keys,
-                      hyperliquid: { ...keys.hyperliquid, apiKey: e.target.value }
+                      hyperliquid: { ...keys.hyperliquid, apiKey: e.target.value.trim() }
                     })}
                     className="bg-black/50 border-cyan-500/30 text-cyan-100 font-mono focus:border-cyan-500"
                   />
+                  <p className="text-xs text-gray-500 font-mono">
+                    Your main wallet address (used for info requests)
+                  </p>
                 </div>
                 
                 <div className="space-y-2">
-                  <Label className="text-cyan-400 font-mono">Hyperliquid API Secret (Private Key) *</Label>
+                  <Label className="text-cyan-400 font-mono">Agent Wallet Private Key (API Secret) *</Label>
                   <Input
                     type="password"
-                    placeholder="0x1234567890abcdef..."
+                    placeholder="0x... (Agent wallet private key from Hyperliquid)"
                     value={keys.hyperliquid.apiSecret}
                     onChange={(e) => setKeys({
                       ...keys,
@@ -218,6 +237,9 @@ export function ApiKeySetup({ onComplete }: ApiKeySetupProps) {
                     <p className="text-xs text-gray-500 font-mono">
                       Format: 0x + 64 hexadecimal characters (total 66 chars)
                     </p>
+                    <p className="text-xs text-green-400 font-mono">
+                      🔒 This agent wallet can trade but cannot withdraw funds
+                    </p>
                     {keys.hyperliquid.apiSecret && (
                       <p className="text-xs text-cyan-400 font-mono">
                         Current length: {keys.hyperliquid.apiSecret.trim().length} characters
@@ -227,17 +249,17 @@ export function ApiKeySetup({ onComplete }: ApiKeySetupProps) {
                 </div>
                 
                 <div className="space-y-2">
-                  <Label className="text-cyan-400 font-mono">Wallet Address (Optional)</Label>
+                  <Label className="text-cyan-400 font-mono">Agent Wallet Address (Optional)</Label>
                   <Input
-                    placeholder="0x..."
+                    placeholder="0x... (Agent wallet address for tracking)"
                     value={keys.hyperliquid.walletAddress}
                     onChange={(e) => setKeys({
                       ...keys,
-                      hyperliquid: { ...keys.hyperliquid, walletAddress: e.target.value }
+                      hyperliquid: { ...keys.hyperliquid, walletAddress: e.target.value.trim() }
                     })}
                     className="bg-black/50 border-cyan-500/30 text-cyan-100 font-mono focus:border-cyan-500"
                   />
-                  <p className="text-xs text-gray-500 font-mono">Your Ethereum wallet address for position tracking</p>
+                  <p className="text-xs text-gray-500 font-mono">The agent wallet address generated by Hyperliquid (optional for tracking)</p>
                 </div>
                 
                 <div className="space-y-2">

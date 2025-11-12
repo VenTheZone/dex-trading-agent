@@ -61,7 +61,10 @@ Before you begin, ensure you have the following installed:
 - **Git**
 
 You'll also need API keys for:
-- **Hyperliquid** (API Key + Private Key for trading on Hyperliquid L1)
+- **Hyperliquid API Wallet** (Recommended - Agent wallet with no withdrawal permissions)
+  - Generate at https://app.hyperliquid.xyz/API
+  - Provides: Master Account Address + Agent Wallet Private Key
+  - **Security**: Agent wallets can trade but CANNOT withdraw funds
 - **OpenRouter** (for AI analysis)
 
 **Network Information:**
@@ -140,11 +143,12 @@ Once the app is running:
 3. Choose your connection method:
    - **🔗 Wallet Connection** (Read-only): Connect MetaMask to view positions without exposing private keys
      - Supports Ethereum, Arbitrum, and Hyperliquid Testnet (Chain ID 998)
-   - **🔑 API Keys** (Full Trading): Enter credentials for automated AI trading
-     - **Hyperliquid API Key** (from https://app.hyperliquid.xyz)
-     - **Hyperliquid API Secret** (your wallet's private key - starts with "0x", 66 characters)
-     - **Wallet Address** (optional, for position tracking)
+   - **🔑 API Keys** (Full Trading - RECOMMENDED): Enter credentials for automated AI trading
+     - **Master Account Address** (Your main wallet address from https://app.hyperliquid.xyz)
+     - **Agent Wallet Private Key** (Generated at https://app.hyperliquid.xyz/API - starts with "0x", 66 characters)
+     - **Agent Wallet Address** (Optional, for tracking)
      - **OpenRouter API Key** (from https://openrouter.ai)
+     - **Security**: Agent wallets can trade but CANNOT withdraw funds - much safer!
    - **🎮 Demo Mode**: Try the platform with simulated perpetual futures trading
 
 **Security Note:** All API keys are stored locally in your browser's localStorage and never sent to any server.
