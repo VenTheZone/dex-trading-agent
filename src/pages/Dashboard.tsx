@@ -135,18 +135,6 @@ export default function Dashboard() {
             </div>
             
             <div className="flex items-center gap-4">
-              {position && (
-                <Button
-                  variant="destructive"
-                  size="sm"
-                  onClick={handleCloseAllPositions}
-                  className="font-mono font-bold bg-red-500 hover:bg-red-600 shadow-[0_0_20px_rgba(239,68,68,0.5)]"
-                >
-                  <X className="mr-2 h-4 w-4" />
-                  Close All Positions
-                </Button>
-              )}
-
               <Sheet>
                 <SheetTrigger asChild>
                   <Button
@@ -256,7 +244,7 @@ export default function Dashboard() {
             initial={{ y: 20, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{ delay: 0.1 }}
-            className="grid grid-cols-1 md:grid-cols-3 gap-3"
+            className="grid grid-cols-1 md:grid-cols-4 gap-3"
           >
             <Card className="bg-black/80 border-cyan-500/50 shadow-[0_0_20px_rgba(0,255,255,0.2)]">
               <CardContent className="p-4">
@@ -289,42 +277,81 @@ export default function Dashboard() {
             <Card className="bg-black/80 border-cyan-500/50 shadow-[0_0_20px_rgba(0,255,255,0.2)]">
               <CardContent className="p-4">
                 <div className="flex items-center justify-between">
-                  <div className="flex-1">
+                  <div>
                     <p className="text-xs font-mono text-cyan-400 mb-1">Status</p>
                     <div className="text-xl font-bold text-cyan-100 font-mono">
                       {position ? 'IN POSITION' : 'READY'}
                     </div>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <Activity className="h-5 w-5 text-cyan-400" />
-                    {position && (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={handleClosePosition}
-                        className="text-red-400 hover:text-red-300 hover:bg-red-500/20 font-mono text-xs"
-                      >
-                        <X className="h-4 w-4 mr-1" />
-                        Close
-                      </Button>
-                    )}
+                  <Activity className="h-5 w-5 text-cyan-400" />
+                </div>
+              </CardContent>
+            </Card>
+            
+            <Card className="bg-black/80 border-cyan-500/50 shadow-[0_0_20px_rgba(0,255,255,0.2)]">
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-xs font-mono text-cyan-400 mb-1">Actions</p>
+                    <div className="flex gap-2">
+                      {position && (
+                        <>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={handleClosePosition}
+                            className="text-red-400 hover:text-red-300 hover:bg-red-500/20 font-mono text-xs"
+                          >
+                            <X className="h-4 w-4 mr-1" />
+                            Close
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={handleCloseAllPositions}
+                            className="text-red-400 hover:text-red-300 hover:bg-red-500/20 font-mono text-xs"
+                          >
+                            <X className="h-4 w-4 mr-1" />
+                            All
+                          </Button>
+                        </>
+                      )}
+                      {!position && (
+                        <span className="text-sm text-gray-500 font-mono">No actions</span>
+                      )}
+                    </div>
                   </div>
                 </div>
               </CardContent>
             </Card>
           </motion.div>
           
-          {/* Charts - Full Width */}
+          {/* Charts and Logs Layout */}
           <motion.div
             initial={{ y: 20, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{ delay: 0.2 }}
-            className="grid grid-cols-1 md:grid-cols-2 gap-4"
+            className="grid grid-cols-1 lg:grid-cols-3 gap-4"
           >
-            <TradingChart symbol="BTCUSD" chartId={1} />
-            <TradingChart symbol="ETHUSD" chartId={2} />
-            <TradingChart symbol="SOLUSD" chartId={3} />
-            <TradingChart symbol="AVAXUSD" chartId={4} />
+            {/* Charts - 2/3 width */}
+            <div className="lg:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-4">
+              <TradingChart symbol="BTCUSD" chartId={1} />
+              <TradingChart symbol="ETHUSD" chartId={2} />
+              <TradingChart symbol="SOLUSD" chartId={3} />
+              <TradingChart symbol="AVAXUSD" chartId={4} />
+            </div>
+            
+            {/* Trading Logs - 1/3 width */}
+            <div className="lg:col-span-1">
+              <Card className="bg-black/80 border-cyan-500/50 shadow-[0_0_20px_rgba(0,255,255,0.2)] h-full">
+                <CardHeader className="border-b border-cyan-500/30">
+                  <CardTitle className="text-cyan-400 font-mono">Trading Logs</CardTitle>
+                </CardHeader>
+                <CardContent className="p-4 h-[calc(100%-4rem)] overflow-hidden">
+                  <TradingLogs />
+                </CardContent>
+              </Card>
+            </div>
           </motion.div>
         </div>
         
