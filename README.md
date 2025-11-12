@@ -207,5 +207,10 @@ This software is for educational purposes only. Trading cryptocurrencies carries
 MIT License - see LICENSE file for details
 
 ---
-
-**Made by VenTheZone**
+### Future Integrations
+```
+Pancakeswap
+Bybit
+Binance
+Dydx
+```
