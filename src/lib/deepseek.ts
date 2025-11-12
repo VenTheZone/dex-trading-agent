@@ -20,6 +20,8 @@ export interface MarketData {
   priceChange24h?: number;
   high24h?: number;
   low24h?: number;
+  chartType?: "time" | "range";
+  chartInterval?: string;
   currentPosition?: {
     side: "long" | "short";
     size: number;
@@ -47,19 +49,36 @@ export class DeepSeekService {
       maxPositionSize?: number;
     }
   ): Promise<TradingAnalysis> {
-    const systemPrompt = `You are an expert cryptocurrency trading analyst. Analyze market data and provide trading recommendations.
+    const chartTypeContext = marketData.chartType === "range" 
+      ? `RANGE CHART ANALYSIS: This is a Range chart (not time-based). Range charts display price bars based on fixed price movements rather than time intervals. This means:
+- Each bar represents a specific price range movement (e.g., 1R = $1 movement, 10R = $10 movement)
+- Eliminates time-based noise and consolidation periods
+- Provides clearer trend identification and support/resistance levels
+- Better for identifying true price action and momentum
+- More reliable for breakout and reversal patterns
+When analyzing Range charts, focus on:
+1. Price momentum and directional strength
+2. Clear support/resistance levels
+3. Breakout patterns are more significant
+4. Trend continuation signals are more reliable`
+      : `TIME-BASED CHART ANALYSIS: Standard time-interval chart (${marketData.chartInterval}). Each bar represents a fixed time period.`;
+
+    const systemPrompt = `You are an expert cryptocurrency trading analyst specializing in technical analysis.
+
+${chartTypeContext}
 
 Your analysis must consider:
 1. Current market conditions and price action
-2. Risk management principles
-3. Position sizing based on account balance
-4. Stop loss and take profit levels
+2. Chart type characteristics (Range vs Time-based)
+3. Risk management principles
+4. Position sizing based on account balance
+5. Stop loss and take profit levels
 
 Respond ONLY with valid JSON matching this exact structure:
 {
   "action": "open_long" | "open_short" | "close_position" | "hold",
   "confidence": 0.0 to 1.0,
-  "reasoning": "detailed explanation",
+  "reasoning": "detailed explanation including chart type analysis",
   "entryPrice": number (if opening position),
   "stopLoss": number (if opening position),
   "takeProfit": number (if opening position),
@@ -70,6 +89,8 @@ Respond ONLY with valid JSON matching this exact structure:
     const userPrompt = `Analyze this trading opportunity:
 
 Symbol: ${marketData.symbol}
+Chart Type: ${marketData.chartType === "range" ? "RANGE CHART" : "TIME-BASED CHART"}
+Chart Interval: ${marketData.chartInterval || "N/A"}
 Current Price: $${marketData.currentPrice}
 24h Change: ${marketData.priceChange24h?.toFixed(2)}%
 24h High: $${marketData.high24h}
@@ -89,6 +110,8 @@ Current Position:
 - Entry: $${marketData.currentPosition.entryPrice}
 - Unrealized PnL: $${marketData.currentPosition.unrealizedPnl}
 ` : "No current position"}
+
+${marketData.chartType === "range" ? "IMPORTANT: This is a Range chart. Focus on price momentum, clear breakouts, and strong directional moves. Range charts filter out time-based noise." : ""}
 
 Provide your trading recommendation.`;
 

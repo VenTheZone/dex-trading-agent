@@ -7,18 +7,44 @@ import { toast } from "sonner";
 
 export function useTrading() {
   const createLog = useMutation(api.tradingLogs.createLog);
-  const { balance, settings, mode } = useTradingStore();
+  const analyzeMarket = useAction(api.trading.analyzeMarket);
+  const { balance, settings, mode, chartType, chartInterval } = useTradingStore();
   const { user } = useAuth();
 
-  const runAIAnalysis = async (symbol: string, chartData: string) => {
+  const runAIAnalysis = async (symbol: string, currentPrice: number) => {
     try {
       toast.info("🤖 AI analyzing market...");
       
-      // Note: This would need to be implemented as a proper action
-      // For now, return a mock response
-      toast.info("AI analysis feature coming soon");
+      const keys = storage.getApiKeys();
+      if (!keys?.openRouter) {
+        toast.error("OpenRouter API key not configured");
+        return null;
+      }
+
+      // Prepare chart data description for AI
+      const chartData = `
+        Chart Type: ${chartType === 'range' ? 'Range Chart' : 'Time-based Chart'}
+        Interval: ${chartInterval}
+        Current Price: $${currentPrice}
+        ${chartType === 'range' ? 
+          'Range Analysis: Price movement analyzed by range bars (fixed price movements) rather than time intervals. This provides clearer trend identification and reduces noise from time-based volatility.' : 
+          'Time Analysis: Price movement analyzed by fixed time intervals.'
+        }
+      `;
       
-      return null;
+      const analysis = await analyzeMarket({
+        symbol,
+        chartData,
+        userBalance: balance,
+        settings: {
+          takeProfitPercent: settings.takeProfitPercent,
+          stopLossPercent: settings.stopLossPercent,
+          useAdvancedStrategy: settings.useAdvancedStrategy,
+        },
+      });
+      
+      toast.success("✅ AI analysis complete");
+      return analysis;
     } catch (error: any) {
       toast.error(`AI Analysis failed: ${error.message}`);
       throw error;
@@ -43,7 +69,6 @@ export function useTrading() {
           return;
         }
 
-        // In live mode, execute real trade
         toast.info("📡 Executing live trade...");
         // Implementation would call Hyperliquid API here
       }
@@ -57,8 +82,8 @@ export function useTrading() {
         size,
         reason: reasoning,
         details: stopLoss 
-          ? `SL: ${stopLoss}, TP: ${takeProfit}` 
-          : undefined,
+          ? `SL: ${stopLoss}, TP: ${takeProfit}, Chart: ${chartType} ${chartInterval}` 
+          : `Chart: ${chartType} ${chartInterval}`,
       });
 
       toast.success(`Trade executed: ${action.toUpperCase()}`);

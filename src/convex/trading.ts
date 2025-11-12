@@ -1,10 +1,10 @@
 "use node";
 
 import { v } from "convex/values";
-import { internalAction } from "./_generated/server";
+import { action, internalAction } from "./_generated/server";
 import { internal } from "./_generated/api";
 
-export const analyzeMarket = internalAction({
+export const analyzeMarket = action({
   args: {
     symbol: v.string(),
     chartData: v.string(),

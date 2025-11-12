@@ -36,7 +36,7 @@ export function TradingChart({ symbol, chartId }: TradingChartProps) {
           interval: chartInterval,
           timezone: 'Etc/UTC',
           theme: 'dark',
-          style: chartType === 'range' ? '3' : '1',
+          style: chartType === 'range' ? '3' : '1', // 3 = Range, 1 = Candles
           locale: 'en',
           toolbar_bg: '#0a0a0a',
           enable_publishing: false,
@@ -45,14 +45,22 @@ export function TradingChart({ symbol, chartId }: TradingChartProps) {
           container_id: `tradingview_${chartId}`,
           backgroundColor: '#000000',
           gridColor: 'rgba(0, 255, 255, 0.1)',
-          studies: [],
-          // Enable drawing tools for stop loss/take profit
+          studies: chartType === 'range' ? ['Volume@tv-basicstudies'] : [],
           drawings_access: { type: 'black', tools: [{ name: 'LineToolHorzLine' }] },
+          // Enable data access for AI analysis
+          datafeed: undefined, // Use default TradingView datafeed
+          library_path: undefined,
         });
 
         // Listen for widget ready event
         widgetRef.current.onChartReady(() => {
           const chart = widgetRef.current.chart();
+          
+          // Store chart reference for data extraction
+          if (chartType === 'range') {
+            // Log that range chart is active for AI analysis
+            console.log(`Range chart active for ${symbol} with interval ${chartInterval}`);
+          }
           
           // Add position lines if there's an active position
           if (position && position.symbol === symbol) {
@@ -73,7 +81,7 @@ export function TradingChart({ symbol, chartId }: TradingChartProps) {
 
             // Stop loss line (draggable)
             if (position.stopLoss) {
-              const slLine = chart.createShape(
+              chart.createShape(
                 { price: position.stopLoss },
                 {
                   shape: 'horizontal_line',
