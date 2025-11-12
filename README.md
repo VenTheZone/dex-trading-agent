@@ -10,14 +10,19 @@ DeX Trading Agent is an advanced AI-driven trading system for Hyperliquid perpet
 
 ## ✨ Key Features
 
-- **🤖 AI-Powered Analysis**: DeepSeek V3.1 / Qwen3 Max, powered market decisions with multi-chart correlation analysis
+- **🤖 AI-Powered Analysis**: DeepSeek V3.1 / Qwen3 Max powered market decisions with multi-chart correlation analysis
 - **📊 Multi-Chart Trading**: 4 TradingView charts with time-based and range-based analysis
-- **🔒 Secure Storage**: Browser-only API key storage - keys never leave your device
-- **⚡ Risk Control**: Advanced TP/SL management with trailing stops and partial profit taking
+- **🔒 Secure Storage**: Browser-only API key storage with format validation - keys never leave your device
+- **⚡ Advanced Risk Control**: 
+  - Real-time margin monitoring with unrealized PnL calculation
+  - Auto-pause at 80% margin usage
+  - Confirmation dialogs for all position closures
+  - Advanced TP/SL management with trailing stops
 - **🌐 Network Selection**: Trade on Hyperliquid Mainnet or Testnet
 - **📄 Paper Trading**: Risk-free testing with simulated trading environment
 - **🎯 Coin Selection**: Choose up to 5 coins for AI to trade (including high-volume meme coins)
-- **📈 Performance Tracking**: Real-time balance history and P&L tracking
+- **📈 Performance Tracking**: Real-time balance history and P&L tracking with adaptive polling
+- **🛡️ Reliability**: Binance API fallback mechanism with price caching for uninterrupted data
 
 ## 🎨 Landing Page
 
@@ -28,13 +33,17 @@ The landing page features a cyberpunk-themed design with:
 - Dynamic CTA button that adapts based on authentication status
 - Responsive design optimized for all screen sizes
 
-## 🔔 Trade Confirmation & History
+## 🔔 Trade Confirmation & Safety Features
 
 - **Trade Confirmation Modal**: Every trade requires explicit confirmation before execution
   - Displays complete trade details including symbol, action, price, size, leverage, and total value
   - Shows stop loss and take profit levels
   - Clear visual warnings for live trading vs paper trading
   - Network indicator (Mainnet/Testnet)
+- **Close All Positions Dialog**: Confirmation required before closing multiple positions
+  - Shows position count and mode-specific warnings
+  - Prevents accidental mass position closure
+  - Different styling for live vs paper/demo modes
 - **Trade History Logging**: Comprehensive logging system tracks all trading activity
   - Real-time trade logs with timestamps
   - Detailed information including entry/exit prices, P&L, and reasoning
@@ -185,14 +194,22 @@ You can select up to 5 coins for the AI to actively trade.
 5. **Enable AI Auto-Trading**: Toggle the AI ON button to start automated analysis and trading
 6. **Monitor Performance**: View real-time charts, balance history, and trading logs
 
-## 🔒 Security Best Practices
+## 🔒 Security & Risk Management
 
+### Security Best Practices
 - **Never share your private keys** with anyone
-- Use **read-only or trading-restricted API keys** when possible
+- Use **Hyperliquid Agent Wallets** (recommended) - they can trade but CANNOT withdraw funds
+- API keys are stored locally in browser localStorage only
 - Start with **Paper Trading** to test strategies risk-free
 - Use **Testnet** before trading on Mainnet
-- Keep your **leverage low** until you're comfortable with the system
 - Regularly **review trading logs** and performance metrics
+
+### Risk Controls
+- **Margin Monitoring**: Real-time margin usage calculation including unrealized PnL
+- **Auto-Trading Pause**: System automatically pauses when margin exceeds 80%
+- **Confirmation Dialogs**: All position closures require explicit confirmation
+- **Liquidation Warnings**: Alerts when approaching dangerous margin levels
+- **Position Limits**: Configurable maximum position sizes and leverage caps
 
 ## 📁 Project Structure
 ```
@@ -226,10 +243,3 @@ This software is for educational purposes only. Trading cryptocurrencies carries
 MIT License - see LICENSE file for details
 
 ---
-### Future Integrations
-```
-Pancakeswap
-Bybit
-Binance
-Dydx
-```
