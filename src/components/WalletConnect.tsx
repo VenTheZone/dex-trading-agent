@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Wallet, CheckCircle, AlertTriangle } from 'lucide-react';
+import { Wallet, CheckCircle, AlertTriangle, Info } from 'lucide-react';
 import { toast } from 'sonner';
 import { motion } from 'framer-motion';
 
@@ -54,7 +54,7 @@ export function WalletConnect({ onConnect }: WalletConnectProps) {
                 Connect Wallet
               </CardTitle>
               <CardDescription className="text-gray-400">
-                Read-only mode - View positions and balance
+                Safe monitoring - No private key required
               </CardDescription>
             </div>
           </div>
@@ -69,14 +69,31 @@ export function WalletConnect({ onConnect }: WalletConnectProps) {
           </Alert>
 
           {connectedAddress ? (
-            <div className="flex items-center gap-3 p-4 bg-green-500/10 border border-green-500/50 rounded">
-              <CheckCircle className="h-6 w-6 text-green-400" />
-              <div>
-                <p className="text-green-400 font-mono font-bold">Connected</p>
-                <p className="text-sm text-gray-400 font-mono">
-                  {connectedAddress.slice(0, 6)}...{connectedAddress.slice(-4)}
-                </p>
+            <div className="space-y-4">
+              <div className="flex items-center gap-3 p-4 bg-green-500/10 border border-green-500/50 rounded">
+                <CheckCircle className="h-6 w-6 text-green-400" />
+                <div className="flex-1">
+                  <p className="text-green-400 font-mono font-bold">Wallet Connected</p>
+                  <p className="text-sm text-gray-400 font-mono">
+                    {connectedAddress.slice(0, 6)}...{connectedAddress.slice(-4)}
+                  </p>
+                </div>
               </div>
+              
+              <Alert className="bg-cyan-500/10 border-cyan-500/50">
+                <Info className="h-4 w-4 text-cyan-400" />
+                <AlertDescription className="text-cyan-200">
+                  <strong>✅ You can now:</strong>
+                  <ul className="mt-2 space-y-1 text-sm">
+                    <li>• View your Hyperliquid positions</li>
+                    <li>• Monitor your account balance</li>
+                    <li>• Track P&L in real-time</li>
+                  </ul>
+                  <p className="mt-3 text-xs text-cyan-300">
+                    💡 For automated AI trading, switch to the "API Keys" tab
+                  </p>
+                </AlertDescription>
+              </Alert>
             </div>
           ) : (
             <Button
