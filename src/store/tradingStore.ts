@@ -23,6 +23,7 @@ interface TradingState {
   chartInterval: string;
   isAutoTrading: boolean;
   connectionMode: 'wallet' | 'api' | 'demo';
+  aiModel: 'deepseek/deepseek-chat' | 'qwen/qwen-2.5-72b-instruct';
   setBalance: (balance: number) => void;
   setPosition: (position: Position | null) => void;
   setMode: (mode: 'paper' | 'live' | 'demo') => void;
@@ -32,6 +33,7 @@ interface TradingState {
   setChartInterval: (interval: string) => void;
   setAutoTrading: (enabled: boolean) => void;
   setConnectionMode: (mode: 'wallet' | 'api' | 'demo') => void;
+  setAiModel: (model: 'deepseek/deepseek-chat' | 'qwen/qwen-2.5-72b-instruct') => void;
 }
 
 export const useTradingStore = create<TradingState>()(
@@ -42,6 +44,7 @@ export const useTradingStore = create<TradingState>()(
       mode: 'paper',
       network: 'mainnet',
       connectionMode: 'demo',
+      aiModel: 'deepseek/deepseek-chat',
       settings: {
         mode: 'paper',
         takeProfitPercent: 2,
@@ -69,6 +72,7 @@ export const useTradingStore = create<TradingState>()(
       setChartInterval: (interval) => set({ chartInterval: interval }),
       setAutoTrading: (enabled) => set({ isAutoTrading: enabled }),
       setConnectionMode: (mode) => set({ connectionMode: mode }),
+      setAiModel: (model) => set({ aiModel: model }),
     }),
     {
       name: 'trading-storage',

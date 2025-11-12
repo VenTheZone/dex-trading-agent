@@ -15,6 +15,7 @@ export const analyzeMarket = action({
       useAdvancedStrategy: v.boolean(),
     }),
     isDemoMode: v.optional(v.boolean()),
+    aiModel: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     const apiKey = process.env.OPENROUTER_API_KEY;
@@ -22,6 +23,8 @@ export const analyzeMarket = action({
     if (!apiKey && !args.isDemoMode) {
       throw new Error("OpenRouter API key not configured");
     }
+
+    const model = args.aiModel || (args.isDemoMode ? "deepseek/deepseek-chat:free" : "deepseek/deepseek-chat");
 
     const prompt = `You are an expert crypto trading analyst. Analyze the following market data and provide a trading recommendation.
 
@@ -51,7 +54,7 @@ Provide your analysis in JSON format with:
           "X-Title": args.isDemoMode ? "DeX Trading Agent Demo" : "DeX Trading Agent",
         },
         body: JSON.stringify({
-          model: args.isDemoMode ? "deepseek/deepseek-chat:free" : "deepseek/deepseek-chat",
+          model,
           messages: [
             {
               role: "system",
@@ -98,6 +101,7 @@ export const analyzeMultiChart = action({
       allowAILeverage: v.boolean(),
     }),
     isDemoMode: v.optional(v.boolean()),
+    aiModel: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     const apiKey = process.env.OPENROUTER_API_KEY;
@@ -105,6 +109,8 @@ export const analyzeMultiChart = action({
     if (!apiKey && !args.isDemoMode) {
       throw new Error("OpenRouter API key not configured");
     }
+
+    const model = args.aiModel || (args.isDemoMode ? "deepseek/deepseek-chat:free" : "deepseek/deepseek-chat");
 
     const chartsDescription = args.charts.map(chart => 
       `${chart.symbol}: $${chart.currentPrice} (${chart.chartType} chart, ${chart.chartInterval})`
@@ -149,7 +155,7 @@ Provide your analysis in JSON format with:
           "X-Title": args.isDemoMode ? "DeX Trading Agent Demo" : "DeX Trading Agent",
         },
         body: JSON.stringify({
-          model: args.isDemoMode ? "deepseek/deepseek-chat:free" : "deepseek/deepseek-chat",
+          model,
           messages: [
             {
               role: "system",

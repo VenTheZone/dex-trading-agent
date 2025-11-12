@@ -9,12 +9,13 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { toast } from 'sonner';
 import { motion } from 'framer-motion';
-import { Bot, BotOff, Sparkles, X } from 'lucide-react';
+import { Bot, BotOff, Sparkles, X, Brain, AlertTriangle } from 'lucide-react';
 import { storage } from '@/lib/storage';
 import { useTrading } from '@/hooks/use-trading';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 export function TradingControls() {
-  const { settings, updateSettings, chartInterval, setChartInterval, chartType, setChartType, isAutoTrading, setAutoTrading, position } = useTradingStore();
+  const { settings, updateSettings, chartInterval, setChartInterval, chartType, setChartType, isAutoTrading, setAutoTrading, position, aiModel, setAiModel } = useTradingStore();
   const [localSettings, setLocalSettings] = useState(settings);
   const { closePosition, closeAllPositions } = useTrading();
   
@@ -102,6 +103,34 @@ export function TradingControls() {
       });
     }
   };
+
+  const handleAiModelChange = (model: 'deepseek/deepseek-chat' | 'qwen/qwen-2.5-72b-instruct') => {
+    if (model === 'qwen/qwen-2.5-72b-instruct') {
+      const confirmed = window.confirm(
+        '⚠️ QWEN PRICING NOTICE\n\n' +
+        'Qwen is a PAID model with the following pricing:\n\n' +
+        '• Input (≤128K): $1.20 per 1M tokens\n' +
+        '• Input (>128K): $3.00 per 1M tokens\n' +
+        '• Output (≤128K): $6.00 per 1M tokens\n' +
+        '• Output (>128K): $15.00 per 1M tokens\n\n' +
+        'DeepSeek is FREE and recommended for most users.\n\n' +
+        'Do you want to continue with Qwen?'
+      );
+      
+      if (!confirmed) return;
+      
+      toast.warning('💰 Qwen AI Model Selected', {
+        description: 'This is a paid model. Monitor your OpenRouter usage.',
+        duration: 5000,
+      });
+    } else {
+      toast.success('✅ DeepSeek AI Model Selected', {
+        description: 'Free tier - No usage costs',
+      });
+    }
+    
+    setAiModel(model);
+  };
   
   return (
     <Card className="bg-gradient-to-br from-black/90 to-black/80 border-cyan-500/50 shadow-[0_0_30px_rgba(0,255,255,0.2)]">
@@ -128,6 +157,69 @@ export function TradingControls() {
       </CardHeader>
       
       <CardContent className="space-y-6 pt-6">
+        {/* AI Model Selector */}
+        <motion.div 
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="space-y-3 pb-4 border-b border-cyan-500/30"
+        >
+          <div className="flex items-center justify-between">
+            <Label className="text-cyan-400 font-mono font-bold flex items-center gap-2">
+              <Brain className="h-4 w-4" />
+              AI Model
+            </Label>
+            <span className={`text-xs font-mono px-2 py-1 rounded ${
+              aiModel === 'deepseek/deepseek-chat' 
+                ? 'bg-green-500/20 text-green-400' 
+                : 'bg-yellow-500/20 text-yellow-400'
+            }`}>
+              {aiModel === 'deepseek/deepseek-chat' ? '✓ FREE' : '💰 PAID'}
+            </span>
+          </div>
+          
+          <div className="grid grid-cols-2 gap-2">
+            <Button
+              variant={aiModel === 'deepseek/deepseek-chat' ? 'default' : 'outline'}
+              onClick={() => handleAiModelChange('deepseek/deepseek-chat')}
+              className={`font-mono text-xs transition-all ${
+                aiModel === 'deepseek/deepseek-chat'
+                  ? 'bg-cyan-500 text-black hover:bg-cyan-600 shadow-[0_0_15px_rgba(0,255,255,0.4)]'
+                  : 'border-cyan-500/30 text-cyan-400 hover:bg-cyan-500/20'
+              }`}
+            >
+              DeepSeek
+              <span className="ml-1 text-green-400">FREE</span>
+            </Button>
+            <Button
+              variant={aiModel === 'qwen/qwen-2.5-72b-instruct' ? 'default' : 'outline'}
+              onClick={() => handleAiModelChange('qwen/qwen-2.5-72b-instruct')}
+              className={`font-mono text-xs transition-all ${
+                aiModel === 'qwen/qwen-2.5-72b-instruct'
+                  ? 'bg-yellow-500 text-black hover:bg-yellow-600 shadow-[0_0_15px_rgba(234,179,8,0.4)]'
+                  : 'border-cyan-500/30 text-cyan-400 hover:bg-cyan-500/20'
+              }`}
+            >
+              Qwen
+              <span className="ml-1 text-yellow-400">PAID</span>
+            </Button>
+          </div>
+          
+          {aiModel === 'qwen/qwen-2.5-72b-instruct' && (
+            <Alert className="bg-yellow-500/10 border-yellow-500/50">
+              <AlertTriangle className="h-4 w-4 text-yellow-500" />
+              <AlertDescription className="text-yellow-200 text-xs">
+                <strong>Qwen Pricing:</strong> Input $1.20-$3/1M tokens, Output $6-$15/1M tokens
+              </AlertDescription>
+            </Alert>
+          )}
+          
+          <p className="text-xs text-gray-500 font-mono">
+            {aiModel === 'deepseek/deepseek-chat' 
+              ? 'DeepSeek is free and recommended for most users' 
+              : 'Qwen offers advanced reasoning but has usage costs'}
+          </p>
+        </motion.div>
+
         {/* Position Management */}
         {position && (
           <motion.div 

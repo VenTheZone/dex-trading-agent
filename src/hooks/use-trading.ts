@@ -14,7 +14,7 @@ export function useTrading() {
   const analyzeMultiChart = useAction((api as any).trading.analyzeMultiChart);
   const executeLiveTrade = useAction((api as any).trading.executeLiveTrade);
   const getHyperliquidPositions = useAction((api as any).trading.getHyperliquidPositions);
-  const { balance, settings, mode, network, chartType, chartInterval, setBalance, setPosition, position, isAutoTrading, setAutoTrading } = useTradingStore();
+  const { balance, settings, mode, network, chartType, chartInterval, setBalance, setPosition, position, isAutoTrading, setAutoTrading, aiModel } = useTradingStore();
   const { user } = useAuth();
   const lastRecordedBalance = useRef(balance);
   const marginWarningShown = useRef(false);
@@ -235,14 +235,16 @@ export function useTrading() {
       const keys = storage.getApiKeys();
       const hasOpenRouterKey = keys?.openRouter && keys.openRouter !== 'DEMO_MODE';
       
+      const modelName = aiModel === 'qwen/qwen-2.5-72b-instruct' ? 'Qwen' : 'DeepSeek';
+      
       if (isDemoMode) {
         if (hasOpenRouterKey) {
-          toast.info("[DEMO] 🤖 AI analyzing with your OpenRouter key (DeepSeek V3.1)...");
+          toast.info(`[DEMO] 🤖 AI analyzing with your OpenRouter key (${modelName})...`);
         } else {
-          toast.info("[DEMO] 🤖 AI analyzing market with DeepSeek V3.1 Free...");
+          toast.info(`[DEMO] 🤖 AI analyzing market with ${modelName} Free...`);
         }
       } else {
-        toast.info("🤖 AI analyzing market...");
+        toast.info(`🤖 AI analyzing market with ${modelName}...`);
       }
 
       const chartData = `
@@ -266,6 +268,7 @@ export function useTrading() {
           useAdvancedStrategy: settings.useAdvancedStrategy,
         },
         isDemoMode,
+        aiModel,
       });
       
       toast.success("✅ AI analysis complete");
@@ -282,14 +285,16 @@ export function useTrading() {
       const keys = storage.getApiKeys();
       const hasOpenRouterKey = keys?.openRouter && keys.openRouter !== 'DEMO_MODE';
       
+      const modelName = aiModel === 'qwen/qwen-2.5-72b-instruct' ? 'Qwen' : 'DeepSeek';
+      
       if (isDemoMode) {
         if (hasOpenRouterKey) {
-          toast.info("[DEMO] 🤖 AI analyzing multiple charts with your OpenRouter key...");
+          toast.info(`[DEMO] 🤖 AI analyzing multiple charts with your OpenRouter key (${modelName})...`);
         } else {
-          toast.info("[DEMO] 🤖 AI analyzing multiple charts with DeepSeek V3.1 Free...");
+          toast.info(`[DEMO] 🤖 AI analyzing multiple charts with ${modelName} Free...`);
         }
       } else {
-        toast.info("🤖 AI analyzing multiple charts...");
+        toast.info(`🤖 AI analyzing multiple charts with ${modelName}...`);
       }
       
       const allowedCoins = settings.allowedCoins || [];
@@ -320,6 +325,7 @@ export function useTrading() {
           allowAILeverage: settings.allowAILeverage,
         },
         isDemoMode,
+        aiModel,
       });
       
       toast.success("✅ Multi-chart AI analysis complete");
