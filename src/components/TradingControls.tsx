@@ -17,7 +17,10 @@ export function TradingControls() {
   const timeIntervals = ['1m', '5m', '15m', '1h', '4h', '1d'];
   const rangeIntervals = ['1R', '10R', '100R', '$100'];
   
-  const availableCoins = ['BTCUSD', 'ETHUSD', 'SOLUSD', 'AVAXUSD', 'BNBUSD', 'ADAUSD', 'DOTUSD', 'MATICUSD'];
+  const availableCoins = [
+    'BTCUSD', 'ETHUSD', 'SOLUSD', 'AVAXUSD', 'BNBUSD', 'ADAUSD', 'DOTUSD', 'MATICUSD',
+    'DOGEUSD', 'SHIBUSD', 'PEPEUSD', 'WIFUSD', 'BONKUSD'
+  ];
   
   const handleSaveSettings = () => {
     updateSettings(localSettings);
@@ -81,9 +84,10 @@ export function TradingControls() {
               {localSettings.allowedCoins?.length || 0}/5 selected
             </span>
           </div>
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid grid-cols-2 gap-2 max-h-[300px] overflow-y-auto pr-2">
             {availableCoins.map((coin) => {
               const isSelected = localSettings.allowedCoins?.includes(coin);
+              const isMeme = ['DOGEUSD', 'SHIBUSD', 'PEPEUSD', 'WIFUSD', 'BONKUSD'].includes(coin);
               return (
                 <Button
                   key={coin}
@@ -94,8 +98,10 @@ export function TradingControls() {
                     isSelected
                       ? 'bg-cyan-500 text-black hover:bg-cyan-600'
                       : 'border-cyan-500/30 text-cyan-400 hover:bg-cyan-500/20'
-                  }`}
+                  } ${isMeme ? 'border-pink-500/50' : ''}`}
+                  title={isMeme ? 'Meme Coin - High Volatility' : ''}
                 >
+                  {isMeme && '🐕 '}
                   {coin.replace('USD', '')}
                 </Button>
               );
