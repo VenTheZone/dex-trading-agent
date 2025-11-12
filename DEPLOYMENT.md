@@ -45,3 +45,24 @@
 ### 3. Deploy to Vercel
 
 #### Option A: Using Vercel CLI
+
+---
+
+# Docker Deployment Guide (Local Development)
+
+## Overview
+
+This guide covers deploying the DeX Trading Agent locally using Docker for development and testing purposes. Docker provides an isolated, consistent environment across different machines.
+
+## Prerequisites
+
+1. **Docker Desktop** installed (https://www.docker.com/products/docker-desktop)
+2. **Docker Compose** (included with Docker Desktop)
+3. **Convex account** with your project deployed
+4. **API Keys** (OpenRouter, Hyperliquid)
+
+## Quick Start
+
+### 1. Create Environment File
+
+Create a `.env.local` file in the project root:

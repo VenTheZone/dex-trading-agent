@@ -80,7 +80,104 @@ You'll also need API keys for:
 - **Hyperliquid Mainnet**: Independent L1 blockchain
 - **Hyperliquid Testnet**: Chain ID 998, RPC: https://rpc.hyperliquid-testnet.xyz/evm
 
-## 🚀 Local Deployment Instructions
+## 🚀 Deployment Options
+
+### Option 1: Local Development (Native)
+
+### 1. Clone the Repository
+```
+git clone https://github.com/VenTheZone/dex-trading-agent.git
+cd dex-trading-agent
+```
+
+### 2. Install Dependencies
+```
+pnpm install
+```
+
+### 3. Set Up Convex
+
+Install Convex CLI globally (if not already installed)
+```
+pnpm add -g convex
+```
+
+If convex fails to start try
+```
+export PNPM_HOME="~/.local/share/pnpm"
+export PATH="$PNPM_HOME:$PATH"
+pnpm add -g convex
+```
+
+Initialize and deploy Convex backend
+```
+npx convex dev
+```
+
+This will:
+- Create a new Convex project (if first time)
+- Generate your `CONVEX_DEPLOYMENT` URL
+- Start the Convex development server
+- Watch for changes in your `src/convex/` directory
+
+### 4. Configure Environment Variables
+
+Create a `.env.local` file in the root directory:
+
+VITE_CONVEX_URL=<your-convex-deployment-url>
+OPENROUTER_API_KEY=<your-openrouter-api-key>
+
+
+**Note:** The `VITE_CONVEX_URL` is automatically generated when you run `npx convex dev`. You can find it in the Convex dashboard or in the terminal output.
+
+### 5. Run the Development Server
+
+In a new terminal (keep Convex dev running):
+```
+pnpm dev
+```
+
+Within VITE, in order to show the webapp
+```
+--host
+```
+
+
+The application will be available at `http://localhost:5173`
+
+### 6. Configure API Keys (In-App)
+
+Once the app is running:
+
+1. Navigate to the application in your browser
+2. You'll be prompted to set up API keys on first launch
+3. Choose your connection method:
+   - **🔗 Wallet Connection** (Read-only): Connect MetaMask to view positions without exposing private keys
+     - Supports Ethereum, Arbitrum, and Hyperliquid Testnet (Chain ID 998)
+   - **🔑 API Keys** (Full Trading - RECOMMENDED): Enter credentials for automated AI trading
+     - **Master Account Address** (Your main wallet address from https://app.hyperliquid.xyz)
+     - **Agent Wallet Private Key** (Generated at https://app.hyperliquid.xyz/API - starts with "0x", 66 characters)
+     - **Agent Wallet Address** (Optional, for tracking)
+     - **OpenRouter API Key** (from https://openrouter.ai)
+     - **Security**: Agent wallets can trade but CANNOT withdraw funds - much safer!
+   - **🎮 Demo Mode**: Try the platform with simulated perpetual futures trading
+
+**Security Note:** All API keys are stored locally in your browser's localStorage and never sent to any server.
+
+**Network Clarification:** 
+- Hyperliquid operates on its own Layer 1 blockchain, not on Ethereum or Arbitrum
+- Testnet Chain ID: 998
+- Mainnet and Testnet can be toggled in the Dashboard header
+
+### Option 2: Local Development (Docker)
+
+**Prerequisites:**
+- Docker Desktop installed
+- Convex CLI installed globally
+
+**Quick Start:**
+
+1. **Clone and Setup**
 
 ### 1. Clone the Repository
 ```

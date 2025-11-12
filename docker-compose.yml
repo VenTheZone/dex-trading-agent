@@ -1,0 +1,31 @@
+version: '3.8'
+
+services:
+  # Development service with hot reload
+  dev:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    ports:
+      - "5173:5173"
+    volumes:
+      - .:/app
+      - /app/node_modules
+    environment:
+      - VITE_CONVEX_URL=${VITE_CONVEX_URL}
+      - OPENROUTER_API_KEY=${OPENROUTER_API_KEY}
+    command: pnpm dev --host
+    stdin_open: true
+    tty: true
+
+  # Production service
+  prod:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    environment:
+      - VITE_CONVEX_URL=${VITE_CONVEX_URL}
+      - OPENROUTER_API_KEY=${OPENROUTER_API_KEY}
+    restart: unless-stopped
