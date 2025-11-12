@@ -11,6 +11,7 @@ export function useTrading() {
   const recordBalance = useMutation(api.balanceHistory.recordBalance);
   const recordPositionSnapshot = useMutation(api.positionSnapshots.recordSnapshot);
   const analyzeMarket = useAction(api.trading.analyzeMarket);
+  const analyzeMultiChart = useAction(api.trading.analyzeMultiChart);
   const executeLiveTrade = useAction(api.trading.executeLiveTrade);
   const getHyperliquidPositions = useAction(api.trading.getHyperliquidPositions);
   const { balance, settings, mode, chartType, chartInterval, setBalance, setPosition, isAutoTrading, setAutoTrading } = useTradingStore();
@@ -176,6 +177,44 @@ export function useTrading() {
     }
   };
 
+  const runMultiChartAIAnalysis = async (charts: Array<{ symbol: string; currentPrice: number }>) => {
+    try {
+      toast.info("🤖 AI analyzing multiple charts...");
+      
+      const keys = storage.getApiKeys();
+      if (!keys?.openRouter) {
+        toast.error("OpenRouter API key not configured");
+        return null;
+      }
+
+      // Prepare multi-chart data for AI
+      const multiChartData = charts.map(chart => ({
+        symbol: chart.symbol,
+        currentPrice: chart.currentPrice,
+        chartType: chartType,
+        chartInterval: chartInterval,
+      }));
+
+      const analysis = await analyzeMultiChart({
+        charts: multiChartData,
+        userBalance: balance,
+        settings: {
+          takeProfitPercent: settings.takeProfitPercent,
+          stopLossPercent: settings.stopLossPercent,
+          useAdvancedStrategy: settings.useAdvancedStrategy,
+          leverage: settings.leverage,
+          allowAILeverage: settings.allowAILeverage,
+        },
+      });
+      
+      toast.success("✅ Multi-chart AI analysis complete");
+      return analysis;
+    } catch (error: any) {
+      toast.error(`Multi-chart AI Analysis failed: ${error.message}`);
+      throw error;
+    }
+  };
+
   const executeTrade = async (
     symbol: string,
     action: string,
@@ -239,6 +278,7 @@ export function useTrading() {
 
   return {
     runAIAnalysis,
+    runMultiChartAIAnalysis,
     executeTrade,
   };
 }
