@@ -3,8 +3,9 @@
 import { v } from "convex/values";
 import { action } from "./_generated/server";
 
-// Simplified market data fetching using direct API calls instead of CCXT
-// This avoids dependency issues in Convex environment
+// Price cache to reduce API calls
+const priceCache: Record<string, { price: number; timestamp: number }> = {};
+const CACHE_DURATION = 5000; // 5 seconds
 
 export const fetchMarketData = action({
   args: {
@@ -40,6 +41,152 @@ export const fetchMarketData = action({
       console.error(`Error fetching market data for ${args.symbol}:`, error);
       throw new Error(`Failed to fetch market data: ${error.message}`);
     }
+  },
+});
+
+export const fetchPriceWithFallback = action({
+  args: {
+    symbol: v.string(),
+  },
+  handler: async (ctx, args) => {
+    // Check cache first
+    const cached = priceCache[args.symbol];
+    if (cached && Date.now() - cached.timestamp < CACHE_DURATION) {
+      return cached.price;
+    }
+
+    // Convert symbol format (e.g., BTCUSD -> BTCUSDT for Binance)
+    const binanceSymbol = args.symbol.replace('USD', 'USDT');
+
+    // Try primary Binance API
+    try {
+      const response = await fetch(
+        `https://api.binance.com/api/v3/ticker/price?symbol=${binanceSymbol}`,
+        { signal: AbortSignal.timeout(5000) }
+      );
+      
+      if (response.ok) {
+        const data = await response.json();
+        const price = parseFloat(data.price);
+        
+        // Cache the result
+        priceCache[args.symbol] = { price, timestamp: Date.now() };
+        return price;
+      }
+    } catch (error) {
+      console.warn('Primary Binance API failed, trying fallback...', error);
+    }
+
+    // Try fallback Binance API
+    try {
+      const response = await fetch(
+        `https://api1.binance.com/api/v3/ticker/price?symbol=${binanceSymbol}`,
+        { signal: AbortSignal.timeout(5000) }
+      );
+      
+      if (response.ok) {
+        const data = await response.json();
+        const price = parseFloat(data.price);
+        
+        // Cache the result
+        priceCache[args.symbol] = { price, timestamp: Date.now() };
+        return price;
+      }
+    } catch (error) {
+      console.error('Fallback Binance API also failed', error);
+    }
+
+    // If both APIs fail, return cached value if available (even if stale)
+    if (cached) {
+      console.warn(`Using stale cached price for ${args.symbol}`);
+      return cached.price;
+    }
+
+    // Last resort: throw error
+    throw new Error(`Failed to fetch price for ${args.symbol} from all sources`);
+  },
+});
+
+export const fetchMultiplePrices = action({
+  args: {
+    symbols: v.array(v.string()),
+  },
+  handler: async (ctx, args) => {
+    const results: Record<string, number> = {};
+    
+    // Fetch all prices in parallel
+    const pricePromises = args.symbols.map(async (symbol) => {
+      try {
+        // Check cache first
+        const cached = priceCache[symbol];
+        if (cached && Date.now() - cached.timestamp < CACHE_DURATION) {
+          return { symbol, price: cached.price };
+        }
+
+        // Convert symbol format (e.g., BTCUSD -> BTCUSDT for Binance)
+        const binanceSymbol = symbol.replace('USD', 'USDT');
+
+        // Try primary Binance API
+        try {
+          const response = await fetch(
+            `https://api.binance.com/api/v3/ticker/price?symbol=${binanceSymbol}`,
+            { signal: AbortSignal.timeout(5000) }
+          );
+          
+          if (response.ok) {
+            const data = await response.json();
+            const price = parseFloat(data.price);
+            
+            // Cache the result
+            priceCache[symbol] = { price, timestamp: Date.now() };
+            return { symbol, price };
+          }
+        } catch (error) {
+          console.warn(`Primary Binance API failed for ${symbol}, trying fallback...`);
+        }
+
+        // Try fallback Binance API
+        try {
+          const response = await fetch(
+            `https://api1.binance.com/api/v3/ticker/price?symbol=${binanceSymbol}`,
+            { signal: AbortSignal.timeout(5000) }
+          );
+          
+          if (response.ok) {
+            const data = await response.json();
+            const price = parseFloat(data.price);
+            
+            // Cache the result
+            priceCache[symbol] = { price, timestamp: Date.now() };
+            return { symbol, price };
+          }
+        } catch (error) {
+          console.error(`Fallback Binance API also failed for ${symbol}`);
+        }
+
+        // If both APIs fail, return cached value if available (even if stale)
+        if (cached) {
+          console.warn(`Using stale cached price for ${symbol}`);
+          return { symbol, price: cached.price };
+        }
+
+        return null;
+      } catch (error) {
+        console.error(`Failed to fetch price for ${symbol}:`, error);
+        return null;
+      }
+    });
+    
+    const prices = await Promise.all(pricePromises);
+    
+    // Build results object
+    prices.forEach((result) => {
+      if (result) {
+        results[result.symbol] = result.price;
+      }
+    });
+    
+    return results;
   },
 });
 

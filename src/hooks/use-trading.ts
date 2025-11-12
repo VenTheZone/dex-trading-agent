@@ -14,6 +14,7 @@ export function useTrading() {
   const analyzeMultiChart = useAction((api as any).trading.analyzeMultiChart);
   const executeLiveTrade = useAction((api as any).trading.executeLiveTrade);
   const getHyperliquidPositions = useAction((api as any).trading.getHyperliquidPositions);
+  const fetchPriceWithFallback = useAction((api as any).marketData.fetchPriceWithFallback);
   const { balance, settings, mode, network, chartType, chartInterval, setBalance, setPosition, position, isAutoTrading, setAutoTrading, aiModel, customPrompt } = useTradingStore();
   const { user } = useAuth();
   const lastRecordedBalance = useRef(balance);
@@ -498,34 +499,13 @@ export function useTrading() {
             description: hasOpenRouterKey ? "Using your OpenRouter key" : "Using DeepSeek Free tier",
           });
 
-          // Fetch real market data for demo mode with better error handling
+          // Fetch real market data using Convex action (bypasses CORS)
           const chartDataPromises = allowedCoins.map(async (symbol) => {
             try {
-              // Convert symbol format: BTCUSD -> BTCUSDT
-              const binanceSymbol = symbol.replace('USD', 'USDT');
-              const response = await fetch(
-                `https://api.binance.com/api/v3/ticker/price?symbol=${binanceSymbol}`,
-                { 
-                  method: 'GET',
-                  headers: { 'Content-Type': 'application/json' }
-                }
-              );
-              
-              if (!response.ok) {
-                console.error(`Binance API error for ${symbol}: ${response.status} ${response.statusText}`);
-                return null;
-              }
-              
-              const data = await response.json();
-              
-              if (!data.price) {
-                console.error(`No price data for ${symbol}:`, data);
-                return null;
-              }
-              
+              const price = await fetchPriceWithFallback({ symbol });
               return {
                 symbol,
-                currentPrice: parseFloat(data.price),
+                currentPrice: price,
               };
             } catch (error) {
               console.error(`[DEMO] Failed to fetch price for ${symbol}:`, error);
@@ -640,34 +620,13 @@ export function useTrading() {
 
         toast.info(`🔄 Auto-trading cycle started (${allowedCoins.length} coins)`);
 
-        // Fetch current market data for allowed coins with better error handling
+        // Fetch current market data using Convex action (bypasses CORS)
         const chartDataPromises = allowedCoins.map(async (symbol) => {
           try {
-            // Convert symbol format: BTCUSD -> BTCUSDT
-            const binanceSymbol = symbol.replace('USD', 'USDT');
-            const response = await fetch(
-              `https://api.binance.com/api/v3/ticker/price?symbol=${binanceSymbol}`,
-              { 
-                method: 'GET',
-                headers: { 'Content-Type': 'application/json' }
-              }
-            );
-            
-            if (!response.ok) {
-              console.error(`Binance API error for ${symbol}: ${response.status} ${response.statusText}`);
-              return null;
-            }
-            
-            const data = await response.json();
-            
-            if (!data.price) {
-              console.error(`No price data for ${symbol}:`, data);
-              return null;
-            }
-            
+            const price = await fetchPriceWithFallback({ symbol });
             return {
               symbol,
-              currentPrice: parseFloat(data.price),
+              currentPrice: price,
             };
           } catch (error) {
             console.error(`Failed to fetch price for ${symbol}:`, error);
@@ -777,7 +736,7 @@ export function useTrading() {
     const interval = setInterval(runAutoTrading, 2 * 60 * 1000);
 
     return () => clearInterval(interval);
-  }, [isAutoTrading, user, settings.allowedCoins, position, balance, settings, chartType, chartInterval, mode, network, aiModel, customPrompt]);
+  }, [isAutoTrading, user, settings.allowedCoins, position, balance, settings, chartType, chartInterval, mode, network, aiModel, customPrompt, fetchPriceWithFallback]);
 
   return {
     runAIAnalysis,
