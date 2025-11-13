@@ -1,0 +1,5 @@
+"use node";
+
+// This file is kept for reference but not actively used.
+// Market data is now fetched via the Python backend API
+// which handles all external API calls including Binance and Hyperliquid.
