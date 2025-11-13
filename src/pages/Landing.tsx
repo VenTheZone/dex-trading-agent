@@ -2,15 +2,23 @@ import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/use-auth";
 import { useNavigate } from "react-router";
+import { useEffect } from "react";
 import { TradingBackground } from "@/components/CyberpunkBackground";
 import { Activity, Brain, Shield, TrendingUp, Zap, Eye } from "lucide-react";
 import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 export default function Landing() {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, signIn, isLoading } = useAuth();
   const navigate = useNavigate();
   const [showPreview, setShowPreview] = useState(false);
+
+  // Auto sign-in as guest on mount
+  useEffect(() => {
+    if (!isLoading && !isAuthenticated) {
+      signIn("anonymous").catch(console.error);
+    }
+  }, [isLoading, isAuthenticated, signIn]);
 
   // Debug logging
   console.log('[Landing] Component mounted/updated', {
@@ -85,11 +93,11 @@ export default function Landing() {
             >
               <Button
                 size="lg"
-                onClick={() => navigate(isAuthenticated ? '/dashboard' : '/auth')}
+                onClick={() => navigate('/dashboard')}
                 className="text-xl px-8 py-6 bg-cyan-500 hover:bg-cyan-600 text-black font-bold font-mono shadow-[0_0_30px_rgba(0,255,255,0.8)] border-2 border-cyan-400"
               >
                 <Zap className="mr-2 h-6 w-6" />
-                {isAuthenticated ? 'ENTER DASHBOARD' : 'GET STARTED'}
+                ENTER DASHBOARD
               </Button>
               
               <Button
@@ -261,12 +269,12 @@ export default function Landing() {
                       size="lg"
                       onClick={() => {
                         setShowPreview(false);
-                        navigate(isAuthenticated ? '/dashboard' : '/auth');
+                        navigate('/dashboard');
                       }}
                       className="bg-cyan-500 hover:bg-cyan-600 text-black font-bold font-mono shadow-[0_0_20px_rgba(0,255,255,0.4)]"
                     >
                       <Zap className="mr-2 h-5 w-5" />
-                      {isAuthenticated ? 'Go to Dashboard' : 'Get Started Now'}
+                      Go to Dashboard
                     </Button>
                   </div>
                 </div>

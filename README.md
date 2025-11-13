@@ -35,7 +35,7 @@ The landing page features a cyberpunk-themed design with:
 
 ## 🔒 Authentication
 
-The application uses **guest-only authentication** for simplicity. No email or password required - just click "Continue as Guest" to access the platform. All API keys are stored locally in your browser.
+The application uses **automatic guest authentication** for simplicity. No login required - you're automatically signed in as a guest when you access the platform. All API keys are stored locally in your browser for localhost deployments, or can be configured in backend environment variables for production deployments.
 
 ## 🔔 Trade Confirmation & Safety Features
 
