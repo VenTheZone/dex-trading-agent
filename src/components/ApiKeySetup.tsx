@@ -30,7 +30,7 @@ export function ApiKeySetup({ onComplete }: ApiKeySetupProps) {
     const checkBackendKeys = async () => {
       try {
         // Check if backend has OpenRouter key configured
-        const response = await fetch(import.meta.env.VITE_CONVEX_URL + '/api/check-backend-keys');
+        const response = await fetch((import.meta.env.VITE_PYTHON_API_URL || 'http://localhost:8000') + '/api/check-backend-keys');
         if (response.ok) {
           const data = await response.json();
           setBackendKeysConfigured(data.hasBackendKeys || false);

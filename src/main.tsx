@@ -10,8 +10,6 @@ import NotFound from "./pages/NotFound.tsx";
 import Dashboard from "./pages/Dashboard.tsx";
 import "./types/global.d.ts";
 
-// const convex = new ConvexReactClient(import.meta.env.VITE_CONVEX_URL as string);
-
 
 
 function RouteSyncer() {
