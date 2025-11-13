@@ -611,15 +611,21 @@ export function useTrading() {
         // Demo mode: Use real AI with DeepSeek V3.1 (free tier or paid if API key provided)
         if (isDemoMode) {
           const keys = storage.getApiKeys();
-          const hasOpenRouterKey = keys?.openRouter && keys.openRouter !== 'DEMO_MODE';
+          const openRouterKey = keys?.openRouter || '';
+          const hasValidKey = openRouterKey && 
+                              openRouterKey.trim() !== '' && 
+                              openRouterKey !== 'DEMO_MODE' && 
+                              openRouterKey.startsWith('sk-or-v1-');
           
           console.log('[AUTO-TRADING] Demo mode detected', {
-            hasOpenRouterKey,
+            hasValidKey,
+            keyLength: openRouterKey?.length,
+            keyPrefix: openRouterKey?.substring(0, 10),
             coinsToFetch: allowedCoins,
           });
           
-          // If no API key in demo mode, skip AI analysis gracefully
-          if (!hasOpenRouterKey) {
+          // If no valid API key in demo mode, skip AI analysis gracefully
+          if (!hasValidKey) {
             toast.info('[DEMO] 🔄 Auto-trading paused - No OpenRouter API key', {
               description: 'Add your OpenRouter key in Settings to enable AI analysis',
               duration: 5000,
