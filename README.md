@@ -91,13 +91,17 @@ You'll also need API keys for:
 
 ## 🚀 Deployment Options
 
-### Option 1: Docker (Recommended for Production)
+### Option 1: Docker (Recommended for Local Development)
+
+Docker provides an isolated, consistent environment for running the DeX Trading Agent locally with your API keys.
 
 #### Prerequisites
-- Docker and Docker Compose installed
-- Convex account and deployment URL
+- **Docker Desktop** installed (https://www.docker.com/products/docker-desktop)
+- **Docker Compose** (included with Docker Desktop)
+- **Convex account** with your project deployed
+- **API Keys** (OpenRouter, CryptoPanic)
 
-#### Steps
+#### Quick Start
 
 1. **Clone the Repository**
 
