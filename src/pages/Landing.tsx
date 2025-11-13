@@ -9,7 +9,7 @@ import { TokenTradingModal } from "@/components/TokenTradingModal";
 import { TRADING_TOKENS, TokenData } from "@/lib/tokenData";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
-import { toast } from "sonner";
+import { handleError, ErrorConfigs } from "@/lib/error-handler";
 
 export default function Landing() {
   const navigate = useNavigate();
@@ -22,10 +22,7 @@ export default function Landing() {
       setSelectedToken(token);
       setShowTokenModal(true);
     } catch (error) {
-      console.error('Error opening token modal:', error);
-      toast.error('Failed to open trading modal', {
-        description: 'Please try again or refresh the page.',
-      });
+      handleError(error, ErrorConfigs.MODAL_OPEN);
     }
   };
 
@@ -33,10 +30,7 @@ export default function Landing() {
     try {
       navigate('/dashboard');
     } catch (error) {
-      console.error('Navigation error:', error);
-      toast.error('Failed to navigate to dashboard', {
-        description: 'Please refresh the page and try again.',
-      });
+      handleError(error, ErrorConfigs.NAVIGATION);
     }
   };
 
@@ -44,10 +38,15 @@ export default function Landing() {
     try {
       setShowPreview(true);
     } catch (error) {
-      console.error('Error showing preview:', error);
-      toast.error('Failed to open preview', {
-        description: 'Please try again.',
-      });
+      handleError(error, ErrorConfigs.MODAL_OPEN);
+    }
+  };
+
+  const handleCloseTokenModal = () => {
+    try {
+      setShowTokenModal(false);
+    } catch (error) {
+      handleError(error, ErrorConfigs.MODAL_CLOSE);
     }
   };
 
@@ -515,13 +514,7 @@ export default function Landing() {
         <TokenTradingModal
           token={selectedToken}
           isOpen={showTokenModal}
-          onClose={() => {
-            try {
-              setShowTokenModal(false);
-            } catch (error) {
-              console.error('Error closing modal:', error);
-            }
-          }}
+          onClose={handleCloseTokenModal}
         />
       </div>
     </div>

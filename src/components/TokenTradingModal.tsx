@@ -4,8 +4,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
 import { TrendingUp, BarChart3, AlertCircle } from 'lucide-react';
-import { toast } from 'sonner';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { handleError, ErrorConfigs } from '@/lib/error-handler';
 
 interface TokenData {
   symbol: string;
@@ -33,9 +33,7 @@ export function TokenTradingModal({ token, isOpen, onClose }: TokenTradingModalP
 
   const handleIframeError = () => {
     setIframeError(true);
-    toast.error('Failed to load Hyperliquid trading interface', {
-      description: 'Please check your internet connection or try again later.',
-    });
+    handleError(new Error('Iframe failed to load'), ErrorConfigs.IFRAME_LOAD);
   };
 
   return (
@@ -210,21 +208,15 @@ function TimeChart({ symbol, interval, onError }: { symbol: string; interval: st
         }
       } catch (error) {
         const errorMessage = error instanceof Error ? error.message : 'Unknown error loading chart';
-        console.error('TradingView TimeChart error:', errorMessage);
         onError(`Failed to load time chart: ${errorMessage}`);
-        toast.error('Chart loading failed', {
-          description: 'Unable to load TradingView chart. Please refresh the page.',
-        });
+        handleError(error, ErrorConfigs.CHART_LOAD);
       }
     };
     
     script.onerror = () => {
-      const errorMessage = 'Failed to load TradingView script';
-      console.error(errorMessage);
-      onError(errorMessage);
-      toast.error('Chart script failed to load', {
-        description: 'Please check your internet connection and try again.',
-      });
+      const error = new Error('Failed to load TradingView script');
+      onError(error.message);
+      handleError(error, ErrorConfigs.CHART_SCRIPT);
     };
     
     document.head.appendChild(script);
@@ -287,21 +279,15 @@ function RangeChart({ symbol, range, onError }: { symbol: string; range: string;
         }
       } catch (error) {
         const errorMessage = error instanceof Error ? error.message : 'Unknown error loading chart';
-        console.error('TradingView RangeChart error:', errorMessage);
         onError(`Failed to load range chart: ${errorMessage}`);
-        toast.error('Chart loading failed', {
-          description: 'Unable to load TradingView range chart. Please refresh the page.',
-        });
+        handleError(error, ErrorConfigs.CHART_LOAD);
       }
     };
     
     script.onerror = () => {
-      const errorMessage = 'Failed to load TradingView script';
-      console.error(errorMessage);
-      onError(errorMessage);
-      toast.error('Chart script failed to load', {
-        description: 'Please check your internet connection and try again.',
-      });
+      const error = new Error('Failed to load TradingView script');
+      onError(error.message);
+      handleError(error, ErrorConfigs.CHART_SCRIPT);
     };
     
     document.head.appendChild(script);
