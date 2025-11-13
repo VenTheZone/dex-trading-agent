@@ -407,6 +407,15 @@ export function useTrading() {
         chartInterval: chartInterval,
       }));
 
+      // Final validation before calling backend
+      if (!openRouterKey || openRouterKey === 'DEMO_MODE' || !openRouterKey.startsWith('sk-or-v1-')) {
+        toast.error('Invalid or missing OpenRouter API key', {
+          description: 'Cannot proceed with AI analysis',
+          duration: 5000,
+        });
+        throw new Error('Invalid OpenRouter API key');
+      }
+
       const analysis = await analyzeMultiChart({
         apiKey: openRouterKey,
         charts: multiChartData,
