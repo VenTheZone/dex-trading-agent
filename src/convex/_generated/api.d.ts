@@ -9,7 +9,6 @@
  */
 
 import type * as auth from "../auth.js";
-import type * as auth_emailOtp from "../auth/emailOtp.js";
 import type * as balanceHistory from "../balanceHistory.js";
 import type * as crons from "../crons.js";
 import type * as cryptoPanic from "../cryptoPanic.js";
@@ -29,7 +28,6 @@ import type {
 
 declare const fullApi: ApiFromModules<{
   auth: typeof auth;
-  "auth/emailOtp": typeof auth_emailOtp;
   balanceHistory: typeof balanceHistory;
   crons: typeof crons;
   cryptoPanic: typeof cryptoPanic;
