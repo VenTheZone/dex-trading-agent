@@ -22,6 +22,7 @@ import { BalanceChart } from '@/components/BalanceChart';
 import { useTrading } from '@/hooks/use-trading';
 import { Breadcrumb, BreadcrumbList, BreadcrumbItem, BreadcrumbLink, BreadcrumbSeparator, BreadcrumbPage } from '@/components/ui/breadcrumb';
 import { CloseAllPositionsDialog } from '@/components/CloseAllPositionsDialog';
+import { UpdateNotification } from '@/components/UpdateNotification';
 
 export default function Dashboard() {
   const { isLoading, isAuthenticated } = useAuth();
@@ -123,6 +124,9 @@ export default function Dashboard() {
         <TradingBackground />
       
       <div className="relative z-10">
+        {/* Update Notification */}
+        <UpdateNotification />
+        
         {/* Header */}
         <motion.header
           initial={{ y: -20, opacity: 0 }}
@@ -432,13 +436,16 @@ export default function Dashboard() {
               </div>
             </SheetContent>
           </Sheet>
-              <CloseAllPositionsDialog
-        isOpen={showCloseAllDialog}
-        onClose={() => setShowCloseAllDialog(false)}
-        onConfirm={confirmCloseAllPositions}
-        positionCount={position ? 1 : 0}
-        mode={mode}
-      />
+        </motion.div>
+        
+        <CloseAllPositionsDialog
+          isOpen={showCloseAllDialog}
+          onClose={() => setShowCloseAllDialog(false)}
+          onConfirm={confirmCloseAllPositions}
+          positionCount={position ? 1 : 0}
+          mode={mode}
+        />
+      </div>
     </div>
   );
 }

@@ -219,6 +219,21 @@ You can select up to 5 coins for the AI to actively trade.
 - **Liquidation Warnings**: Alerts when approaching dangerous margin levels
 - **Position Limits**: Configurable maximum position sizes and leverage caps
 
+## 🔄 Auto-Update Feature
+
+The application automatically checks for updates from the GitHub repository every hour. When a new version is available:
+
+1. **Update Notification**: A notification banner appears at the top of the dashboard
+2. **Version Information**: Shows current version vs. latest available version
+3. **Release Notes**: Displays a preview of the latest release notes
+4. **Update Instructions**: Provides deployment-specific update commands
+
+### Manual Update Check
+
+To manually check for updates or force an update:
+
+**For Standard Deployment:**
+
 ## 📁 Project Structure
 ```
 src/
