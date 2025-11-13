@@ -22,6 +22,8 @@ import { useTrading } from '@/hooks/use-trading';
 import { Breadcrumb, BreadcrumbList, BreadcrumbItem, BreadcrumbLink, BreadcrumbSeparator, BreadcrumbPage } from '@/components/ui/breadcrumb';
 import { CloseAllPositionsDialog } from '@/components/CloseAllPositionsDialog';
 import { UpdateNotification } from '@/components/UpdateNotification';
+import { useAction } from 'convex/react';
+import { api } from '@/convex/_generated/api';
 
 export default function Dashboard() {
   const navigate = useNavigate();

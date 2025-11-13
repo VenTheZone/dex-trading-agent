@@ -34,8 +34,9 @@ export function TradingControls() {
   const handleTestConnection = async () => {
     setTestingConnection(true);
     try {
-      const { useAction } = await import('@/hooks/use-auth');
-      const testConnection = useAction((api: any) => api.hyperliquid.testConnection);
+      const { useAction } = await import('convex/react');
+      const { api } = await import('@/convex/_generated/api');
+      const testConnection = useAction(api.hyperliquid.testConnection);
       
       const result = await testConnection({ isTestnet: network === 'testnet' });
       

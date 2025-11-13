@@ -148,6 +148,8 @@ export function useTrading() {
               currentPrice: entryPrice + (unrealizedPnl / size),
               pnl: unrealizedPnl,
               side: size > 0 ? 'long' : 'short' as 'long' | 'short',
+              stopLoss: undefined,
+              takeProfit: undefined,
             };
 
             setPosition(currentPosition);

@@ -106,45 +106,6 @@ export default function Landing() {
             </motion.div>
           </motion.div>
           
-          {/* Token List Section */}
-          <motion.div
-            initial={{ y: 50, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            transition={{ delay: 0.6 }}
-            className="mt-24 max-w-6xl w-full"
-          >
-            <h2 className="text-3xl font-bold text-cyan-400 font-mono text-center mb-8">
-              🎯 Available Trading Pairs
-            </h2>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {TRADING_TOKENS.map((token, i) => (
-                <motion.div
-                  key={token.symbol}
-                  initial={{ y: 20, opacity: 0 }}
-                  animate={{ y: 0, opacity: 1 }}
-                  transition={{ delay: 0.7 + i * 0.05 }}
-                >
-                  <Card
-                    onClick={() => handleTokenClick(token)}
-                    className="bg-black/80 border-cyan-500/50 p-6 cursor-pointer hover:border-cyan-500 transition-all hover:shadow-[0_0_30px_rgba(0,255,255,0.3)] hover:scale-105"
-                  >
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <h3 className="text-xl font-bold text-cyan-400 font-mono mb-2">
-                          {token.pair}
-                        </h3>
-                        <Badge variant="outline" className="bg-purple-500/20 text-purple-400 border-purple-500 font-mono">
-                          {token.maxLeverage}x Leverage
-                        </Badge>
-                      </div>
-                      <TrendingUp className="h-8 w-8 text-cyan-400" />
-                    </div>
-                  </Card>
-                </motion.div>
-              ))}
-            </div>
-          </motion.div>
-          
           {/* Features Grid */}
           <motion.div
             initial={{ y: 50, opacity: 0 }}
@@ -172,6 +133,45 @@ export default function Landing() {
                 <p className="text-sm text-gray-400">{feature.desc}</p>
               </motion.div>
             ))}
+          </motion.div>
+          
+          {/* Token List Section - Moved to Bottom */}
+          <motion.div
+            initial={{ y: 50, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ delay: 1.2 }}
+            className="mt-24 max-w-6xl w-full pb-16"
+          >
+            <h2 className="text-3xl font-bold text-cyan-400 font-mono text-center mb-8">
+              🎯 Available Trading Pairs
+            </h2>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {TRADING_TOKENS.map((token, i) => (
+                <motion.div
+                  key={token.symbol}
+                  initial={{ y: 20, opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
+                  transition={{ delay: 1.3 + i * 0.05 }}
+                >
+                  <Card
+                    onClick={() => handleTokenClick(token)}
+                    className="bg-black/80 border-cyan-500/50 p-6 cursor-pointer hover:border-cyan-500 transition-all hover:shadow-[0_0_30px_rgba(0,255,255,0.3)] hover:scale-105"
+                  >
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h3 className="text-xl font-bold text-cyan-400 font-mono mb-2">
+                          {token.pair}
+                        </h3>
+                        <Badge variant="outline" className="bg-purple-500/20 text-purple-400 border-purple-500 font-mono">
+                          {token.maxLeverage}x Leverage
+                        </Badge>
+                      </div>
+                      <TrendingUp className="h-8 w-8 text-cyan-400" />
+                    </div>
+                  </Card>
+                </motion.div>
+              ))}
+            </div>
           </motion.div>
         </motion.div>
         

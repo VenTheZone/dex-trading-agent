@@ -83,7 +83,7 @@ export const getAccountInfo = action({
         totalMarginUsed: parseFloat(state.marginSummary.totalMarginUsed || "0"),
         positions: state.assetPositions.length,
         network: args.isTestnet ? "testnet" : "mainnet",
-        spotBalances: state.spotState?.balances || [],
+        spotBalances: [],
       };
     } catch (error: any) {
       console.error("Failed to get account info:", error);
