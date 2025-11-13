@@ -22,8 +22,7 @@ import { useTrading } from '@/hooks/use-trading';
 import { Breadcrumb, BreadcrumbList, BreadcrumbItem, BreadcrumbLink, BreadcrumbSeparator, BreadcrumbPage } from '@/components/ui/breadcrumb';
 import { CloseAllPositionsDialog } from '@/components/CloseAllPositionsDialog';
 import { UpdateNotification } from '@/components/UpdateNotification';
-import { useAction } from 'convex/react';
-import { api } from '@/convex/_generated/api';
+import { pythonApi } from '@/lib/python-api-client';
 import { AiThoughtsPanel } from '@/components/AiThoughtsPanel';
 
 export default function Dashboard() {
@@ -32,7 +31,6 @@ export default function Dashboard() {
   const [showCloseAllDialog, setShowCloseAllDialog] = useState(false);
   const { mode, setMode, network, setNetwork, balance, position, initialBalance, resetBalance, settings, setBalance, isAiThinking } = useTradingStore();
   const { closePosition, closeAllPositions } = useTrading();
-  const getAccountInfo = useAction((api as any).hyperliquid.getAccountInfo);
   
   useEffect(() => {
     const keys = storage.getApiKeys();
@@ -46,15 +44,15 @@ export default function Dashboard() {
       if (!keys?.hyperliquid.apiKey) return;
 
       try {
-        const result = await getAccountInfo({
-          walletAddress: keys.hyperliquid.apiKey, // Master wallet address
+        const result = await pythonApi.getAccountInfo({
+          walletAddress: keys.hyperliquid.apiKey,
           isTestnet: network === 'testnet',
         });
 
-        if (result.success) {
-          setBalance(result.perpetualBalance);
-          toast.success(`💰 Balance loaded: ${result.perpetualBalance.toLocaleString()}`, {
-            description: `${network === 'testnet' ? 'Testnet' : 'Mainnet'} - Withdrawable: ${result.withdrawable.toLocaleString()}`,
+        if (result.success && result.data) {
+          setBalance(result.data.perpetualBalance);
+          toast.success(`💰 Balance loaded: ${result.data.perpetualBalance.toLocaleString()}`, {
+            description: `${network === 'testnet' ? 'Testnet' : 'Mainnet'} - Withdrawable: ${result.data.withdrawable.toLocaleString()}`,
             duration: 3000,
           });
         } else {
@@ -68,10 +66,10 @@ export default function Dashboard() {
       }
     };
 
-    if (hasApiKeys) {
+    if (hasApiKeys && mode === 'live') {
       fetchBalance();
     }
-  }, [network, hasApiKeys, getAccountInfo, setBalance]);
+  }, [network, hasApiKeys, setBalance, mode]);
   
   // Calculate P&L
   const pnl = position?.pnl || 0;

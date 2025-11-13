@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useAction } from 'convex/react';
-import { api } from '@/convex/_generated/api';
+import { pythonApi } from '@/lib/python-api-client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
@@ -31,19 +30,18 @@ export function NewsFeed() {
   const [news, setNews] = useState<NewsPost[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [filter, setFilter] = useState<'hot' | 'bullish' | 'bearish' | 'important'>('hot');
-  const fetchNews = useAction((api as any).cryptoPanic.fetchCryptoNews);
 
   const loadNews = async () => {
     setIsLoading(true);
     try {
-      const result = await fetchNews({
+      const result = await pythonApi.fetchCryptoNews({
         filter,
         currencies: ['BTC', 'ETH', 'SOL', 'AVAX'],
         limit: 20,
       });
 
-      if (result.success && result.posts) {
-        setNews(result.posts);
+      if (result.success && result.data) {
+        setNews(result.data);
       } else {
         console.error('News fetch failed:', result.error);
         toast.error('Failed to load news', {

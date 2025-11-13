@@ -1,12 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { useTradingStore } from '@/store/tradingStore';
-import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { useMutation } from 'convex/react';
-import { api } from '@/convex/_generated/api';
 import { toast } from 'sonner';
-import { motion, AnimatePresence } from 'framer-motion';
+import { pythonApi } from '@/lib/python-api-client';
 
 interface TradingChartProps {
   symbol: string;
@@ -21,7 +18,6 @@ export function TradingChart({ symbol, chartId }: TradingChartProps) {
   const [takeProfit, setTakeProfit] = useState<number | null>(null);
   const [previousBalance, setPreviousBalance] = useState(balance);
   const [balanceChange, setBalanceChange] = useState(0);
-  const createLog = useMutation((api as any).tradingLogs.createLog);
   
   // Track balance changes for visual feedback
   useEffect(() => {
@@ -86,17 +82,18 @@ export function TradingChart({ symbol, chartId }: TradingChartProps) {
     if (!position) return;
 
     try {
-      await createLog({
+      await pythonApi.createTradingLog({
         action: "update_stop_loss",
         symbol: position.symbol,
-        reason: `Stop loss updated to $${newPrice.toFixed(2)}`,
+        reason: `Stop loss updated to ${newPrice.toFixed(2)}`,
         price: newPrice,
         size: position.size,
         side: position.side,
+        mode: mode,
       });
       
       setStopLoss(newPrice);
-      toast.success(`Stop loss updated to $${newPrice.toFixed(2)}`);
+      toast.success(`Stop loss updated to ${newPrice.toFixed(2)}`);
     } catch (error: any) {
       toast.error(`Failed to update stop loss: ${error.message}`);
     }

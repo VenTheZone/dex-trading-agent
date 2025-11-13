@@ -20,6 +20,7 @@ export interface TradingLog {
   price?: number;
   size?: number;
   side?: 'long' | 'short';
+  mode?: 'paper' | 'live' | 'demo';
   created_at: string;
 }
 
@@ -219,6 +220,20 @@ class PythonApiClient {
 
   async getOrderBook(coin: string, isTestnet: boolean = false): Promise<ApiResponse<any>> {
     return this.request<any>(`/api/hyperliquid/orderbook?coin=${coin}&isTestnet=${isTestnet}`);
+  }
+
+  async getAccountInfo(params: { walletAddress: string; isTestnet: boolean }): Promise<ApiResponse<any>> {
+    return this.request('/api/hyperliquid/account-info', {
+      method: 'POST',
+      body: JSON.stringify(params),
+    });
+  }
+
+  async fetchCryptoNews(params: { filter: string; currencies: string[]; limit: number }): Promise<ApiResponse<any>> {
+    return this.request('/api/news/crypto', {
+      method: 'POST',
+      body: JSON.stringify(params),
+    });
   }
 
   // Live Trading
