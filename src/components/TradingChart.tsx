@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { useMutation } from 'convex/react';
 import { api } from '@/convex/_generated/api';
 import { toast } from 'sonner';
+import { motion, AnimatePresence } from 'framer-motion';
 
 interface TradingChartProps {
   symbol: string;
@@ -15,10 +16,25 @@ interface TradingChartProps {
 export function TradingChart({ symbol, chartId }: TradingChartProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const widgetRef = useRef<any>(null);
-  const { chartInterval, chartType, position, mode } = useTradingStore();
+  const { chartInterval, chartType, position, mode, balance } = useTradingStore();
   const [stopLoss, setStopLoss] = useState<number | null>(null);
   const [takeProfit, setTakeProfit] = useState<number | null>(null);
+  const [previousBalance, setPreviousBalance] = useState(balance);
+  const [balanceChange, setBalanceChange] = useState(0);
   const createLog = useMutation((api as any).tradingLogs.createLog);
+  
+  // Track balance changes for visual feedback
+  useEffect(() => {
+    if (balance !== previousBalance) {
+      const change = balance - previousBalance;
+      setBalanceChange(change);
+      setPreviousBalance(balance);
+      
+      // Clear the change indicator after 3 seconds
+      const timeout = setTimeout(() => setBalanceChange(0), 3000);
+      return () => clearTimeout(timeout);
+    }
+  }, [balance, previousBalance]);
   
   useEffect(() => {
     if (!containerRef.current) return;
