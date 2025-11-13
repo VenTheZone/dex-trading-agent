@@ -2,12 +2,31 @@ version: '3.8'
 
 services:
   dex-trading-agent:
-    build: .
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: dex-trading-agent
     ports:
       - "5173:5173"
     environment:
-      - NODE_ENV=production
+      # Convex deployment URL (required)
       - VITE_CONVEX_URL=${VITE_CONVEX_URL}
+      
+      # Backend API Keys (optional - fallback if not set in browser)
+      - OPENROUTER_API_KEY=${OPENROUTER_API_KEY}
+      - CRYPTOPANIC_AUTH_TOKEN=${CRYPTOPANIC_AUTH_TOKEN}
+      
+      # Docker deployment flag
+      - VITE_DOCKER_DEPLOYMENT=true
+    env_file:
+      - .env
     restart: unless-stopped
     volumes:
-      - ./dist:/app/dist:ro
+      # Mount convex functions for hot reload during development
+      - ./src/convex:/app/src/convex:ro
+    networks:
+      - dex-network
+
+networks:
+  dex-network:
+    driver: bridge

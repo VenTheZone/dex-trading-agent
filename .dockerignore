@@ -1,13 +1,44 @@
-node_modules
-dist
-.git
-.gitignore
+# Dependencies
+node_modules/
+.pnpm-store/
+
+# Build outputs
+dist/
+build/
+.next/
+out/
+
+# Environment files (will be passed via docker-compose)
 .env
 .env.local
 .env*.local
-*.log
+
+# Git
+.git/
+.gitignore
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
 .DS_Store
-.vscode
-.idea
-README.md
-.convex
+Thumbs.db
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+pnpm-debug.log*
+
+# Testing
+coverage/
+.nyc_output/
+
+# Misc
+.cache/
+.temp/
+tmp/

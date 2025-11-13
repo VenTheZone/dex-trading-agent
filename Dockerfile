@@ -1,10 +1,11 @@
-# Build stage
+# Multi-stage build for optimized production image
 FROM node:20-alpine AS builder
-
-WORKDIR /app
 
 # Install pnpm
 RUN npm install -g pnpm
+
+# Set working directory
+WORKDIR /app
 
 # Copy package files
 COPY package.json pnpm-lock.yaml* ./
@@ -21,10 +22,10 @@ RUN pnpm build
 # Production stage
 FROM node:20-alpine
 
-WORKDIR /app
-
 # Install pnpm
 RUN npm install -g pnpm
+
+WORKDIR /app
 
 # Copy package files
 COPY package.json pnpm-lock.yaml* ./
@@ -32,11 +33,12 @@ COPY package.json pnpm-lock.yaml* ./
 # Install production dependencies only
 RUN pnpm install --prod --frozen-lockfile
 
-# Copy built assets from builder
+# Copy built application from builder
 COPY --from=builder /app/dist ./dist
+COPY --from=builder /app/src/convex ./src/convex
 
 # Expose port
 EXPOSE 5173
 
 # Start the application
-CMD ["pnpm", "preview", "--host", "0.0.0.0", "--port", "5173"]
+CMD ["pnpm", "preview", "--host", "0.0.0.0"]

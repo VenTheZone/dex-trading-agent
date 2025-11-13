@@ -64,7 +64,7 @@ This guide covers deploying the DeX Trading Agent locally using Docker for devel
 1. **Docker Desktop** installed (https://www.docker.com/products/docker-desktop)
 2. **Docker Compose** (included with Docker Desktop)
 3. **Convex account** with your project deployed
-4. **API Keys** (OpenRouter, Hyperliquid)
+4. **API Keys** (OpenRouter, CryptoPanic)
 
 ## Quick Start
 
@@ -76,5 +76,8 @@ Before using Docker, you need to deploy your Convex backend:
 2. Select your project
 3. Click "Deploy" to deploy your Convex backend
 4. Wait for deployment to complete
+5. Copy your `CONVEX_DEPLOYMENT_URL` from the dashboard
 
-Once your Convex backend is deployed, you can proceed with the Docker setup.
+### 2. Configure Environment Variables
+
+Create a `.env` file in the root directory (copy from `.env.example`):
