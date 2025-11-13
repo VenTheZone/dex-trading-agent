@@ -1,1 +1,5 @@
-const model = args.isDemoMode ? "deepseek/deepseek-chat-v3.1:free" : (args.aiModel || "deepseek/deepseek-chat");
+const apiKey = process.env.OPENROUTER_API_KEY;
+
+if (!apiKey && !args.isDemoMode) {
+  throw new Error("OpenRouter API key not configured");
+}
