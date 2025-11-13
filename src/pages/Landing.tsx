@@ -9,6 +9,7 @@ import { TokenTradingModal } from "@/components/TokenTradingModal";
 import { TRADING_TOKENS, TokenData } from "@/lib/tokenData";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
+import { toast } from "sonner";
 
 export default function Landing() {
   const navigate = useNavigate();
@@ -17,8 +18,37 @@ export default function Landing() {
   const [showTokenModal, setShowTokenModal] = useState(false);
 
   const handleTokenClick = (token: TokenData) => {
-    setSelectedToken(token);
-    setShowTokenModal(true);
+    try {
+      setSelectedToken(token);
+      setShowTokenModal(true);
+    } catch (error) {
+      console.error('Error opening token modal:', error);
+      toast.error('Failed to open trading modal', {
+        description: 'Please try again or refresh the page.',
+      });
+    }
+  };
+
+  const handleNavigateToDashboard = () => {
+    try {
+      navigate('/dashboard');
+    } catch (error) {
+      console.error('Navigation error:', error);
+      toast.error('Failed to navigate to dashboard', {
+        description: 'Please refresh the page and try again.',
+      });
+    }
+  };
+
+  const handleShowPreview = () => {
+    try {
+      setShowPreview(true);
+    } catch (error) {
+      console.error('Error showing preview:', error);
+      toast.error('Failed to open preview', {
+        description: 'Please try again.',
+      });
+    }
   };
 
   return (
@@ -87,7 +117,7 @@ export default function Landing() {
             >
               <Button
                 size="lg"
-                onClick={() => navigate('/dashboard')}
+                onClick={handleNavigateToDashboard}
                 className="text-xl px-8 py-6 bg-cyan-500 hover:bg-cyan-600 text-black font-bold font-mono shadow-[0_0_30px_rgba(0,255,255,0.8)] border-2 border-cyan-400"
               >
                 <Zap className="mr-2 h-6 w-6" />
@@ -97,7 +127,7 @@ export default function Landing() {
               <Button
                 size="lg"
                 variant="outline"
-                onClick={() => setShowPreview(true)}
+                onClick={handleShowPreview}
                 className="text-xl px-8 py-6 border-2 border-cyan-500 text-cyan-400 hover:bg-cyan-500/20 font-bold font-mono shadow-[0_0_20px_rgba(0,255,255,0.4)]"
               >
                 <Eye className="mr-2 h-6 w-6" />
@@ -467,7 +497,7 @@ export default function Landing() {
                       size="lg"
                       onClick={() => {
                         setShowPreview(false);
-                        navigate('/dashboard');
+                        handleNavigateToDashboard();
                       }}
                       className="bg-cyan-500 hover:bg-cyan-600 text-black font-bold font-mono shadow-[0_0_20px_rgba(0,255,255,0.4)]"
                     >
@@ -485,7 +515,13 @@ export default function Landing() {
         <TokenTradingModal
           token={selectedToken}
           isOpen={showTokenModal}
-          onClose={() => setShowTokenModal(false)}
+          onClose={() => {
+            try {
+              setShowTokenModal(false);
+            } catch (error) {
+              console.error('Error closing modal:', error);
+            }
+          }}
         />
       </div>
     </div>
