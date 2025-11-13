@@ -344,11 +344,11 @@ export default function Dashboard() {
                   <TradingChart key={`${symbol}-${index}`} symbol={symbol} chartId={index + 1} />
                 ))
               ) : (
-                <>
-                  <TradingChart symbol="BTCUSD" chartId={1} />
-                  <TradingChart symbol="ETHUSD" chartId={2} />
-                  <TradingChart symbol="SOLUSD" chartId={3} />
-                </>
+                <div className="col-span-full flex items-center justify-center p-8">
+                  <p className="text-cyan-400 font-mono text-center">
+                    No coins selected. Please select coins in Trading Controls to display charts.
+                  </p>
+                </div>
               )}
             </div>
             

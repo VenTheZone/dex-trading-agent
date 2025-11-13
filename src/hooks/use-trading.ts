@@ -585,7 +585,7 @@ export function useTrading() {
         });
         
         // Validation checks with detailed feedback
-        if (allowedCoins.length === 0) {
+        if (!allowedCoins || allowedCoins.length === 0) {
           toast.error("❌ Auto-trading paused: No coins selected", {
             description: "Please select at least 1 coin in Trading Controls",
             duration: 5000,
@@ -723,16 +723,34 @@ export function useTrading() {
             return;
           }
 
-          // Execute simulated trade based on AI recommendation
+          // Execute simulated trade based on AI recommendation - only if symbol is in allowed coins
           if (analysis.action === "open_long" || analysis.action === "open_short") {
+            const recommendedSymbol = analysis.recommendedSymbol || validCharts[0].symbol;
+            
+            // Double-check that the recommended symbol is in allowed coins
+            if (!allowedCoins.includes(recommendedSymbol)) {
+              toast.warning(`[DEMO] ⚠️ AI recommended ${recommendedSymbol} but it's not in your allowed coins list`, {
+                description: 'Skipping this trade recommendation',
+              });
+              
+              await createLog({
+                action: "trade_skipped",
+                symbol: recommendedSymbol,
+                reason: `[DEMO] AI recommended ${recommendedSymbol} but it's not in allowed coins: ${allowedCoins.join(', ')}`,
+                details: analysis.reasoning,
+              });
+              
+              return;
+            }
+            
             const side = analysis.action === "open_long" ? "long" : "short";
             
-            toast.info(`[DEMO] 📊 AI recommends ${side.toUpperCase()} on ${analysis.recommendedSymbol}`, {
+            toast.info(`[DEMO] 📊 AI recommends ${side.toUpperCase()} on ${recommendedSymbol}`, {
               description: `Confidence: ${analysis.confidence}%`,
             });
             
             await executeTrade(
-              analysis.recommendedSymbol || validCharts[0].symbol,
+              recommendedSymbol,
               analysis.action,
               side,
               analysis.entryPrice,
@@ -837,16 +855,34 @@ export function useTrading() {
           return;
         }
 
-        // Execute trade based on AI recommendation
+        // Execute trade based on AI recommendation - only if symbol is in allowed coins
         if (analysis.action === "open_long" || analysis.action === "open_short") {
+          const recommendedSymbol = analysis.recommendedSymbol || validCharts[0].symbol;
+          
+          // Double-check that the recommended symbol is in allowed coins
+          if (!allowedCoins.includes(recommendedSymbol)) {
+            toast.warning(`⚠️ AI recommended ${recommendedSymbol} but it's not in your allowed coins list`, {
+              description: 'Skipping this trade recommendation',
+            });
+            
+            await createLog({
+              action: "trade_skipped",
+              symbol: recommendedSymbol,
+              reason: `AI recommended ${recommendedSymbol} but it's not in allowed coins: ${allowedCoins.join(', ')}`,
+              details: analysis.reasoning,
+            });
+            
+            return;
+          }
+          
           const side = analysis.action === "open_long" ? "long" : "short";
           
-          toast.info(`📊 AI recommends ${side.toUpperCase()} on ${analysis.recommendedSymbol}`, {
+          toast.info(`📊 AI recommends ${side.toUpperCase()} on ${recommendedSymbol}`, {
             description: `Confidence: ${analysis.confidence}%`,
           });
           
           await executeTrade(
-            analysis.recommendedSymbol || validCharts[0].symbol,
+            recommendedSymbol,
             analysis.action,
             side,
             analysis.entryPrice,
