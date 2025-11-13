@@ -32,12 +32,12 @@ export const analyzeSingleMarket = action({
     customPrompt: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
-    // Validate API key format
-    if (!args.apiKey || args.apiKey.trim() === '') {
+    // Validate API key format (must be a real key, no DEMO_MODE allowed)
+    if (!args.apiKey || args.apiKey.trim() === '' || args.apiKey === 'DEMO_MODE') {
       throw new Error("OpenRouter API key is required. Please add your API key in Settings.");
     }
 
-    if (args.apiKey !== 'DEMO_MODE' && !args.apiKey.startsWith('sk-or-v1-')) {
+    if (!args.apiKey.startsWith('sk-or-v1-')) {
       throw new Error("Invalid OpenRouter API key format. Key must start with 'sk-or-v1-'");
     }
 
@@ -143,12 +143,12 @@ export const analyzeMultipleCharts = action({
       hasApiKey: !!args.apiKey,
     });
     
-    // Validate API key
-    if (!args.apiKey || args.apiKey.trim() === '') {
+    // Validate API key (must be a real key, no DEMO_MODE allowed)
+    if (!args.apiKey || args.apiKey.trim() === '' || args.apiKey === 'DEMO_MODE') {
       throw new Error("OpenRouter API key is required. Please add your API key in Settings.");
     }
 
-    if (args.apiKey !== 'DEMO_MODE' && !args.apiKey.startsWith('sk-or-v1-')) {
+    if (!args.apiKey.startsWith('sk-or-v1-')) {
       throw new Error("Invalid OpenRouter API key format. Key must start with 'sk-or-v1-'");
     }
 

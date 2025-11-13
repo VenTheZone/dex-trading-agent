@@ -258,7 +258,16 @@ export function useTrading() {
       const keys = storage.getApiKeys();
       const openRouterKey = keys?.openRouter || '';
       
-      // Validate API key
+      // In demo mode without a real API key, skip AI analysis
+      if (isDemoMode && (!openRouterKey || openRouterKey === 'DEMO_MODE')) {
+        toast.info('[DEMO] AI analysis skipped - No OpenRouter API key provided', {
+          description: 'Add your OpenRouter key in Settings to enable real AI analysis in demo mode',
+          duration: 5000,
+        });
+        throw new Error('Demo mode requires OpenRouter API key for AI analysis');
+      }
+      
+      // Validate API key format
       if (!openRouterKey || openRouterKey.trim() === '') {
         toast.error('OpenRouter API key required', {
           description: 'Please add your OpenRouter API key in Settings',
@@ -267,7 +276,7 @@ export function useTrading() {
         throw new Error('OpenRouter API key not configured');
       }
 
-      if (openRouterKey !== 'DEMO_MODE' && !openRouterKey.startsWith('sk-or-v1-')) {
+      if (!openRouterKey.startsWith('sk-or-v1-')) {
         toast.error('Invalid OpenRouter API key format', {
           description: 'Key must start with "sk-or-v1-"',
           duration: 5000,
@@ -278,11 +287,7 @@ export function useTrading() {
       const modelName = aiModel === 'qwen/qwen3-max' ? 'Qwen' : 'DeepSeek';
       
       if (isDemoMode) {
-        if (openRouterKey !== 'DEMO_MODE') {
-          toast.info(`[DEMO] 🤖 AI analyzing with your OpenRouter key (${modelName})...`);
-        } else {
-          toast.info(`[DEMO] 🤖 AI analyzing market with ${modelName} Free...`);
-        }
+        toast.info(`[DEMO] 🤖 AI analyzing with your OpenRouter key (${modelName})...`);
       } else {
         toast.info(`🤖 AI analyzing market with ${modelName}...`);
       }
@@ -343,7 +348,24 @@ export function useTrading() {
       const keys = storage.getApiKeys();
       const openRouterKey = keys?.openRouter || '';
       
-      // Validate API key
+      // In demo mode without a real API key, skip AI analysis
+      if (isDemoMode && (!openRouterKey || openRouterKey === 'DEMO_MODE')) {
+        toast.info('[DEMO] AI analysis skipped - No OpenRouter API key provided', {
+          description: 'Add your OpenRouter key in Settings to enable real AI analysis in demo mode',
+          duration: 5000,
+        });
+        
+        await createLog({
+          action: "ai_skip",
+          symbol: "DEMO",
+          reason: "Demo mode: AI analysis skipped (no API key)",
+          details: "User can add OpenRouter API key in Settings to enable AI analysis",
+        });
+        
+        return null;
+      }
+      
+      // Validate API key format for non-demo or demo with real key
       if (!openRouterKey || openRouterKey.trim() === '') {
         toast.error('OpenRouter API key required', {
           description: 'Please add your OpenRouter API key in Settings',
@@ -352,7 +374,7 @@ export function useTrading() {
         throw new Error('OpenRouter API key not configured');
       }
 
-      if (openRouterKey !== 'DEMO_MODE' && !openRouterKey.startsWith('sk-or-v1-')) {
+      if (!openRouterKey.startsWith('sk-or-v1-')) {
         toast.error('Invalid OpenRouter API key format', {
           description: 'Key must start with "sk-or-v1-"',
           duration: 5000,
@@ -363,11 +385,7 @@ export function useTrading() {
       const modelName = aiModel === 'qwen/qwen3-max' ? 'Qwen' : 'DeepSeek';
       
       if (isDemoMode) {
-        if (openRouterKey !== 'DEMO_MODE') {
-          toast.info(`[DEMO] 🤖 AI analyzing multiple charts with your OpenRouter key (${modelName})...`);
-        } else {
-          toast.info(`[DEMO] 🤖 AI analyzing multiple charts with ${modelName} Free...`);
-        }
+        toast.info(`[DEMO] 🤖 AI analyzing multiple charts with your OpenRouter key (${modelName})...`);
       } else {
         toast.info(`🤖 AI analyzing multiple charts with ${modelName}...`);
       }
