@@ -176,9 +176,11 @@ You have two options for configuring API keys:
    - **🔑 API Keys** (Full Trading - RECOMMENDED): Enter credentials for automated AI trading
      - **Master Account Address** (Your main wallet address from https://app.hyperliquid.xyz)
      - **Agent Wallet Private Key** (Generated at https://app.hyperliquid.xyz/API - starts with "0x", 66 characters)
-     - **Agent Wallet Address** (Optional, for tracking)
      - **OpenRouter API Key** (from https://openrouter.ai)
-     - **Security**: Agent wallets can trade but CANNOT withdraw funds - much safer!
+     - **Security**: 
+       - ⚠️ **ALWAYS use a separate/dedicated wallet for AI trading - NEVER your main wallet!**
+       - Agent wallets can trade but CANNOT withdraw funds - much safer!
+       - Only 2 keys needed: Master Address + Agent Private Key (agent address is auto-derived)
    - **🎮 Demo Mode**: Try the platform with simulated perpetual futures trading
 
 **Security Note:** All API keys are stored locally in your browser's localStorage and never sent to any server.
@@ -239,12 +241,15 @@ You can select up to 5 coins for the AI to actively trade.
 ## 🔒 Security & Risk Management
 
 ### Security Best Practices
-- **Never share your private keys** with anyone
+- **CRITICAL: Always use a separate/dedicated wallet for AI trading**
+- **NEVER use your main wallet with significant funds**
 - Use **Hyperliquid Agent Wallets** (recommended) - they can trade but CANNOT withdraw funds
+- **Never share your private keys** with anyone
 - API keys are stored locally in browser localStorage only
 - Start with **Paper Trading** to test strategies risk-free
 - Use **Testnet** before trading on Mainnet
 - Regularly **review trading logs** and performance metrics
+- Consider using a fresh wallet with only trading capital (not your savings!)
 
 ### Risk Controls
 - **Margin Monitoring**: Real-time margin usage calculation including unrealized PnL

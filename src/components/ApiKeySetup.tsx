@@ -249,13 +249,14 @@ export function ApiKeySetup({ onComplete }: ApiKeySetupProps) {
               <Alert className="bg-green-500/10 border-green-500/50">
                 <Info className="h-4 w-4 text-green-500" />
                 <AlertDescription className="text-green-200">
-                  <strong>✅ RECOMMENDED: Use Hyperliquid API Wallet (Agent Wallet)</strong>
+                  <strong>✅ RECOMMENDED: Use Hyperliquid Agent Wallet</strong>
                   <ul className="mt-2 space-y-1 text-sm">
                     <li>• Agent wallets can trade but CANNOT withdraw funds</li>
                     <li>• Much safer than using your main wallet's private key</li>
                     <li>• Generate at <a href="https://app.hyperliquid.xyz/API" target="_blank" rel="noopener noreferrer" className="text-cyan-400 hover:underline">app.hyperliquid.xyz/API</a></li>
                     <li>• Valid for up to 180 days</li>
                     <li>• Can be revoked anytime from the Hyperliquid dashboard</li>
+                    <li>• <strong className="text-yellow-300">⚠️ Use a separate/dedicated wallet for AI trading - never your main wallet!</strong></li>
                   </ul>
                 </AlertDescription>
               </Alert>
@@ -263,8 +264,10 @@ export function ApiKeySetup({ onComplete }: ApiKeySetupProps) {
               <Alert className="bg-yellow-500/10 border-yellow-500/50">
                 <AlertTriangle className="h-4 w-4 text-yellow-500" />
                 <AlertDescription className="text-yellow-200">
-                  <strong>⚠️ SECURITY NOTES:</strong>
+                  <strong>⚠️ CRITICAL SECURITY NOTES:</strong>
                   <ul className="mt-2 space-y-1 text-sm">
+                    <li>• <strong className="text-red-300">ALWAYS use a separate/dedicated wallet for AI trading</strong></li>
+                    <li>• <strong className="text-red-300">NEVER use your main wallet with significant funds</strong></li>
                     <li>• Keys are stored in browser localStorage only</li>
                     <li>• NEVER share your private keys with anyone</li>
                     <li>• Start with testnet to verify functionality</li>
@@ -413,11 +416,11 @@ export function ApiKeySetup({ onComplete }: ApiKeySetupProps) {
                 </div>
                 
                 <div className="space-y-2">
-                  <Label className="text-cyan-400 font-mono text-base">
-                    3️⃣ Agent Wallet Address (Optional - For Tracking Only)
+                  <Label className="text-cyan-400 font-mono text-base text-gray-500">
+                    3️⃣ Agent Wallet Address (Optional - Not Required)
                   </Label>
                   <Input
-                    placeholder="Example: 0x9876...4321 (NEW address created by Hyperliquid)"
+                    placeholder="Not needed - Leave empty (automatically derived from private key)"
                     value={keys.hyperliquid.walletAddress}
                     onChange={(e) => {
                       const sanitized = sanitizeWalletAddress(e.target.value);
@@ -426,20 +429,18 @@ export function ApiKeySetup({ onComplete }: ApiKeySetupProps) {
                         hyperliquid: { ...keys.hyperliquid, walletAddress: sanitized }
                       });
                     }}
-                    className="bg-black/50 border-cyan-500/30 text-cyan-100 font-mono focus:border-cyan-500"
+                    className="bg-black/50 border-cyan-500/30 text-cyan-100 font-mono focus:border-cyan-500 opacity-50"
+                    disabled
                   />
-                  <div className="bg-blue-500/10 p-2 rounded border border-blue-500/30">
-                    <p className="text-xs text-blue-300 font-mono font-bold">
-                      ℹ️ This is DIFFERENT from your main wallet address!
+                  <div className="bg-gray-500/10 p-2 rounded border border-gray-500/30">
+                    <p className="text-xs text-gray-400 font-mono font-bold">
+                      ℹ️ This field is NOT required - the agent address is automatically derived from the private key
                     </p>
-                    <p className="text-xs text-gray-400 font-mono mt-1">
-                      • This is the NEW agent wallet address that Hyperliquid creates when you click "Generate"
+                    <p className="text-xs text-gray-500 font-mono mt-1">
+                      • You only need Fields 1 & 2 above to start trading
                     </p>
-                    <p className="text-xs text-gray-400 font-mono">
-                      • It's NOT the same as your main wallet address (Field 1)
-                    </p>
-                    <p className="text-xs text-gray-400 font-mono">
-                      • Optional: Only needed if you want to track this specific agent wallet
+                    <p className="text-xs text-gray-500 font-mono">
+                      • The system will automatically use the correct agent wallet address
                     </p>
                   </div>
                 </div>
