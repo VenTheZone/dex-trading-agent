@@ -73,7 +73,7 @@ export function useTrading() {
     };
   }, [balance, mode, user, recordBalance]);
 
-  // Poll for live positions if in live mode
+  // Poll for live positions if in live mode with trailing stop loss logic
   useEffect(() => {
     if (mode !== 'live' || !user) return;
 
@@ -151,6 +151,35 @@ export function useTrading() {
             };
 
             setPosition(currentPosition);
+
+            // Implement trailing stop loss logic if enabled
+            if (settings.useTrailingStop && currentPosition.pnl > 0) {
+              const profitPercent = (currentPosition.pnl / (currentPosition.entryPrice * currentPosition.size)) * 100;
+              
+              // If profit exceeds 50% of take profit target, move stop loss to break even
+              if (profitPercent >= (settings.takeProfitPercent * 0.5)) {
+                const newStopLoss = currentPosition.entryPrice;
+                
+                // Only update if the new stop loss is better than the current one
+                if (!currentPosition.stopLoss || 
+                    (currentPosition.side === 'long' && newStopLoss > currentPosition.stopLoss) ||
+                    (currentPosition.side === 'short' && newStopLoss < currentPosition.stopLoss)) {
+                  
+                  console.log(`[TRAILING STOP] Moving stop loss to break even: ${newStopLoss}`);
+                  
+                  toast.info(`🎯 Trailing Stop: Stop loss moved to break even (${newStopLoss.toFixed(2)})`, {
+                    duration: 5000,
+                  });
+                  
+                  await createLog({
+                    action: "trailing_stop_update",
+                    symbol: currentPosition.symbol,
+                    reason: `Trailing stop activated - moved SL to break even`,
+                    details: `Profit: ${profitPercent.toFixed(2)}%, New SL: ${newStopLoss.toFixed(2)}`,
+                  });
+                }
+              }
+            }
 
             // Record position snapshot
             await recordPositionSnapshot({

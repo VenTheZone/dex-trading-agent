@@ -225,6 +225,15 @@ export function TradingControls() {
             </Alert>
           )}
           
+          {mode === 'paper' && (
+            <Alert className="bg-cyan-500/10 border-cyan-500/50">
+              <AlertTriangle className="h-4 w-4 text-cyan-500" />
+              <AlertDescription className="text-cyan-200 text-xs">
+                <strong>Paper Trading Active:</strong> All trades are simulated. Enable AI auto-trading to test DeepSeek's execution capabilities.
+              </AlertDescription>
+            </Alert>
+          )}
+          
           <p className="text-xs text-gray-500 font-mono">
             {aiModel === 'deepseek/deepseek-chat-v3-0324:free' 
               ? 'DeepSeek is free and recommended for most users' 

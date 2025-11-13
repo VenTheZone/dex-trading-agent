@@ -331,46 +331,64 @@ export const executeHyperliquidTrade = action({
         grouping: "na",
       });
 
-      // Place stop loss if provided
+      // Place TP/SL as children orders if provided
+      const children: any[] = [];
+      
       if (args.stopLoss) {
-        await exchClient.order({
-          orders: [{
-            a: assetIndex,
-            b: args.side === "sell", // Opposite side for stop loss
-            p: "0",
-            s: args.size.toString(),
-            r: true,
-            t: {
-              trigger: {
-                isMarket: true,
-                triggerPx: args.stopLoss.toString(),
-                tpsl: "sl",
-              },
+        children.push({
+          a: assetIndex,
+          b: args.side === "sell", // Opposite side for stop loss
+          p: "0",
+          s: args.size.toString(),
+          r: true,
+          t: {
+            trigger: {
+              isMarket: true,
+              triggerPx: args.stopLoss.toString(),
+              tpsl: "sl",
             },
-          }],
-          grouping: "normalTpsl",
+          },
         });
       }
 
-      // Place take profit if provided
       if (args.takeProfit) {
-        await exchClient.order({
+        children.push({
+          a: assetIndex,
+          b: args.side === "sell", // Opposite side for take profit
+          p: "0",
+          s: args.size.toString(),
+          r: true,
+          t: {
+            trigger: {
+              isMarket: true,
+              triggerPx: args.takeProfit.toString(),
+              tpsl: "tp",
+            },
+          },
+        });
+      }
+
+      // Place main order with children TP/SL
+      if (children.length > 0) {
+        const mainOrderWithChildren = await exchClient.order({
           orders: [{
             a: assetIndex,
-            b: args.side === "sell", // Opposite side for take profit
-            p: "0",
+            b: args.side === "buy",
+            p: args.price.toString(),
             s: args.size.toString(),
-            r: true,
-            t: {
-              trigger: {
-                isMarket: true,
-                triggerPx: args.takeProfit.toString(),
-                tpsl: "tp",
-              },
-            },
+            r: false,
+            t: { limit: { tif: "Gtc" } },
           }],
-          grouping: "normalTpsl",
+          grouping: "na",
         });
+
+        // Place children orders after main order
+        if (mainOrderWithChildren.status === "ok") {
+          await exchClient.order({
+            orders: children,
+            grouping: "normalTpsl",
+          });
+        }
       }
 
       return { success: true, result: orderResult };
