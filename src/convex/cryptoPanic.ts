@@ -73,15 +73,41 @@ export const fetchCryptoNews = action({
 
       const url = `https://cryptopanic.com/api/v1/posts/?${params.toString()}`;
       
-      const response = await fetch(url, {
-        signal: AbortSignal.timeout(10000),
-        headers: {
-          'Accept': 'application/json',
-          'User-Agent': 'DeX-Trading-Agent/1.0',
-        },
-      });
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 10000); // 10s timeout
+
+      let response;
+      try {
+        response = await fetch(url, {
+          signal: controller.signal,
+          headers: {
+            'Accept': 'application/json',
+            'User-Agent': 'DeX-Trading-Agent/1.0',
+          },
+        });
+        clearTimeout(timeoutId);
+      } catch (fetchError: any) {
+        clearTimeout(timeoutId);
+        if (fetchError.name === 'AbortError') {
+          throw new Error('CryptoPanic API request timed out after 10 seconds');
+        }
+        throw fetchError;
+      }
 
       if (!response.ok) {
+        const errorText = await response.text().catch(() => 'Unable to read error response');
+        console.error('[CONVEX] CryptoPanic API error:', {
+          status: response.status,
+          statusText: response.statusText,
+          errorText,
+        });
+        
+        if (response.status === 429) {
+          throw new Error('CryptoPanic API rate limit exceeded. Please add CRYPTOPANIC_AUTH_TOKEN for higher limits.');
+        } else if (response.status >= 500) {
+          throw new Error('CryptoPanic API server error. Please try again later.');
+        }
+        
         throw new Error(`CryptoPanic API error: ${response.status} ${response.statusText}`);
       }
 
@@ -120,10 +146,15 @@ export const fetchCryptoNews = action({
         count: Math.min(data.count || 0, 999999),
       };
     } catch (error: any) {
-      console.error('Error fetching CryptoPanic news:', error);
+      console.error('[CONVEX] Error fetching CryptoPanic news:', {
+        message: error.message,
+        stack: error.stack,
+        filter: args.filter,
+        currencies: args.currencies,
+      });
       return {
         success: false,
-        error: error.message || 'Unknown error',
+        error: error.message || 'Unknown error fetching crypto news',
         posts: [],
         count: 0,
       };

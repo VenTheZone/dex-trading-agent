@@ -9,20 +9,25 @@ import { internal } from "./_generated/api";
  * Priority: Client-provided key > Backend environment variable
  */
 function getOpenRouterKey(clientKey: string): string {
-  // If client provides a valid key, use it
-  if (clientKey && clientKey !== 'DEMO_MODE' && clientKey.startsWith('sk-or-v1-')) {
-    return clientKey;
+  try {
+    // If client provides a valid key, use it
+    if (clientKey && clientKey !== 'DEMO_MODE' && clientKey.startsWith('sk-or-v1-')) {
+      return clientKey;
+    }
+    
+    // Fallback to backend environment variable
+    const backendKey = process.env.OPENROUTER_API_KEY;
+    if (backendKey && backendKey.startsWith('sk-or-v1-')) {
+      console.log('[CONVEX] Using backend OpenRouter API key');
+      return backendKey;
+    }
+    
+    // No valid key available
+    throw new Error("OpenRouter API key is required. Please add your API key in Settings or configure OPENROUTER_API_KEY in backend environment.");
+  } catch (error: any) {
+    console.error('[CONVEX] Error validating OpenRouter API key:', error.message);
+    throw new Error(`API key validation failed: ${error.message}`);
   }
-  
-  // Fallback to backend environment variable
-  const backendKey = process.env.OPENROUTER_API_KEY;
-  if (backendKey && backendKey.startsWith('sk-or-v1-')) {
-    console.log('[CONVEX] Using backend OpenRouter API key');
-    return backendKey;
-  }
-  
-  // No valid key available
-  throw new Error("OpenRouter API key is required. Please add your API key in Settings or configure OPENROUTER_API_KEY in backend environment.");
 }
 
 /**
@@ -76,49 +81,81 @@ export const analyzeSingleMarket = action({
         "Authorization": `Bearer ${apiKey}`,
       };
 
-      const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-        method: "POST",
-        headers,
-        body: JSON.stringify({
-          model,
-          messages: [
-            {
-              role: "system",
-              content: "You are a professional crypto trading analyst. Always respond with valid JSON."
-            },
-            {
-              role: "user",
-              content: prompt
-            }
-          ],
-          response_format: { type: "json_object" },
-        }),
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 30000); // 30s timeout
+
+      try {
+        const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+          method: "POST",
+          headers,
+          body: JSON.stringify({
+            model,
+            messages: [
+              {
+                role: "system",
+                content: "You are a professional crypto trading analyst. Always respond with valid JSON."
+              },
+              {
+                role: "user",
+                content: prompt
+              }
+            ],
+            response_format: { type: "json_object" },
+          }),
+          signal: controller.signal,
+        });
+
+        clearTimeout(timeoutId);
+
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error('[CONVEX] OpenRouter API error:', {
+            status: response.status,
+            statusText: response.statusText,
+            errorText,
+          });
+          
+          if (response.status === 401) {
+            throw new Error('Invalid OpenRouter API key. Please check your API key in Settings.');
+          } else if (response.status === 429) {
+            throw new Error('OpenRouter API rate limit exceeded. Please try again later.');
+          } else if (response.status >= 500) {
+            throw new Error('OpenRouter API server error. Please try again later.');
+          }
+          
+          throw new Error(`OpenRouter API error (${response.status}): ${response.statusText}`);
+        }
+
+        const data = await response.json();
+        
+        if (!data.choices || !Array.isArray(data.choices) || data.choices.length === 0) {
+          console.error('[CONVEX] Invalid API response structure:', data);
+          throw new Error('OpenRouter API returned invalid response structure. No choices array found.');
+        }
+        
+        if (!data.choices[0]?.message?.content) {
+          console.error('[CONVEX] Missing message content in API response:', data.choices[0]);
+          throw new Error('OpenRouter API returned empty message content.');
+        }
+        
+        const analysis = JSON.parse(data.choices[0].message.content);
+
+        return analysis;
+      } catch (fetchError: any) {
+        clearTimeout(timeoutId);
+        
+        if (fetchError.name === 'AbortError') {
+          throw new Error('OpenRouter API request timed out after 30 seconds. Please try again.');
+        }
+        throw fetchError;
+      }
+    } catch (error: any) {
+      console.error("[CONVEX] AI Analysis error:", {
+        message: error.message,
+        stack: error.stack,
+        symbol: args.symbol,
       });
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('OpenRouter API error:', errorText);
-        throw new Error(`OpenRouter API error (${response.status}): ${response.statusText}`);
-      }
-
-      const data = await response.json();
-      
-      if (!data.choices || !Array.isArray(data.choices) || data.choices.length === 0) {
-        console.error('[CONVEX] Invalid API response structure:', data);
-        throw new Error('OpenRouter API returned invalid response structure. No choices array found.');
-      }
-      
-      if (!data.choices[0]?.message?.content) {
-        console.error('[CONVEX] Missing message content in API response:', data.choices[0]);
-        throw new Error('OpenRouter API returned empty message content.');
-      }
-      
-      const analysis = JSON.parse(data.choices[0].message.content);
-
-      return analysis;
-    } catch (error) {
-      console.error("AI Analysis error:", error);
-      throw error;
+      throw new Error(`AI analysis failed: ${error.message}`);
     }
   },
 });
@@ -203,65 +240,94 @@ export const analyzeMultipleCharts = action({
         isDemoMode: args.isDemoMode,
         hasAuthHeader: !!multiHeaders["Authorization"],
         usingBackendKey: args.apiKey === '' || args.apiKey === 'DEMO_MODE',
+        chartsCount: args.charts.length,
       });
 
-      const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-        method: "POST",
-        headers: multiHeaders,
-        body: JSON.stringify({
-          model,
-          messages: [
-            {
-              role: "system",
-              content: "You are a professional crypto trading analyst specializing in multi-chart correlation analysis. Always respond with valid JSON."
-            },
-            {
-              role: "user",
-              content: prompt
-            }
-          ],
-          response_format: { type: "json_object" },
-        }),
-      });
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 30000); // 30s timeout
 
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('[CONVEX] OpenRouter API error', {
-          status: response.status,
-          statusText: response.statusText,
-          errorText,
+      try {
+        const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+          method: "POST",
+          headers: multiHeaders,
+          body: JSON.stringify({
+            model,
+            messages: [
+              {
+                role: "system",
+                content: "You are a professional crypto trading analyst specializing in multi-chart correlation analysis. Always respond with valid JSON."
+              },
+              {
+                role: "user",
+                content: prompt
+              }
+            ],
+            response_format: { type: "json_object" },
+          }),
+          signal: controller.signal,
         });
-        throw new Error(`OpenRouter API error (${response.status}): ${response.statusText}`);
-      }
 
-      const data = await response.json();
-      console.log('[CONVEX] OpenRouter API response received', {
-        hasChoices: !!data.choices,
-        choicesLength: data.choices?.length,
-        fullResponse: JSON.stringify(data).substring(0, 500),
-      });
-      
-      if (!data.choices || !Array.isArray(data.choices) || data.choices.length === 0) {
-        console.error('[CONVEX] Invalid API response structure:', data);
-        throw new Error('OpenRouter API returned invalid response structure. No choices array found.');
-      }
-      
-      if (!data.choices[0]?.message?.content) {
-        console.error('[CONVEX] Missing message content in API response:', data.choices[0]);
-        throw new Error('OpenRouter API returned empty message content.');
-      }
-      
-      const analysis = JSON.parse(data.choices[0].message.content);
-      console.log('[CONVEX] AI analysis parsed successfully', {
-        action: analysis.action,
-        confidence: analysis.confidence,
-        recommendedSymbol: analysis.recommendedSymbol,
-      });
+        clearTimeout(timeoutId);
 
-      return analysis;
-    } catch (error) {
-      console.error("[CONVEX] Multi-chart AI Analysis error:", error);
-      throw error;
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error('[CONVEX] OpenRouter API error', {
+            status: response.status,
+            statusText: response.statusText,
+            errorText,
+          });
+          
+          if (response.status === 401) {
+            throw new Error('Invalid OpenRouter API key. Please check your API key in Settings.');
+          } else if (response.status === 429) {
+            throw new Error('OpenRouter API rate limit exceeded. Please try again later.');
+          } else if (response.status >= 500) {
+            throw new Error('OpenRouter API server error. Please try again later.');
+          }
+          
+          throw new Error(`OpenRouter API error (${response.status}): ${response.statusText}`);
+        }
+
+        const data = await response.json();
+        console.log('[CONVEX] OpenRouter API response received', {
+          hasChoices: !!data.choices,
+          choicesLength: data.choices?.length,
+          fullResponse: JSON.stringify(data).substring(0, 500),
+        });
+        
+        if (!data.choices || !Array.isArray(data.choices) || data.choices.length === 0) {
+          console.error('[CONVEX] Invalid API response structure:', data);
+          throw new Error('OpenRouter API returned invalid response structure. No choices array found.');
+        }
+        
+        if (!data.choices[0]?.message?.content) {
+          console.error('[CONVEX] Missing message content in API response:', data.choices[0]);
+          throw new Error('OpenRouter API returned empty message content.');
+        }
+        
+        const analysis = JSON.parse(data.choices[0].message.content);
+        console.log('[CONVEX] AI analysis parsed successfully', {
+          action: analysis.action,
+          confidence: analysis.confidence,
+          recommendedSymbol: analysis.recommendedSymbol,
+        });
+
+        return analysis;
+      } catch (fetchError: any) {
+        clearTimeout(timeoutId);
+        
+        if (fetchError.name === 'AbortError') {
+          throw new Error('OpenRouter API request timed out after 30 seconds. Please try again.');
+        }
+        throw fetchError;
+      }
+    } catch (error: any) {
+      console.error("[CONVEX] Multi-chart AI Analysis error:", {
+        message: error.message,
+        stack: error.stack,
+        chartsCount: args.charts.length,
+      });
+      throw new Error(`Multi-chart AI analysis failed: ${error.message}`);
     }
   },
 });

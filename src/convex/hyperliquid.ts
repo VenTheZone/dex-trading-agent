@@ -109,6 +109,10 @@ export const getOrderBook = action({
   },
   handler: async (ctx, args) => {
     try {
+      if (!args.coin || typeof args.coin !== 'string' || args.coin.trim() === '') {
+        throw new Error('Invalid coin symbol provided');
+      }
+
       const hl = await import("@nktkas/hyperliquid");
       
       const transport = new hl.HttpTransport({ 
@@ -117,9 +121,24 @@ export const getOrderBook = action({
       
       const infoClient = new hl.InfoClient({ transport });
       
-      // Fetch L2 orderbook
-      const orderbook = await infoClient.l2Book({ 
-        coin: args.coin 
+      // Fetch L2 orderbook with timeout
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 10000); // 10s timeout
+      
+      const orderbook = await new Promise<any>((resolve, reject) => {
+        const timeoutId = setTimeout(() => {
+          reject(new Error(`Hyperliquid API timeout for ${args.coin}`));
+        }, 10000);
+
+        infoClient.l2Book({ coin: args.coin.trim() })
+          .then((result) => {
+            clearTimeout(timeoutId);
+            resolve(result);
+          })
+          .catch((error) => {
+            clearTimeout(timeoutId);
+            reject(error);
+          });
       });
       
       // Format the response
@@ -149,10 +168,14 @@ export const getOrderBook = action({
           : 0,
       };
     } catch (error: any) {
-      console.error(`Failed to get orderbook for ${args.coin}:`, error);
+      console.error(`Failed to get orderbook for ${args.coin}:`, {
+        message: error.message,
+        stack: error.stack,
+        isTestnet: args.isTestnet,
+      });
       return {
         success: false,
-        error: error.message,
+        error: error.message || 'Unknown error fetching orderbook',
         coin: args.coin,
       };
     }
@@ -184,6 +207,11 @@ export const getBulkOrderBooks = action({
       const orderbookPromises = args.coins.map(async (coin) => {
         try {
           const orderbook = await infoClient.l2Book({ coin });
+          
+          if (!orderbook || !orderbook.levels) {
+            console.error(`Invalid orderbook data for ${coin}`);
+            return null;
+          }
           
           const bids = orderbook.levels[0].map((level: any) => ({
             price: parseFloat(level.px),
