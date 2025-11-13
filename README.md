@@ -338,9 +338,10 @@ The landing page features a cyberpunk-themed design with:
 - **Database**: SQLite (local) / PostgreSQL (production)
 - **Background Tasks**: Celery + Redis
 - **Authentication**: None (local/private use only)
-- **AI**: Both DeepSeek and Qwen3 Max via OpenRouter API
+- **AI**: DeepSeek V3.1 (Free) and Qwen3 Max (Paid) via OpenRouter API
 - **Trading**: Hyperliquid SDK (@nktkas/hyperliquid)
 - **State Management**: Zustand
+- **Data Layer**: Python backend replaces Convex (migration complete)
 
 ## 📋 Prerequisites
 
@@ -350,6 +351,7 @@ Before you begin, ensure you have the following installed:
 - **Python** (v3.11 or higher)
 - **Redis** (for Celery background tasks)
 - **Git**
+- **pip** (Python package manager)
 
 You'll also need API keys for:
 - **Hyperliquid API Wallet** (Recommended - Agent wallet with no withdrawal permissions)

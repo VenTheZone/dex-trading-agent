@@ -28,11 +28,15 @@
 - [x] Implement scheduled AI analysis tasks
 - [x] Implement balance tracking tasks
 
-## Phase 6: Frontend Integration 🔄
-- [ ] Replace Convex hooks with REST API calls
-- [ ] Implement WebSocket client for real-time updates
-- [ ] Update environment variables
-- [ ] Test all frontend features
+## Phase 6: Frontend Integration ✅
+- [x] Replace Convex hooks with REST API calls
+- [x] Implement WebSocket client for real-time updates
+- [x] Update environment variables
+- [x] Test all frontend features
+- [x] Created python-api-client.ts for backend communication
+- [x] Created use-python-api.ts hooks for React integration
+- [x] Updated TradingLogs.tsx to use Python API
+- [x] Updated BalanceChart.tsx to use Python API
 
 ## Phase 7: Testing & Deployment
 - [ ] Write unit tests
@@ -45,4 +49,5 @@
 - ✅ Python backend core implementation complete
 - ✅ All services implemented (trading, market data, Hyperliquid, paper trading)
 - ✅ Background workers configured with Celery
-- 🔄 Next: Frontend integration with new Python API
+- ✅ Frontend integration with Python API complete
+- 🔄 Next: Testing & Deployment
