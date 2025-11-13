@@ -337,14 +337,31 @@ export function useTrading() {
       }
 
       const chartData = `
-        Chart Type: ${chartType === 'range' ? 'Range Chart' : 'Time-based Chart'}
-        Interval: ${chartInterval}
-        Current Price: ${currentPrice}
-        Leverage: ${settings.leverage}x ${settings.allowAILeverage ? '(AI can adjust)' : '(fixed)'}
+        === MARKET DATA ===
+        Symbol: ${symbol}
+        Current Price: ${currentPrice.toLocaleString()}
+        Chart Type: ${chartType === 'range' ? 'Range Chart (price-based)' : 'Time-based Chart'}
+        Timeframe: ${chartInterval}
+        
+        === TRADING PARAMETERS ===
+        Account Balance: ${balance.toLocaleString()}
+        Leverage: ${settings.leverage}x ${settings.allowAILeverage ? '(AI can adjust within limits)' : '(fixed)'}
+        Max Risk Per Trade: ${((balance * 0.05) / settings.leverage).toFixed(2)} (5% of balance)
+        Take Profit Target: ${settings.takeProfitPercent}%
+        Stop Loss: ${settings.stopLossPercent}%
+        
+        === ANALYSIS CONTEXT ===
         ${chartType === 'range' ? 
-          'Range Analysis: Price movement analyzed by range bars (fixed price movements) rather than time intervals. This provides clearer trend identification and reduces noise from time-based volatility.' : 
-          'Time Analysis: Price movement analyzed by fixed time intervals.'
+          'Range Chart Analysis: Price movements are measured by fixed price ranges rather than time. This reduces noise and provides clearer trend signals. Look for range breakouts and support/resistance levels.' : 
+          'Time-based Analysis: Price movements over fixed time intervals. Consider momentum, volume patterns, and time-based indicators.'
         }
+        
+        INSTRUCTIONS:
+        1. Analyze the current market data step-by-step
+        2. Evaluate technical indicators and market context
+        3. Provide a clear trading recommendation with specific entry/exit levels
+        4. Ensure risk management aligns with account balance and leverage
+        5. Format your response as valid JSON
       `;
       
       const analysis = await analyzeMarket({
@@ -459,6 +476,7 @@ export function useTrading() {
         currentPrice: chart.currentPrice,
         chartType: chartType,
         chartInterval: chartInterval,
+        technicalContext: `Price: ${chart.currentPrice.toLocaleString()}, Timeframe: ${chartInterval}, Chart: ${chartType}`,
       }));
 
       // Final validation before calling backend
