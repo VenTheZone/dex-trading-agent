@@ -80,4 +80,4 @@ Before using Docker, you need to deploy your Convex backend:
 
 ### 2. Configure Environment Variables
 
-Create a `.env` file in the root directory (copy from `.env.example`):
+Create a `.env` file in the root directory:

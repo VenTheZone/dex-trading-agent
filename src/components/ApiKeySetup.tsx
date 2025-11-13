@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -23,6 +23,25 @@ export function ApiKeySetup({ onComplete }: ApiKeySetupProps) {
     openRouter: '',
   });
   const [mode, setMode] = useState<'wallet' | 'api' | 'demo'>('wallet');
+  const [backendKeysConfigured, setBackendKeysConfigured] = useState(false);
+
+  // Check if backend keys are configured
+  useEffect(() => {
+    const checkBackendKeys = async () => {
+      try {
+        // Check if backend has OpenRouter key configured
+        const response = await fetch(import.meta.env.VITE_CONVEX_URL + '/api/check-backend-keys');
+        if (response.ok) {
+          const data = await response.json();
+          setBackendKeysConfigured(data.hasBackendKeys || false);
+        }
+      } catch (error) {
+        // Backend check failed, assume no backend keys
+        setBackendKeysConfigured(false);
+      }
+    };
+    checkBackendKeys();
+  }, []);
 
   const handleWalletConnect = (address: string) => {
     setKeys({
@@ -205,6 +224,26 @@ export function ApiKeySetup({ onComplete }: ApiKeySetupProps) {
                 </div>
               </div>
             </CardHeader>
+
+            {backendKeysConfigured && (
+              <div className="px-6 pb-4">
+                <Alert className="bg-green-500/10 border-green-500/50">
+                  <Info className="h-4 w-4 text-green-500" />
+                  <AlertDescription className="text-green-200">
+                    <strong>✅ Backend API Keys Detected</strong>
+                    <p className="mt-2 text-sm">
+                      Your OpenRouter and/or CryptoPanic API keys are configured in the backend environment (.env or Convex Dashboard).
+                    </p>
+                    <p className="mt-1 text-sm">
+                      You can still add Hyperliquid keys below for trading, or use Demo Mode.
+                    </p>
+                    <p className="mt-2 text-xs text-yellow-300">
+                      ⚠️ To change backend keys, update your .env file or Convex Dashboard environment variables.
+                    </p>
+                  </AlertDescription>
+                </Alert>
+              </div>
+            )}
             
             <CardContent className="space-y-6">
               <Alert className="bg-green-500/10 border-green-500/50">
