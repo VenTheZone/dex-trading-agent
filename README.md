@@ -8,6 +8,12 @@ DeX Trading Agent is an advanced AI-driven trading system for Hyperliquid perpet
 
 **Important:** Hyperliquid is an independent Layer 1 blockchain (Chain ID 998 for testnet, not Arbitrum or Ethereum). The platform uses its own consensus mechanism (HyperBFT) and native token (HYPE).
 
+## 📊 System Workflow
+
+Here's a visual representation of how the DeX Trading Agent works:
+
+[Visual workflow diagram would go here]
+
 ## ✨ Key Features
 
 - **🤖 AI-Powered Analysis**: DeepSeek V3.1 / Qwen3 Max powered market decisions with multi-chart correlation analysis
