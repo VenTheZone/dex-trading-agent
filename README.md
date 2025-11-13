@@ -334,8 +334,10 @@ The landing page features a cyberpunk-themed design with:
 - **Routing**: React Router v7
 - **Styling**: Tailwind CSS v4, Shadcn UI
 - **Animations**: Framer Motion
-- **Backend**: Convex (serverless backend & database)
-- **Authentication**: Convex Auth with Email OTP
+- **Backend**: Python FastAPI (REST API + WebSockets)
+- **Database**: SQLite (local) / PostgreSQL (production)
+- **Background Tasks**: Celery + Redis
+- **Authentication**: None (local/private use only)
 - **AI**: Both DeepSeek and Qwen3 Max via OpenRouter API
 - **Trading**: Hyperliquid SDK (@nktkas/hyperliquid)
 - **State Management**: Zustand
@@ -345,6 +347,8 @@ The landing page features a cyberpunk-themed design with:
 Before you begin, ensure you have the following installed:
 - **Node.js** (v18 or higher)
 - **pnpm** (v8 or higher)
+- **Python** (v3.11 or higher)
+- **Redis** (for Celery background tasks)
 - **Git**
 
 You'll also need API keys for:
@@ -353,6 +357,7 @@ You'll also need API keys for:
   - Provides: Master Account Address + Agent Wallet Private Key
   - **Security**: Agent wallets can trade but CANNOT withdraw funds
 - **OpenRouter** (for AI analysis)
+- **CryptoPanic** (for news feed - optional)
 
 **Network Information:**
 - **Hyperliquid Mainnet**: Independent L1 blockchain
