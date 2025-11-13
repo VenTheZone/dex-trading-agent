@@ -195,7 +195,7 @@ Should we adjust the stop loss to lock in profits or reduce risk?`;
 
     try {
       const response = await this.client.chat.completions.create({
-        model: "deepseek/deepseek-chat",
+        model: "deepseek/deepseek-chat-v3.1:free",
         messages: [
           { role: "system", content: systemPrompt },
           { role: "user", content: userPrompt },
