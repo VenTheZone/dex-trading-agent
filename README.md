@@ -35,7 +35,12 @@ The landing page features a cyberpunk-themed design with:
 
 ## 🔒 Authentication
 
-The application uses **automatic guest authentication** for simplicity. No login required - you're automatically signed in as a guest when you access the platform. All API keys are stored locally in your browser for localhost deployments, or can be configured in backend environment variables for production deployments.
+The application uses **automatic guest authentication** for simplicity. No login required - you're automatically signed in as a guest when you access the platform. 
+
+**API Key Storage Options:**
+- **Client-Side (Default)**: API keys stored in browser localStorage - ideal for personal use
+- **Backend Environment Variables**: Configure keys in `.env` or Convex Dashboard - ideal for self-hosted/production deployments
+- **Hybrid**: Client-side keys take priority, with backend keys as fallback
 
 ## 🔔 Trade Confirmation & Safety Features
 
@@ -151,10 +156,11 @@ Within VITE, in order to show the webapp
 
 The application will be available at `http://localhost:5173`
 
-### 6. Configure API Keys (In-App)
+### 6. Configure API Keys
 
-Once the app is running:
+You have two options for configuring API keys:
 
+#### Option A: Client-Side Storage (Browser LocalStorage)
 1. Navigate to the application in your browser
 2. You'll be prompted to set up API keys on first launch
 3. Choose your connection method:
@@ -170,10 +176,31 @@ Once the app is running:
 
 **Security Note:** All API keys are stored locally in your browser's localStorage and never sent to any server.
 
-**Network Clarification:** 
-- Hyperliquid operates on its own Layer 1 blockchain, not on Ethereum or Arbitrum
-- Testnet Chain ID: 998
-- Mainnet and Testnet can be toggled in the Dashboard header
+#### Option B: Backend Environment Variables (For Self-Hosted/Local Deployment)
+
+For local or self-hosted deployments, you can configure API keys in the backend environment:
+
+1. **Create a `.env` file** in the root directory (copy from `.env.example`):
+
+VITE_CONVEX_URL=<your-convex-deployment-url>
+OPENROUTER_API_KEY=<your-openrouter-api-key>
+
+**Note:** The `VITE_CONVEX_URL` is automatically generated when you run `npx convex dev`. You can find it in the Convex dashboard or in the terminal output.
+
+### 7. Run the Development Server
+
+In a new terminal (keep Convex dev running):
+```
+pnpm dev
+```
+
+Within VITE, in order to show the webapp
+```
+--host
+```
+
+
+The application will be available at `http://localhost:5173`
 
 ## 📦 Building for Production
 ```
