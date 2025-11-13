@@ -30,12 +30,12 @@ The landing page features a cyberpunk-themed design with:
 - Animated trading background with grid patterns and glowing effects
 - Prominent logo with pulsing glow animation
 - Feature showcase highlighting AI Analysis, Multi-Chart capabilities, Security, and Risk Control
-- Dynamic CTA button that adapts based on authentication status
+- Direct access buttons to enter the dashboard or preview it
 - Responsive design optimized for all screen sizes
 
 ## 🔒 Authentication
 
-The application uses **automatic guest authentication** for simplicity. No login required - you're automatically signed in as a guest when you access the platform. 
+**No authentication required!** The application provides direct access to all features without any login or sign-up process. Simply navigate to the dashboard and start trading.
 
 **API Key Storage Options:**
 - **Client-Side (Default)**: API keys stored in browser localStorage - ideal for personal use
