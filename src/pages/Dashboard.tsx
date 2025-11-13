@@ -32,12 +32,21 @@ export default function Dashboard() {
   const { mode, setMode, network, setNetwork, balance, position, initialBalance, resetBalance, settings } = useTradingStore();
   const { closePosition, closeAllPositions } = useTrading();
   
-  // No redirect needed - Landing page handles guest authentication
-  // If somehow not authenticated, the Landing page will auto-sign in
+  // Only redirect if auth is fully loaded and user is definitely not authenticated
+  // Give auth system time to initialize before redirecting
   useEffect(() => {
-    if (!isLoading && !isAuthenticated) {
-      console.warn('[Dashboard] User not authenticated, redirecting to landing');
-      navigate('/');
+    // Wait for auth to fully load before making redirect decisions
+    if (!isLoading) {
+      if (!isAuthenticated) {
+        console.warn('[Dashboard] User not authenticated after loading, redirecting to landing');
+        // Small delay to allow auth state to propagate
+        const timer = setTimeout(() => {
+          if (!isAuthenticated) {
+            navigate('/');
+          }
+        }, 100);
+        return () => clearTimeout(timer);
+      }
     }
   }, [isLoading, isAuthenticated, navigate]);
   
