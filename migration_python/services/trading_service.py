@@ -1,8 +1,6 @@
 """
-PSEUDO-CODE: Trading Service
+Trading Service - AI-powered trading analysis and decision making
 Replaces: Convex trading.ts actions
-
-This file shows how to implement the AI trading logic in Python.
 """
 
 import httpx
@@ -23,7 +21,6 @@ class TradingService:
     def _get_openrouter_key(self, client_key: str) -> str:
         """
         Get OpenRouter API key with priority: client > backend env
-        Replaces: getOpenRouterKey function in trading.ts
         """
         # If client provides valid key, use it
         if client_key and client_key != 'DEMO_MODE' and client_key.startswith('sk-or-v1-'):
@@ -50,7 +47,6 @@ class TradingService:
     ) -> Dict:
         """
         Analyzes market data for a single symbol using AI
-        Replaces: analyzeSingleMarket action in trading.ts
         """
         # Get API key (client or backend)
         api_key = self._get_openrouter_key(api_key)
@@ -150,49 +146,36 @@ Provide your analysis in JSON format with:
         custom_prompt: Optional[str] = None
     ) -> Dict:
         """
-        Analyzes multiple charts simultaneously for correlation-based trading
-        Replaces: analyzeMultipleCharts action in trading.ts
+        Analyzes multiple charts and recommends best trading opportunity
         """
-        print(f'[PYTHON] analyzeMultipleCharts called with {len(charts)} charts')
-        
         # Get API key (client or backend)
         api_key = self._get_openrouter_key(api_key)
         
-        # Validate AI model
-        valid_models = ['deepseek/deepseek-chat-v3-0324:free', 'qwen/qwen3-max']
-        requested_model = ai_model or "deepseek/deepseek-chat-v3-0324:free"
-        if requested_model not in valid_models:
-            raise ValueError(f"Invalid AI model: {requested_model}. Valid models: {', '.join(valid_models)}")
+        model = ai_model or "deepseek/deepseek-chat-v3-0324:free"
         
-        model = "deepseek/deepseek-chat-v3-0324:free" if is_demo_mode else requested_model
+        base_prompt = custom_prompt or "You are an expert crypto trading analyst. Analyze multiple trading pairs and recommend the best opportunity."
         
-        # Build market snapshot
-        market_snapshot = '\n'.join([
-            f"{chart['symbol']}: {chart['currentPrice']:.2f}"
+        charts_data = "\n".join([
+            f"- {chart['symbol']}: ${chart['currentPrice']:,.2f} ({chart.get('chartType', 'time')}, {chart.get('chartInterval', '15m')})"
             for chart in charts
         ])
         
-        base_prompt = custom_prompt or "You are an expert crypto trading analyst."
-        
         prompt = f"""{base_prompt}
 
-MARKET PRICES:
-{market_snapshot}
-
-ACCOUNT:
-Balance: {user_balance:.2f}
+Current Balance: ${user_balance:,.2f}
+Risk Settings: TP {settings['takeProfitPercent']}%, SL {settings['stopLossPercent']}%
 Leverage: {settings['leverage']}x
-Risk: TP {settings['takeProfitPercent']}%, SL {settings['stopLossPercent']}%
 
-TASK:
-Analyze these {len(charts)} assets and recommend ONE trade.
+Available Trading Pairs:
+{charts_data}
 
-OUTPUT (JSON only):
+Analyze all pairs and provide your recommendation in JSON format:
 {{
-  "recommendedSymbol": "symbol to trade",
-  "action": "open_long" | "open_short" | "close" | "hold",
+  "action": "open_long" | "open_short" | "hold",
+  "recommendedSymbol": "BTC" | "ETH" | etc,
   "confidence": 0-100,
-  "reasoning": "brief explanation (max 150 chars)",
+  "reasoning": "detailed multi-chart analysis",
+  "marketContext": "overall market conditions",
   "entryPrice": number,
   "stopLoss": number,
   "takeProfit": number,
@@ -211,7 +194,7 @@ OUTPUT (JSON only):
             "messages": [
                 {
                     "role": "system",
-                    "content": "You are a professional crypto trading analyst specializing in multi-chart correlation analysis. Always respond with valid JSON."
+                    "content": "You are a professional crypto trading analyst specializing in multi-chart analysis. Always respond with valid JSON."
                 },
                 {
                     "role": "user",
@@ -220,8 +203,6 @@ OUTPUT (JSON only):
             ],
             "response_format": {"type": "json_object"},
         }
-        
-        print(f'[PYTHON] Calling OpenRouter API with model: {model}')
         
         try:
             async with httpx.AsyncClient(timeout=30.0) as client:
@@ -236,52 +217,16 @@ OUTPUT (JSON only):
                     print(f'[PYTHON] OpenRouter API error: {response.status_code} - {error_text}')
                     
                     if response.status_code == 401:
-                        raise ValueError('Invalid OpenRouter API key. Please check your API key in Settings.')
+                        raise ValueError('Invalid OpenRouter API key.')
                     elif response.status_code == 429:
-                        raise ValueError('OpenRouter API rate limit exceeded. Please try again later.')
-                    elif response.status_code >= 500:
-                        raise ValueError('OpenRouter API server error. Please try again later.')
+                        raise ValueError('Rate limit exceeded.')
                     
-                    raise ValueError(f'OpenRouter API error ({response.status_code}): {response.reason_phrase}')
+                    raise ValueError(f'API error: {response.status_code}')
                 
                 data = response.json()
-                print(f'[PYTHON] OpenRouter API response received')
-                
-                if not data.get('choices') or len(data['choices']) == 0:
-                    print(f'[PYTHON] Invalid API response structure: {data}')
-                    raise ValueError('OpenRouter API returned invalid response structure. No choices array found.')
-                
-                if not data['choices'][0].get('message', {}).get('content'):
-                    print(f'[PYTHON] Missing message content in API response: {data["choices"][0]}')
-                    raise ValueError('OpenRouter API returned empty message content.')
-                
                 analysis = json.loads(data['choices'][0]['message']['content'])
-                print(f'[PYTHON] AI analysis parsed successfully: action={analysis.get("action")}, confidence={analysis.get("confidence")}')
-                
                 return analysis
                 
-        except httpx.TimeoutException:
-            raise ValueError('OpenRouter API request timed out after 30 seconds. Please try again.')
         except Exception as e:
             print(f"[PYTHON] Multi-chart AI Analysis error: {str(e)}")
-            raise ValueError(f"Multi-chart AI analysis failed: {str(e)}")
-
-"""
-USAGE:
-
-from services.trading_service import TradingService
-from database.schema import get_db
-
-# In FastAPI endpoint
-@app.post("/api/trading/analyze")
-async def analyze(request: AnalysisRequest, db: Session = Depends(get_db)):
-    service = TradingService(db)
-    result = await service.analyze_single_market(
-        api_key=request.api_key,
-        symbol=request.symbol,
-        chart_data=request.chart_data,
-        user_balance=request.user_balance,
-        settings=request.settings
-    )
-    return result
-"""
+            raise ValueError(f"Multi-chart analysis failed: {str(e)}")

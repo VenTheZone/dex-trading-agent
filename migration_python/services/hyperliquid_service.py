@@ -1,13 +1,11 @@
 """
-PSEUDO-CODE: Hyperliquid Service
+Hyperliquid Service - Exchange API integration
 Replaces: Convex hyperliquid.ts actions
-
-This file shows how to implement Hyperliquid API integration in Python.
 """
 
 import httpx
 import json
-from typing import Dict, Optional, List
+from typing import Dict, Optional
 from eth_account import Account
 from eth_account.signers.local import LocalAccount
 
@@ -28,10 +26,7 @@ class HyperliquidService:
         )
     
     async def test_connection(self) -> Dict:
-        """
-        Test connection to Hyperliquid (mainnet or testnet)
-        Replaces: hyperliquid.testConnection
-        """
+        """Test connection to Hyperliquid"""
         try:
             async with httpx.AsyncClient(timeout=10.0) as client:
                 response = await client.post(
@@ -59,10 +54,7 @@ class HyperliquidService:
             }
     
     async def get_account_info(self, wallet_address: str) -> Dict:
-        """
-        Get account info from Hyperliquid (Perpetual Wallet Balance)
-        Replaces: hyperliquid.getAccountInfo
-        """
+        """Get account info from Hyperliquid"""
         try:
             async with httpx.AsyncClient(timeout=10.0) as client:
                 response = await client.post(
@@ -82,7 +74,6 @@ class HyperliquidService:
                     "totalMarginUsed": float(state["marginSummary"].get("totalMarginUsed", "0")),
                     "positions": len(state["assetPositions"]),
                     "network": "testnet" if self.is_testnet else "mainnet",
-                    "spotBalances": []
                 }
         except Exception as e:
             return {
@@ -91,116 +82,26 @@ class HyperliquidService:
                 "network": "testnet" if self.is_testnet else "mainnet"
             }
     
-    async def get_orderbook(self, coin: str) -> Dict:
-        """
-        Fetch L2 orderbook data from Hyperliquid for a specific coin
-        Replaces: hyperliquid.getOrderBook
-        """
+    async def get_positions(self, wallet_address: str) -> Dict:
+        """Get all open positions"""
         try:
-            if not coin or not isinstance(coin, str) or not coin.strip():
-                raise ValueError("Invalid coin symbol provided")
-            
             async with httpx.AsyncClient(timeout=10.0) as client:
                 response = await client.post(
                     f"{self.base_url}/info",
                     json={
-                        "type": "l2Book",
-                        "coin": coin.strip()
+                        "type": "clearinghouseState",
+                        "user": wallet_address
                     }
                 )
                 response.raise_for_status()
-                orderbook = response.json()
-                
-                if not orderbook or "levels" not in orderbook or not isinstance(orderbook["levels"], list):
-                    raise ValueError(f"Invalid orderbook data received for {coin}")
-                
-                bids = [
-                    {
-                        "price": float(level["px"]),
-                        "size": float(level["sz"]),
-                        "orders": level["n"]
-                    }
-                    for level in orderbook["levels"][0]
-                ]
-                
-                asks = [
-                    {
-                        "price": float(level["px"]),
-                        "size": float(level["sz"]),
-                        "orders": level["n"]
-                    }
-                    for level in orderbook["levels"][1]
-                ]
-                
-                spread = asks[0]["price"] - bids[0]["price"] if asks and bids else 0
-                mid_price = (asks[0]["price"] + bids[0]["price"]) / 2 if asks and bids else 0
+                state = response.json()
                 
                 return {
                     "success": True,
-                    "coin": orderbook["coin"],
-                    "timestamp": orderbook["time"],
-                    "bids": bids,
-                    "asks": asks,
-                    "spread": spread,
-                    "midPrice": mid_price
+                    "positions": state,
                 }
         except Exception as e:
             return {
                 "success": False,
                 "error": str(e),
-                "coin": coin
-            }
-    
-    async def execute_trade(
-        self,
-        api_secret: str,
-        symbol: str,
-        side: str,
-        size: float,
-        price: float,
-        leverage: int,
-        stop_loss: Optional[float] = None,
-        take_profit: Optional[float] = None
-    ) -> Dict:
-        """
-        Execute a live trade on Hyperliquid exchange
-        Replaces: trading.executeHyperliquidTrade
-        
-        NOTE: This requires the @nktkas/hyperliquid Python equivalent
-        or direct implementation of Hyperliquid's signing protocol
-        """
-        try:
-            # Create account from private key
-            account: LocalAccount = Account.from_key(api_secret)
-            
-            # Get asset metadata
-            async with httpx.AsyncClient(timeout=10.0) as client:
-                meta_response = await client.post(
-                    f"{self.base_url}/info",
-                    json={"type": "meta"}
-                )
-                meta = meta_response.json()
-                
-                asset_index = next(
-                    (i for i, asset in enumerate(meta["universe"]) if asset["name"] == symbol),
-                    None
-                )
-                
-                if asset_index is None:
-                    raise ValueError(f"Asset {symbol} not found")
-                
-                # Set leverage (requires signing)
-                # ... implement leverage update with signature ...
-                
-                # Place order (requires signing)
-                # ... implement order placement with signature ...
-                
-                return {
-                    "success": True,
-                    "message": "Trade executed successfully"
-                }
-        except Exception as e:
-            return {
-                "success": False,
-                "error": str(e)
             }
