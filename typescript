@@ -1,8 +1,20 @@
-// Single coin
-const btcOrderbook = await getOrderBook({ coin: "BTC", isTestnet: false });
+// src/lib/paper-trading-engine.ts
+setStopLoss(symbol: string, stopLoss: number): boolean
+setTakeProfit(symbol: string, takeProfit: number): boolean
 
-// Multiple coins (all your trading tokens)
-const allOrderbooks = await getBulkOrderBooks({ 
-  coins: ["BTC", "ETH", "SOL", "HYPE", "XRP", "PUMP", "UNI", "ASTER"],
-  isTestnet: false 
-});
+// Calculate profit percentage
+const profitPercent = (currentPosition.pnl / (currentPosition.entryPrice * currentPosition.size)) * 100;
+
+// Trigger at 50% of TP target
+if (profitPercent >= (settings.takeProfitPercent * 0.5)) {
+  const newStopLoss = currentPosition.entryPrice; // Move to break-even
+  
+  // Only update if better than current SL
+  if (!currentPosition.stopLoss || 
+      (currentPosition.side === 'long' && newStopLoss > currentPosition.stopLoss) ||
+      (currentPosition.side === 'short' && newStopLoss < currentPosition.stopLoss)) {
+    
+    // Update stop loss to break-even
+    toast.info(`🎯 Trailing Stop: Stop loss moved to break even`);
+  }
+}
