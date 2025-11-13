@@ -16,9 +16,105 @@ const API_ENDPOINTS = {
     'https://api3.binance.com/api/v3',
   ],
   BINANCE_US: 'https://api.binance.us/api/v3',
+  KUCOIN: 'https://api.kucoin.com/api/v1/market/orderbook/level1',
+  OKX: 'https://www.okx.com/api/v5/market/ticker',
+  GATEIO: 'https://api.gateio.ws/api/v4/spot/tickers',
+  MEXC: 'https://api.mexc.com/api/v3/ticker/price',
   COINBASE: 'https://api.coinbase.com/v2/prices',
   KRAKEN: 'https://api.kraken.com/0/public/Ticker',
 };
+
+/**
+ * Fetches price from KuCoin
+ */
+async function fetchFromKuCoin(symbol: string): Promise<number | null> {
+  try {
+    const kucoinSymbol = symbol.replace('USD', 'USDT').replace('USDT', '-USDT');
+    const response = await fetch(
+      `${API_ENDPOINTS.KUCOIN}?symbol=${kucoinSymbol}`,
+      { signal: AbortSignal.timeout(5000) }
+    );
+    
+    if (response.ok) {
+      const data = await response.json();
+      if (data.data?.price) {
+        return parseFloat(data.data.price);
+      }
+    }
+  } catch (error) {
+    console.warn(`KuCoin API failed for ${symbol}:`, error);
+  }
+  return null;
+}
+
+/**
+ * Fetches price from OKX
+ */
+async function fetchFromOKX(symbol: string): Promise<number | null> {
+  try {
+    const okxSymbol = symbol.replace('USD', 'USDT').replace('USDT', '-USDT');
+    const response = await fetch(
+      `${API_ENDPOINTS.OKX}?instId=${okxSymbol}`,
+      { signal: AbortSignal.timeout(5000) }
+    );
+    
+    if (response.ok) {
+      const data = await response.json();
+      if (data.data?.[0]?.last) {
+        return parseFloat(data.data[0].last);
+      }
+    }
+  } catch (error) {
+    console.warn(`OKX API failed for ${symbol}:`, error);
+  }
+  return null;
+}
+
+/**
+ * Fetches price from Gate.io
+ */
+async function fetchFromGateIO(symbol: string): Promise<number | null> {
+  try {
+    const gateSymbol = symbol.replace('USD', 'USDT').replace('USDT', '_USDT');
+    const response = await fetch(
+      `${API_ENDPOINTS.GATEIO}?currency_pair=${gateSymbol}`,
+      { signal: AbortSignal.timeout(5000) }
+    );
+    
+    if (response.ok) {
+      const data = await response.json();
+      if (data[0]?.last) {
+        return parseFloat(data[0].last);
+      }
+    }
+  } catch (error) {
+    console.warn(`Gate.io API failed for ${symbol}:`, error);
+  }
+  return null;
+}
+
+/**
+ * Fetches price from MEXC
+ */
+async function fetchFromMEXC(symbol: string): Promise<number | null> {
+  try {
+    const mexcSymbol = symbol.replace('USD', 'USDT');
+    const response = await fetch(
+      `${API_ENDPOINTS.MEXC}?symbol=${mexcSymbol}`,
+      { signal: AbortSignal.timeout(5000) }
+    );
+    
+    if (response.ok) {
+      const data = await response.json();
+      if (data.price) {
+        return parseFloat(data.price);
+      }
+    }
+  } catch (error) {
+    console.warn(`MEXC API failed for ${symbol}:`, error);
+  }
+  return null;
+}
 
 /**
  * Fetches price from Coinbase as fallback
@@ -184,8 +280,36 @@ export const fetchCurrentPrice = action({
       return cached.price;
     }
 
-    // Try Binance first (fastest)
+    // Try Binance first (fastest, most reliable when not geo-blocked)
     let price = await fetchFromBinance(args.symbol);
+    if (price) {
+      priceCache[args.symbol] = { price, timestamp: Date.now() };
+      return price;
+    }
+
+    // Try KuCoin (widely accessible)
+    price = await fetchFromKuCoin(args.symbol);
+    if (price) {
+      priceCache[args.symbol] = { price, timestamp: Date.now() };
+      return price;
+    }
+
+    // Try OKX (good global coverage)
+    price = await fetchFromOKX(args.symbol);
+    if (price) {
+      priceCache[args.symbol] = { price, timestamp: Date.now() };
+      return price;
+    }
+
+    // Try Gate.io (accessible in many regions)
+    price = await fetchFromGateIO(args.symbol);
+    if (price) {
+      priceCache[args.symbol] = { price, timestamp: Date.now() };
+      return price;
+    }
+
+    // Try MEXC (good alternative)
+    price = await fetchFromMEXC(args.symbol);
     if (price) {
       priceCache[args.symbol] = { price, timestamp: Date.now() };
       return price;
@@ -212,7 +336,7 @@ export const fetchCurrentPrice = action({
     }
 
     // Last resort: throw error
-    throw new Error(`Failed to fetch price for ${args.symbol} from all sources (Binance, Coinbase, Kraken)`);
+    throw new Error(`Failed to fetch price for ${args.symbol} from all sources (8 exchanges: Binance, KuCoin, OKX, Gate.io, MEXC, Coinbase, Kraken)`);
   },
 });
 
@@ -239,6 +363,34 @@ export const fetchBulkPrices = action({
 
         // Try Binance first
         let price = await fetchFromBinance(symbol);
+        if (price) {
+          priceCache[symbol] = { price, timestamp: Date.now() };
+          return { symbol, price };
+        }
+
+        // Try KuCoin
+        price = await fetchFromKuCoin(symbol);
+        if (price) {
+          priceCache[symbol] = { price, timestamp: Date.now() };
+          return { symbol, price };
+        }
+
+        // Try OKX
+        price = await fetchFromOKX(symbol);
+        if (price) {
+          priceCache[symbol] = { price, timestamp: Date.now() };
+          return { symbol, price };
+        }
+
+        // Try Gate.io
+        price = await fetchFromGateIO(symbol);
+        if (price) {
+          priceCache[symbol] = { price, timestamp: Date.now() };
+          return { symbol, price };
+        }
+
+        // Try MEXC
+        price = await fetchFromMEXC(symbol);
         if (price) {
           priceCache[symbol] = { price, timestamp: Date.now() };
           return { symbol, price };

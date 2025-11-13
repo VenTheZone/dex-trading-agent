@@ -16,7 +16,7 @@ export async function fetchPriceWithFallback(symbol: string): Promise<number> {
     return cached.price;
   }
 
-  // Convert symbol format (e.g., BTCUSD -> BTCUSDT for Binance)
+  // Convert symbol format (e.g., BTCUSD -> BTCUSDT for most exchanges)
   const binanceSymbol = symbol.replace('USD', 'USDT');
 
   // Try all Binance API endpoints
@@ -64,14 +64,142 @@ export async function fetchPriceWithFallback(symbol: string): Promise<number> {
     console.warn('Binance US API failed:', error);
   }
 
-  // If both APIs fail, return cached value if available (even if stale)
+  // Try KuCoin
+  try {
+    const response = await fetch(
+      `${API_CONFIG.KUCOIN.BASE_URL}?symbol=BTC-USDT`.replace('BTC-USDT', binanceSymbol.replace('USDT', '-USDT')),
+      { signal: AbortSignal.timeout(API_CONFIG.KUCOIN.TIMEOUT) }
+    );
+    
+    if (response.ok) {
+      const data = await response.json();
+      if (data.data?.price) {
+        const price = parseFloat(data.data.price);
+        priceCache[symbol] = { price, timestamp: Date.now() };
+        return price;
+      }
+    }
+  } catch (error) {
+    console.warn('KuCoin API failed:', error);
+  }
+
+  // Try OKX
+  try {
+    const response = await fetch(
+      `${API_CONFIG.OKX.BASE_URL}?instId=${binanceSymbol.replace('USDT', '-USDT')}`,
+      { signal: AbortSignal.timeout(API_CONFIG.OKX.TIMEOUT) }
+    );
+    
+    if (response.ok) {
+      const data = await response.json();
+      if (data.data?.[0]?.last) {
+        const price = parseFloat(data.data[0].last);
+        priceCache[symbol] = { price, timestamp: Date.now() };
+        return price;
+      }
+    }
+  } catch (error) {
+    console.warn('OKX API failed:', error);
+  }
+
+  // Try Gate.io
+  try {
+    const response = await fetch(
+      `${API_CONFIG.GATEIO.BASE_URL}?currency_pair=${binanceSymbol.replace('USDT', '_USDT')}`,
+      { signal: AbortSignal.timeout(API_CONFIG.GATEIO.TIMEOUT) }
+    );
+    
+    if (response.ok) {
+      const data = await response.json();
+      if (data[0]?.last) {
+        const price = parseFloat(data[0].last);
+        priceCache[symbol] = { price, timestamp: Date.now() };
+        return price;
+      }
+    }
+  } catch (error) {
+    console.warn('Gate.io API failed:', error);
+  }
+
+  // Try MEXC
+  try {
+    const response = await fetch(
+      `${API_CONFIG.MEXC.BASE_URL}?symbol=${binanceSymbol}`,
+      { signal: AbortSignal.timeout(API_CONFIG.MEXC.TIMEOUT) }
+    );
+    
+    if (response.ok) {
+      const data = await response.json();
+      if (data.price) {
+        const price = parseFloat(data.price);
+        priceCache[symbol] = { price, timestamp: Date.now() };
+        return price;
+      }
+    }
+  } catch (error) {
+    console.warn('MEXC API failed:', error);
+  }
+
+  // Try Coinbase
+  try {
+    const coinbaseSymbol = symbol.replace('USD', '-USD');
+    const response = await fetch(
+      `${API_CONFIG.COINBASE.BASE_URL}/${coinbaseSymbol}/spot`,
+      { signal: AbortSignal.timeout(API_CONFIG.COINBASE.TIMEOUT) }
+    );
+    
+    if (response.ok) {
+      const data = await response.json();
+      if (data.data?.amount) {
+        const price = parseFloat(data.data.amount);
+        priceCache[symbol] = { price, timestamp: Date.now() };
+        return price;
+      }
+    }
+  } catch (error) {
+    console.warn('Coinbase API failed:', error);
+  }
+
+  // Try Kraken
+  try {
+    const krakenMap: Record<string, string> = {
+      'BTCUSD': 'XXBTZUSD',
+      'ETHUSD': 'XETHZUSD',
+      'SOLUSD': 'SOLUSD',
+      'AVAXUSD': 'AVAXUSD',
+      'BNBUSD': 'BNBUSD',
+      'ADAUSD': 'ADAUSD',
+      'DOTUSD': 'DOTUSD',
+      'MATICUSD': 'MATICUSD',
+    };
+    
+    const krakenSymbol = krakenMap[symbol] || symbol;
+    const response = await fetch(
+      `${API_CONFIG.KRAKEN.BASE_URL}?pair=${krakenSymbol}`,
+      { signal: AbortSignal.timeout(API_CONFIG.KRAKEN.TIMEOUT) }
+    );
+    
+    if (response.ok) {
+      const data = await response.json();
+      const result = data.result?.[Object.keys(data.result)[0]];
+      if (result?.c?.[0]) {
+        const price = parseFloat(result.c[0]);
+        priceCache[symbol] = { price, timestamp: Date.now() };
+        return price;
+      }
+    }
+  } catch (error) {
+    console.warn('Kraken API failed:', error);
+  }
+
+  // If all APIs fail, return cached value if available (even if stale)
   if (cached) {
     console.warn(`Using stale cached price for ${symbol}`);
     return cached.price;
   }
 
   // Last resort: throw error
-  throw new Error(`Failed to fetch price for ${symbol} from all sources`);
+  throw new Error(`Failed to fetch price for ${symbol} from all sources (8 exchanges tested)`);
 }
 
 export async function fetchMultiplePrices(symbols: string[]): Promise<Record<string, number>> {

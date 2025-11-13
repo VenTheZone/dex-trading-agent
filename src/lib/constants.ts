@@ -54,6 +54,22 @@ export const API_CONFIG = {
     BASE_URL: 'https://api.kraken.com/0/public/Ticker',
     TIMEOUT: 10000,
   },
+  KUCOIN: {
+    BASE_URL: 'https://api.kucoin.com/api/v1/market/orderbook/level1',
+    TIMEOUT: 10000,
+  },
+  OKX: {
+    BASE_URL: 'https://www.okx.com/api/v5/market/ticker',
+    TIMEOUT: 10000,
+  },
+  GATEIO: {
+    BASE_URL: 'https://api.gateio.ws/api/v4/spot/tickers',
+    TIMEOUT: 10000,
+  },
+  MEXC: {
+    BASE_URL: 'https://api.mexc.com/api/v3/ticker/price',
+    TIMEOUT: 10000,
+  },
   HYPERLIQUID: {
     MAINNET_URL: 'https://api.hyperliquid.xyz',
     TESTNET_URL: 'https://api.hyperliquid-testnet.xyz',
