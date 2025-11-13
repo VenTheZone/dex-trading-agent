@@ -95,3 +95,149 @@ export const getAccountInfo = action({
     }
   },
 });
+
+/**
+ * Fetch L2 orderbook data from Hyperliquid for a specific coin
+ * @param coin - Coin symbol (e.g., "BTC", "ETH", "SOL")
+ * @param isTestnet - Whether to use testnet
+ * @returns Orderbook with bids and asks
+ */
+export const getOrderBook = action({
+  args: {
+    coin: v.string(),
+    isTestnet: v.optional(v.boolean()),
+  },
+  handler: async (ctx, args) => {
+    try {
+      const hl = await import("@nktkas/hyperliquid");
+      
+      const transport = new hl.HttpTransport({ 
+        isTestnet: args.isTestnet ?? false 
+      });
+      
+      const infoClient = new hl.InfoClient({ transport });
+      
+      // Fetch L2 orderbook
+      const orderbook = await infoClient.l2Book({ 
+        coin: args.coin 
+      });
+      
+      // Format the response
+      const bids = orderbook.levels[0].map((level: any) => ({
+        price: parseFloat(level.px),
+        size: parseFloat(level.sz),
+        orders: level.n,
+      }));
+      
+      const asks = orderbook.levels[1].map((level: any) => ({
+        price: parseFloat(level.px),
+        size: parseFloat(level.sz),
+        orders: level.n,
+      }));
+      
+      return {
+        success: true,
+        coin: orderbook.coin,
+        timestamp: orderbook.time,
+        bids,
+        asks,
+        spread: asks.length > 0 && bids.length > 0 
+          ? asks[0].price - bids[0].price 
+          : 0,
+        midPrice: asks.length > 0 && bids.length > 0 
+          ? (asks[0].price + bids[0].price) / 2 
+          : 0,
+      };
+    } catch (error: any) {
+      console.error(`Failed to get orderbook for ${args.coin}:`, error);
+      return {
+        success: false,
+        error: error.message,
+        coin: args.coin,
+      };
+    }
+  },
+});
+
+/**
+ * Fetch orderbook data for multiple coins in parallel
+ * @param coins - Array of coin symbols
+ * @param isTestnet - Whether to use testnet
+ * @returns Object mapping coins to their orderbook data
+ */
+export const getBulkOrderBooks = action({
+  args: {
+    coins: v.array(v.string()),
+    isTestnet: v.optional(v.boolean()),
+  },
+  handler: async (ctx, args) => {
+    try {
+      const hl = await import("@nktkas/hyperliquid");
+      
+      const transport = new hl.HttpTransport({ 
+        isTestnet: args.isTestnet ?? false 
+      });
+      
+      const infoClient = new hl.InfoClient({ transport });
+      
+      // Fetch all orderbooks in parallel
+      const orderbookPromises = args.coins.map(async (coin) => {
+        try {
+          const orderbook = await infoClient.l2Book({ coin });
+          
+          const bids = orderbook.levels[0].map((level: any) => ({
+            price: parseFloat(level.px),
+            size: parseFloat(level.sz),
+            orders: level.n,
+          }));
+          
+          const asks = orderbook.levels[1].map((level: any) => ({
+            price: parseFloat(level.px),
+            size: parseFloat(level.sz),
+            orders: level.n,
+          }));
+          
+          return {
+            coin: orderbook.coin,
+            timestamp: orderbook.time,
+            bids,
+            asks,
+            spread: asks.length > 0 && bids.length > 0 
+              ? asks[0].price - bids[0].price 
+              : 0,
+            midPrice: asks.length > 0 && bids.length > 0 
+              ? (asks[0].price + bids[0].price) / 2 
+              : 0,
+          };
+        } catch (error) {
+          console.error(`Failed to fetch orderbook for ${coin}:`, error);
+          return null;
+        }
+      });
+      
+      const orderbooks = await Promise.all(orderbookPromises);
+      
+      // Build results object
+      const results: Record<string, any> = {};
+      orderbooks.forEach((orderbook) => {
+        if (orderbook) {
+          results[orderbook.coin] = orderbook;
+        }
+      });
+      
+      return {
+        success: true,
+        orderbooks: results,
+        count: Object.keys(results).length,
+      };
+    } catch (error: any) {
+      console.error("Failed to fetch bulk orderbooks:", error);
+      return {
+        success: false,
+        error: error.message,
+        orderbooks: {},
+        count: 0,
+      };
+    }
+  },
+});

@@ -1,5 +1,8 @@
-const apiKey = process.env.OPENROUTER_API_KEY;
+// Single coin
+const btcOrderbook = await getOrderBook({ coin: "BTC", isTestnet: false });
 
-if (!apiKey && !args.isDemoMode) {
-  throw new Error("OpenRouter API key not configured");
-}
+// Multiple coins (all your trading tokens)
+const allOrderbooks = await getBulkOrderBooks({ 
+  coins: ["BTC", "ETH", "SOL", "HYPE", "XRP", "PUMP", "UNI", "ASTER"],
+  isTestnet: false 
+});
