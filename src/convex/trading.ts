@@ -54,8 +54,9 @@ export const analyzeSingleMarket = action({
         "X-Title": args.isDemoMode ? "DeX Trading Agent Demo" : "DeX Trading Agent",
       };
       
-      // Only add Authorization header if not using free tier
-      if (!args.isDemoMode && apiKey) {
+      // Always add Authorization header if API key is available
+      // Free tier models still require authentication, they just don't charge
+      if (apiKey) {
         headers["Authorization"] = `Bearer ${apiKey}`;
       }
 
@@ -201,8 +202,9 @@ OUTPUT (JSON only):
         "X-Title": args.isDemoMode ? "DeX Trading Agent Demo" : "DeX Trading Agent",
       };
       
-      // Only add Authorization header if not using free tier
-      if (!args.isDemoMode && apiKey) {
+      // Always add Authorization header if API key is available
+      // Free tier models still require authentication, they just don't charge
+      if (apiKey) {
         multiHeaders["Authorization"] = `Bearer ${apiKey}`;
       }
 
