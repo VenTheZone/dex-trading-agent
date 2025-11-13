@@ -139,11 +139,9 @@ This will:
 
 Create a `.env.local` file in the root directory:
 ```
-VITE_CONVEX_URL=<your-convex-deployment-url>
 OPENROUTER_API_KEY=
-HYPERLIQUID_MASTER_ADDRESS=
-HYPERLIQUID_AGENT_PRIVATE_KEY=
-HYPERLIQUID_AGENT_ADDRESS=
+HYPERLIQUID_MASTER_ADDRESS= # Wallet private key
+HYPERLIQUID_AGENT_PRIVATE_KEY= # From https://openrouter.ai
 ```
 
 **Note:** The `VITE_CONVEX_URL` is automatically generated when you run `npx convex dev`. You can find it in the Convex dashboard or in the terminal output.
