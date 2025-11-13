@@ -146,8 +146,8 @@ export const analyzeMultipleCharts = action({
       throw new Error(`Invalid AI model: ${requestedModel}. Valid models: ${validModels.join(', ')}`);
     }
 
-    // Demo mode uses same model but with free tier headers (no :free suffix needed)
-    const model = args.aiModel || "deepseek/deepseek-chat";
+    // Demo mode uses free tier model with :free suffix
+    const model = args.isDemoMode ? "deepseek/deepseek-chat-v3.1:free" : (args.aiModel || "deepseek/deepseek-chat");
 
     // Simplified market snapshot (similar to Hyper-Alpha-Arena approach)
     const marketSnapshot = args.charts.map(chart => 
