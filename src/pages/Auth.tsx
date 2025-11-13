@@ -33,15 +33,15 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
     setIsLoading(true);
     setError(null);
     try {
-      console.log("Attempting anonymous sign in...");
-      await signIn("anonymous");
-      console.log("Anonymous sign in successful");
+      console.log("Local user access - no authentication required");
+      await signIn();
+      console.log("Access granted");
       const redirect = redirectAfterAuth || "/";
       navigate(redirect);
     } catch (error) {
-      console.error("Guest login error:", error);
+      console.error("Navigation error:", error);
       console.error("Error details:", JSON.stringify(error, null, 2));
-      setError(`Failed to sign in as guest: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      setError(`Failed to navigate: ${error instanceof Error ? error.message : 'Unknown error'}`);
       setIsLoading(false);
     }
   };

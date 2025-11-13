@@ -682,7 +682,7 @@ export function useTrading() {
 
     console.log('[AUTO-TRADING] Loop started', {
       isAutoTrading,
-      user: user?._id,
+      user: user?.id,
       mode,
       allowedCoins: settings.allowedCoins,
       timestamp: new Date().toISOString()

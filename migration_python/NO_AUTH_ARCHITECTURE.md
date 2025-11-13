@@ -40,4 +40,3 @@ This project is designed for **local and private use only**. No authentication s
 - **Private wallet**: Use dedicated wallet for trading
 
 ## Quick Start (No Auth)
-

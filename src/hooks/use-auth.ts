@@ -3,16 +3,13 @@ import { useAuthActions } from "@convex-dev/auth/react";
 import { useConvexAuth, useQuery } from "convex/react";
 
 export function useAuth() {
-  const { isLoading: isAuthLoading, isAuthenticated } = useConvexAuth();
-  const user = useQuery((api as any).users.currentUser);
-  const { signIn, signOut } = useAuthActions();
-
-  // Always return ready state - no auth required
+  // No auth needed for local/private use
+  // Always return ready state
   return {
     isLoading: false,
-    isAuthenticated: true, // Always authenticated
-    user,
-    signIn,
-    signOut,
+    isAuthenticated: true,
+    user: { id: 1, name: "Local User" }, // Hardcoded local user
+    signIn: async () => {},
+    signOut: async () => {},
   };
 }
