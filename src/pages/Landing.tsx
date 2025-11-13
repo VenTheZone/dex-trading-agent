@@ -5,10 +5,21 @@ import { TradingBackground } from "@/components/CyberpunkBackground";
 import { Activity, Brain, Shield, TrendingUp, Zap, Eye } from "lucide-react";
 import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { TokenTradingModal } from "@/components/TokenTradingModal";
+import { TRADING_TOKENS, TokenData } from "@/lib/tokenData";
+import { Badge } from "@/components/ui/badge";
+import { Card } from "@/components/ui/card";
 
 export default function Landing() {
   const navigate = useNavigate();
   const [showPreview, setShowPreview] = useState(false);
+  const [selectedToken, setSelectedToken] = useState<TokenData | null>(null);
+  const [showTokenModal, setShowTokenModal] = useState(false);
+
+  const handleTokenClick = (token: TokenData) => {
+    setSelectedToken(token);
+    setShowTokenModal(true);
+  };
 
   return (
     <div className="min-h-screen bg-black text-cyan-100">
@@ -93,6 +104,45 @@ export default function Landing() {
                 PREVIEW DASHBOARD
               </Button>
             </motion.div>
+          </motion.div>
+          
+          {/* Token List Section */}
+          <motion.div
+            initial={{ y: 50, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ delay: 0.6 }}
+            className="mt-24 max-w-6xl w-full"
+          >
+            <h2 className="text-3xl font-bold text-cyan-400 font-mono text-center mb-8">
+              🎯 Available Trading Pairs
+            </h2>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {TRADING_TOKENS.map((token, i) => (
+                <motion.div
+                  key={token.symbol}
+                  initial={{ y: 20, opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
+                  transition={{ delay: 0.7 + i * 0.05 }}
+                >
+                  <Card
+                    onClick={() => handleTokenClick(token)}
+                    className="bg-black/80 border-cyan-500/50 p-6 cursor-pointer hover:border-cyan-500 transition-all hover:shadow-[0_0_30px_rgba(0,255,255,0.3)] hover:scale-105"
+                  >
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h3 className="text-xl font-bold text-cyan-400 font-mono mb-2">
+                          {token.pair}
+                        </h3>
+                        <Badge variant="outline" className="bg-purple-500/20 text-purple-400 border-purple-500 font-mono">
+                          {token.maxLeverage}x Leverage
+                        </Badge>
+                      </div>
+                      <TrendingUp className="h-8 w-8 text-cyan-400" />
+                    </div>
+                  </Card>
+                </motion.div>
+              ))}
+            </div>
           </motion.div>
           
           {/* Features Grid */}
@@ -265,6 +315,13 @@ export default function Landing() {
             </div>
           </DialogContent>
         </Dialog>
+
+        {/* Token Trading Modal */}
+        <TokenTradingModal
+          token={selectedToken}
+          isOpen={showTokenModal}
+          onClose={() => setShowTokenModal(false)}
+        />
       </div>
     </div>
   );
