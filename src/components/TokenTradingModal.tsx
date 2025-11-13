@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
 import { TrendingUp, BarChart3, AlertCircle } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { handleError, ErrorConfigs } from '@/lib/error-handler';
+import { handleError, ERROR_MESSAGES } from '@/lib/error-handler';
 
 interface TokenData {
   symbol: string;
@@ -33,7 +33,7 @@ export function TokenTradingModal({ token, isOpen, onClose }: TokenTradingModalP
 
   const handleIframeError = () => {
     setIframeError(true);
-    handleError(new Error('Iframe failed to load'), ErrorConfigs.IFRAME_LOAD);
+    handleError(new Error('Iframe failed to load'), ERROR_MESSAGES.IFRAME_LOAD);
   };
 
   return (
@@ -209,14 +209,14 @@ function TimeChart({ symbol, interval, onError }: { symbol: string; interval: st
       } catch (error) {
         const errorMessage = error instanceof Error ? error.message : 'Unknown error loading chart';
         onError(`Failed to load time chart: ${errorMessage}`);
-        handleError(error, ErrorConfigs.CHART_LOAD);
+        handleError(error, ERROR_MESSAGES.CHART_LOAD);
       }
     };
     
     script.onerror = () => {
       const error = new Error('Failed to load TradingView script');
       onError(error.message);
-      handleError(error, ErrorConfigs.CHART_SCRIPT);
+      handleError(error, ERROR_MESSAGES.CHART_SCRIPT);
     };
     
     document.head.appendChild(script);
@@ -280,14 +280,14 @@ function RangeChart({ symbol, range, onError }: { symbol: string; range: string;
       } catch (error) {
         const errorMessage = error instanceof Error ? error.message : 'Unknown error loading chart';
         onError(`Failed to load range chart: ${errorMessage}`);
-        handleError(error, ErrorConfigs.CHART_LOAD);
+        handleError(error, ERROR_MESSAGES.CHART_LOAD);
       }
     };
     
     script.onerror = () => {
       const error = new Error('Failed to load TradingView script');
       onError(error.message);
-      handleError(error, ErrorConfigs.CHART_SCRIPT);
+      handleError(error, ERROR_MESSAGES.CHART_SCRIPT);
     };
     
     document.head.appendChild(script);
