@@ -1,5 +1,3 @@
-import { useQuery, useMutation } from 'convex/react';
-import { api } from '@/convex/_generated/api';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -8,18 +6,22 @@ import { Trash2, TrendingUp, TrendingDown, Activity } from 'lucide-react';
 import { toast } from 'sonner';
 import { motion } from 'framer-motion';
 import { sanitizeText } from '@/lib/utils';
+import { useTradingLogs } from '@/hooks/use-python-api';
 
 export function TradingLogs() {
-  const logs = useQuery((api as any).tradingLogs.getUserLogs, { limit: 100 });
-  const clearLogs = useMutation((api as any).tradingLogs.clearUserLogs);
+  const { logs, loading, clearLogs } = useTradingLogs(100);
 
   const handleClearLogs = async () => {
     const confirmed = window.confirm('Are you sure you want to clear all logs?');
     if (!confirmed) return;
     
     try {
-      await clearLogs({});
-      toast.success('Logs cleared');
+      const success = await clearLogs();
+      if (success) {
+        toast.success('Logs cleared');
+      } else {
+        toast.error('Failed to clear logs');
+      }
     } catch (error) {
       toast.error('Failed to clear logs');
     }
@@ -53,7 +55,11 @@ export function TradingLogs() {
       
       <CardContent>
         <ScrollArea className="h-[500px] pr-4">
-          {!logs || logs.length === 0 ? (
+          {loading ? (
+            <div className="text-center text-gray-500 py-8 font-mono">
+              Loading logs...
+            </div>
+          ) : !logs || logs.length === 0 ? (
             <div className="text-center text-gray-500 py-8 font-mono">
               No trading logs yet
             </div>
@@ -61,7 +67,7 @@ export function TradingLogs() {
             <div className="space-y-3">
               {logs.map((log: any, index: number) => (
                 <motion.div
-                  key={log._id}
+                  key={log.id}
                   initial={{ opacity: 0, x: -20 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: index * 0.05 }}
@@ -108,7 +114,7 @@ export function TradingLogs() {
                             <span>Size: {log.size}</span>
                           )}
                           <span>
-                            {new Date(log._creationTime).toLocaleString()}
+                            {new Date(log.created_at).toLocaleString()}
                           </span>
                         </div>
                       </div>

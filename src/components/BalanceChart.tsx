@@ -1,16 +1,15 @@
-import { useQuery } from 'convex/react';
-import { api } from '@/convex/_generated/api';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Area, AreaChart } from 'recharts';
 import { motion } from 'framer-motion';
 import { TrendingUp, DollarSign, Activity } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useBalanceHistory, usePositionHistory } from '@/hooks/use-python-api';
 
 export function BalanceChart() {
-  const balanceHistory = useQuery((api as any).balanceHistory.getBalanceHistory, { limit: 50 });
-  const positionHistory = useQuery((api as any).positionSnapshots.getPositionHistory, { limit: 50 });
+  const { history: balanceHistory, loading: balanceLoading } = useBalanceHistory(50);
+  const { history: positionHistory, loading: positionLoading } = usePositionHistory(undefined, 50);
 
-  if (!balanceHistory || balanceHistory.length === 0) {
+  if (balanceLoading || !balanceHistory || balanceHistory.length === 0) {
     return (
       <Card className="bg-black/90 border-cyan-500/50">
         <CardHeader>
@@ -21,7 +20,7 @@ export function BalanceChart() {
         </CardHeader>
         <CardContent>
           <div className="text-center text-gray-500 py-8 font-mono">
-            No history data yet
+            {balanceLoading ? 'Loading history...' : 'No history data yet'}
           </div>
         </CardContent>
       </Card>
@@ -29,22 +28,22 @@ export function BalanceChart() {
   }
 
   const balanceChartData = balanceHistory.map((entry: any) => ({
-    time: new Date(entry._creationTime).toLocaleTimeString([], { 
+    time: new Date(entry.created_at).toLocaleTimeString([], { 
       hour: '2-digit', 
       minute: '2-digit' 
     }),
     balance: entry.balance,
-    fullTime: new Date(entry._creationTime).toLocaleString(),
+    fullTime: new Date(entry.created_at).toLocaleString(),
   }));
 
   const pnlChartData = positionHistory?.map((entry: any) => ({
-    time: new Date(entry._creationTime).toLocaleTimeString([], { 
+    time: new Date(entry.created_at).toLocaleTimeString([], { 
       hour: '2-digit', 
       minute: '2-digit' 
     }),
-    pnl: entry.unrealizedPnl,
+    pnl: entry.unrealized_pnl,
     symbol: entry.symbol,
-    fullTime: new Date(entry._creationTime).toLocaleString(),
+    fullTime: new Date(entry.created_at).toLocaleString(),
   })) || [];
 
   const currentBalance = balanceHistory[balanceHistory.length - 1]?.balance || 0;
@@ -125,7 +124,11 @@ export function BalanceChart() {
           </TabsContent>
           
           <TabsContent value="pnl" className="mt-4">
-            {pnlChartData.length === 0 ? (
+            {positionLoading ? (
+              <div className="text-center text-gray-500 py-8 font-mono">
+                Loading position history...
+              </div>
+            ) : pnlChartData.length === 0 ? (
               <div className="text-center text-gray-500 py-8 font-mono">
                 No position history yet
               </div>
