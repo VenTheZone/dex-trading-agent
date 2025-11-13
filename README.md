@@ -140,6 +140,7 @@ This will:
 Create a `.env.local` file in the root directory:
 
 VITE_CONVEX_URL=<your-convex-deployment-url>
+
 OPENROUTER_API_KEY=<your-openrouter-api-key>
 
 
