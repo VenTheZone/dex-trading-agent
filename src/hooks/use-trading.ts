@@ -279,7 +279,7 @@ export function useTrading() {
       const confirmed = window.confirm(
         `⚠️ Close all positions?\n\n` +
         `This will close your ${position.symbol} ${position.side} position.\n` +
-        `Current P&L: $${position.pnl.toFixed(2)}\n\n` +
+        `Current P&L: ${position.pnl.toFixed(2)}\n\n` +
         `Are you sure?`
       );
 
@@ -293,9 +293,6 @@ export function useTrading() {
     } catch (error: any) {
       toast.error(`Failed to close all positions: ${error.message}`);
       throw error;
-    } finally {
-      const { setAiThinking } = useTradingStore.getState();
-      setAiThinking(false);
     }
   };
 
@@ -454,7 +451,7 @@ export function useTrading() {
       if (isDemoMode) {
         toast.info(`[DEMO] 🤖 AI analyzing multiple charts with your OpenRouter key (${modelName})...`);
       } else {
-        toast.info(`�🤖 AI analyzing multiple charts with ${modelName}...`);
+        toast.info(`🤖 AI analyzing multiple charts with ${modelName}...`);
       }
 
       const multiChartData = filteredCharts.map(chart => ({
@@ -516,6 +513,8 @@ export function useTrading() {
       });
       
       throw error;
+    } finally {
+      setAiThinking(false);
     }
   };
 
