@@ -41,8 +41,8 @@ export function TradingControls() {
       
       if (result.success) {
         toast.success(`✅ ${result.message}`, {
-          description: `Connected to ${result.endpoint} - ${result.assetsCount} assets available`,
-          duration: 5000,
+          description: `API: ${result.apiEndpoint}\nApp: ${result.appUrl}\n${result.assetsCount} assets available\nSample: ${result.availableAssets}`,
+          duration: 8000,
         });
       } else {
         toast.error(`❌ ${result.message}`, {

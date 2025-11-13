@@ -73,6 +73,8 @@ export const API_CONFIG = {
   HYPERLIQUID: {
     MAINNET_URL: 'https://api.hyperliquid.xyz',
     TESTNET_URL: 'https://api.hyperliquid-testnet.xyz',
+    MAINNET_APP_URL: 'https://app.hyperliquid.xyz',
+    TESTNET_APP_URL: 'https://app.hyperliquid-testnet.xyz',
   },
 } as const;
 

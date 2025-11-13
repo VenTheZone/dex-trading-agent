@@ -28,10 +28,14 @@ export const testConnection = action({
       return {
         success: true,
         network: args.isTestnet ? "testnet" : "mainnet",
-        endpoint: args.isTestnet 
+        apiEndpoint: args.isTestnet 
           ? "https://api.hyperliquid-testnet.xyz" 
           : "https://api.hyperliquid.xyz",
+        appUrl: args.isTestnet
+          ? "https://app.hyperliquid-testnet.xyz"
+          : "https://app.hyperliquid.xyz",
         assetsCount: meta.universe.length,
+        availableAssets: meta.universe.slice(0, 10).map((a: any) => a.name).join(', '),
         message: `Successfully connected to Hyperliquid ${args.isTestnet ? 'Testnet' : 'Mainnet'}`,
       };
     } catch (error: any) {
