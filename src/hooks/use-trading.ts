@@ -349,7 +349,10 @@ export function useTrading() {
       const openRouterKey = keys?.openRouter || '';
       
       // In demo mode without a real API key, skip AI analysis
-      if (isDemoMode && (!openRouterKey || openRouterKey === 'DEMO_MODE')) {
+      if (isDemoMode && (!openRouterKey || 
+                         openRouterKey.trim() === '' || 
+                         openRouterKey === 'DEMO_MODE' || 
+                         !openRouterKey.startsWith('sk-or-v1-'))) {
         toast.info('[DEMO] AI analysis skipped - No OpenRouter API key provided', {
           description: 'Add your OpenRouter key in Settings to enable real AI analysis in demo mode',
           duration: 5000,
