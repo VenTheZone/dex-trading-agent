@@ -1,103 +1,110 @@
 """
-PSEUDO-CODE: Celery Background Tasks
-Replaces: Convex crons.ts
-
-This file shows how to implement scheduled background tasks using Celery.
+Celery Background Tasks - Scheduled AI analysis and monitoring
 """
-
-from celery import Celery
-from celery.schedules import crontab
-import os
+from workers import celery_app
 from services.trading_service import TradingService
-from database.schema import SessionLocal
+from services.market_data_service import MarketDataService
+from database import SessionLocal
+from database.schema import TradingLog
+import logging
+import os
 
-# Initialize Celery
-celery_app = Celery(
-    "dex_trading_agent",
-    broker=os.getenv("REDIS_URL", "redis://localhost:6379/0"),
-    backend=os.getenv("REDIS_URL", "redis://localhost:6379/0")
-)
+logger = logging.getLogger(__name__)
 
-# Configure Celery
-celery_app.conf.update(
-    task_serializer="json",
-    accept_content=["json"],
-    result_serializer="json",
-    timezone="UTC",
-    enable_utc=True,
-)
+trading_service = TradingService()
+market_service = MarketDataService()
 
-@celery_app.task(name="ai_trading_analysis")
-def run_ai_trading_analysis():
+
+@celery_app.task(name='workers.celery_tasks.scheduled_ai_analysis')
+def scheduled_ai_analysis():
     """
-    Run AI analysis for auto-trading (every 5 minutes)
-    Replaces: crons.ts ai_trading_analysis
+    Scheduled AI analysis task - runs every 5 minutes
+    Analyzes market conditions and logs recommendations
     """
-    db = SessionLocal()
     try:
-        trading_service = TradingService(db)
+        logger.info("🤖 Starting scheduled AI analysis...")
         
-        # Get all users with auto-trading enabled
-        # Note: This logic should be implemented based on user settings
-        # For now, this is a placeholder
+        # Get API key from environment
+        openrouter_key = os.getenv('OPENROUTER_API_KEY')
+        if not openrouter_key:
+            logger.warning("OpenRouter API key not configured, skipping AI analysis")
+            return {'status': 'skipped', 'reason': 'No API key'}
         
-        print(f"Scheduled AI analysis triggered at {datetime.now()}")
+        # Define coins to analyze
+        coins = ['BTC', 'ETH', 'SOL']
         
-        # The actual real-time trading logic runs in the frontend hook
-        # to have access to user settings and API keys from localStorage
-        # This is just a placeholder for backend-triggered analysis
+        # Fetch current prices
+        chart_data = []
+        for symbol in coins:
+            try:
+                price = market_service.fetch_price_with_fallback(symbol)
+                chart_data.append({
+                    'symbol': symbol,
+                    'currentPrice': price,
+                    'chartType': 'time',
+                    'chartInterval': '15',
+                    'technicalContext': f'Price: {price}, Timeframe: 15m'
+                })
+            except Exception as e:
+                logger.error(f"Failed to fetch price for {symbol}: {e}")
         
-        return {"success": True, "message": "Scheduled analysis complete"}
+        if not chart_data:
+            logger.warning("No market data available for analysis")
+            return {'status': 'skipped', 'reason': 'No market data'}
+        
+        # Run AI analysis
+        analysis = trading_service.analyze_multi_chart(
+            api_key=openrouter_key,
+            charts=chart_data,
+            user_balance=10000.0,
+            settings={
+                'takeProfitPercent': 5.0,
+                'stopLossPercent': 2.0,
+                'useAdvancedStrategy': True,
+                'leverage': 5,
+                'allowAILeverage': False,
+            },
+            ai_model='deepseek/deepseek-chat-v3-0324:free'
+        )
+        
+        # Log analysis result
+        db = SessionLocal()
+        try:
+            log = TradingLog(
+                action='scheduled_ai_analysis',
+                symbol=analysis.get('recommendedSymbol', 'MULTI'),
+                reason=f"AI Decision: {analysis['action']} (Confidence: {analysis['confidence']}%)",
+                details=analysis.get('reasoning', ''),
+            )
+            db.add(log)
+            db.commit()
+            logger.info(f"✅ AI analysis complete: {analysis['action']}")
+        finally:
+            db.close()
+        
+        return {
+            'status': 'success',
+            'action': analysis['action'],
+            'confidence': analysis['confidence'],
+            'symbol': analysis.get('recommendedSymbol')
+        }
+        
     except Exception as e:
-        print(f"Error in scheduled AI analysis: {e}")
-        return {"success": False, "error": str(e)}
-    finally:
-        db.close()
+        logger.error(f"Scheduled AI analysis error: {e}")
+        return {'status': 'error', 'error': str(e)}
 
-@celery_app.task(name="update_balance_history")
+
+@celery_app.task(name='workers.celery_tasks.update_balance_history')
 def update_balance_history():
     """
-    Record balance snapshots for all users (every 15 minutes)
+    Update balance history - runs periodically
+    Records current balance snapshots for tracking
     """
-    db = SessionLocal()
     try:
-        # Implement balance history recording logic
-        print(f"Balance history update triggered at {datetime.now()}")
-        return {"success": True}
+        logger.info("📊 Updating balance history...")
+        # This would fetch live balance from Hyperliquid or paper trading engine
+        # For now, just log the task execution
+        return {'status': 'success'}
     except Exception as e:
-        print(f"Error updating balance history: {e}")
-        return {"success": False, "error": str(e)}
-    finally:
-        db.close()
-
-@celery_app.task(name="update_position_snapshots")
-def update_position_snapshots():
-    """
-    Record position snapshots for historical tracking (every 5 minutes)
-    """
-    db = SessionLocal()
-    try:
-        # Implement position snapshot recording logic
-        print(f"Position snapshots update triggered at {datetime.now()}")
-        return {"success": True}
-    except Exception as e:
-        print(f"Error updating position snapshots: {e}")
-        return {"success": False, "error": str(e)}
-    finally:
-        db.close()
-
-# Configure periodic tasks
-celery_app.conf.beat_schedule = {
-    "ai-trading-analysis-every-5-minutes": {
-        "task": "ai_trading_analysis",
-        "schedule": crontab(minute="*/5"),  # Every 5 minutes
-    },
-    "update-balance-history-every-15-minutes": {
-        "task": "update_balance_history",
-        "schedule": crontab(minute="*/15"),  # Every 15 minutes
-    },
-    "update-position-snapshots-every-5-minutes": {
-        "task": "update_position_snapshots",
-        "schedule": crontab(minute="*/5"),  # Every 5 minutes
-    },
-}
+        logger.error(f"Balance history update error: {e}")
+        return {'status': 'error', 'error': str(e)}
