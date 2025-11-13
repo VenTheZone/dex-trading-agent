@@ -293,6 +293,9 @@ export function useTrading() {
     } catch (error: any) {
       toast.error(`Failed to close all positions: ${error.message}`);
       throw error;
+    } finally {
+      const { setAiThinking } = useTradingStore.getState();
+      setAiThinking(false);
     }
   };
 
@@ -387,7 +390,12 @@ export function useTrading() {
   };
 
   const runMultiChartAIAnalysis = async (charts: Array<{ symbol: string; currentPrice: number }>) => {
+    const { setAiThinking, setAiThoughts } = useTradingStore.getState();
+    
     try {
+      setAiThinking(true);
+      setAiThoughts('🔍 Initializing AI analysis...\n\nValidating API keys and market data...');
+      
       const isDemoMode = storage.isDemoMode();
       const keys = storage.getApiKeys();
       const openRouterKey = keys?.openRouter || '';
@@ -429,14 +437,6 @@ export function useTrading() {
         throw new Error('Invalid OpenRouter API key format');
       }
       
-      const modelName = aiModel === 'qwen/qwen3-max' ? 'Qwen' : 'DeepSeek';
-      
-      if (isDemoMode) {
-        toast.info(`[DEMO] 🤖 AI analyzing multiple charts with your OpenRouter key (${modelName})...`);
-      } else {
-        toast.info(`🤖 AI analyzing multiple charts with ${modelName}...`);
-      }
-      
       const allowedCoins = settings.allowedCoins || [];
       const filteredCharts = charts.filter(chart => 
         allowedCoins.length === 0 || allowedCoins.includes(chart.symbol)
@@ -445,6 +445,16 @@ export function useTrading() {
       if (filteredCharts.length === 0) {
         toast.error("❌ No allowed coins selected for trading");
         return null;
+      }
+      
+      const modelName = aiModel === 'qwen/qwen3-max' ? 'Qwen' : 'DeepSeek';
+      
+      setAiThoughts(`✅ API keys validated\n\n🤖 Using ${modelName} AI model\n📊 Analyzing ${filteredCharts.length} trading pairs...\n\nMarket data:\n${filteredCharts.map(c => `  • ${c.symbol}: ${c.currentPrice.toLocaleString()}`).join('\n')}`);
+      
+      if (isDemoMode) {
+        toast.info(`[DEMO] 🤖 AI analyzing multiple charts with your OpenRouter key (${modelName})...`);
+      } else {
+        toast.info(`�🤖 AI analyzing multiple charts with ${modelName}...`);
       }
 
       const multiChartData = filteredCharts.map(chart => ({
@@ -463,6 +473,9 @@ export function useTrading() {
         throw new Error('Invalid OpenRouter API key');
       }
 
+      const currentThoughts = useTradingStore.getState().aiThoughts;
+      setAiThoughts(`${currentThoughts}\n\n⏳ Sending request to ${modelName}...\nWaiting for AI response...`);
+      
       const analysis = await analyzeMultiChart({
         apiKey: openRouterKey,
         charts: multiChartData,
@@ -479,6 +492,8 @@ export function useTrading() {
         customPrompt,
       });
       
+      setAiThoughts(`✅ AI Analysis Complete!\n\n📊 Recommendation: ${analysis.action.toUpperCase()}\n🎯 Confidence: ${analysis.confidence}%\n💰 Symbol: ${analysis.recommendedSymbol || 'N/A'}\n\n💭 Reasoning:\n${analysis.reasoning}\n\n🌍 Market Context:\n${analysis.marketContext || 'N/A'}`);
+      
       toast.success(`✅ Multi-chart AI analysis complete: ${analysis.action.toUpperCase()}`);
       
       await createLog({
@@ -490,6 +505,7 @@ export function useTrading() {
       
       return analysis;
     } catch (error: any) {
+      setAiThoughts(`❌ AI Analysis Error\n\n${error.message}\n\nPlease check your API keys and try again.`);
       toast.error(`❌ Multi-chart AI Analysis failed: ${error.message}`);
       
       await createLog({

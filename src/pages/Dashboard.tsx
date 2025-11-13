@@ -11,7 +11,7 @@ import { TradingControls } from '@/components/TradingControls';
 import { LogoDropdown } from '@/components/LogoDropdown';
 import { storage } from '@/lib/storage';
 import { useTradingStore } from '@/store/tradingStore';
-import { Activity, DollarSign, TrendingUp, Settings, LineChart, Network, X } from 'lucide-react';
+import { Activity, DollarSign, TrendingUp, Settings, LineChart, Network, X, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { TradingLogs } from '@/components/TradingLogs';
 import { NewsFeed } from '@/components/NewsFeed';
@@ -24,12 +24,13 @@ import { CloseAllPositionsDialog } from '@/components/CloseAllPositionsDialog';
 import { UpdateNotification } from '@/components/UpdateNotification';
 import { useAction } from 'convex/react';
 import { api } from '@/convex/_generated/api';
+import { AiThoughtsPanel } from '@/components/AiThoughtsPanel';
 
 export default function Dashboard() {
   const navigate = useNavigate();
   const [hasApiKeys, setHasApiKeys] = useState(false);
   const [showCloseAllDialog, setShowCloseAllDialog] = useState(false);
-  const { mode, setMode, network, setNetwork, balance, position, initialBalance, resetBalance, settings, setBalance } = useTradingStore();
+  const { mode, setMode, network, setNetwork, balance, position, initialBalance, resetBalance, settings, setBalance, isAiThinking } = useTradingStore();
   const { closePosition, closeAllPositions } = useTrading();
   const getAccountInfo = useAction((api as any).hyperliquid.getAccountInfo);
   
@@ -158,15 +159,27 @@ export default function Dashboard() {
             <div className="flex items-center gap-4">
               <LogoDropdown />
               <div className="flex flex-col gap-1">
-                <h1 
-                  className="text-3xl font-bold text-cyan-400"
-                  style={{ 
-                    fontFamily: 'monospace',
-                    textShadow: '0 0 20px rgba(0,255,255,0.8), 2px 2px 0 #ff0080'
-                  }}
-                >
-                  DeX TRADING AGENT
-                </h1>
+                <div className="flex items-center gap-3">
+                  <h1 
+                    className="text-3xl font-bold text-cyan-400"
+                    style={{ 
+                      fontFamily: 'monospace',
+                      textShadow: '0 0 20px rgba(0,255,255,0.8), 2px 2px 0 #ff0080'
+                    }}
+                  >
+                    DeX TRADING AGENT
+                  </h1>
+                  {isAiThinking && (
+                    <motion.div
+                      initial={{ opacity: 0, scale: 0.8 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      className="flex items-center gap-2 bg-green-500/20 border border-green-500/50 px-3 py-1 rounded-full"
+                    >
+                      <Loader2 className="h-4 w-4 animate-spin text-green-400" />
+                      <span className="text-xs text-green-400 font-bold font-mono">AI THINKING</span>
+                    </motion.div>
+                  )}
+                </div>
                 <Breadcrumb>
                   <BreadcrumbList>
                     <BreadcrumbItem>
@@ -389,21 +402,27 @@ export default function Dashboard() {
               )}
             </div>
             
-            {/* Logs and News - 1/3 width */}
+            {/* Logs, News, and AI Thoughts - 1/3 width */}
             <div className="lg:col-span-1">
               <Tabs defaultValue="logs" className="w-full">
-                <TabsList className="grid w-full grid-cols-2 bg-black/50">
+                <TabsList className="grid w-full grid-cols-3 bg-black/50">
                   <TabsTrigger 
                     value="logs" 
-                    className="data-[state=active]:bg-cyan-500 data-[state=active]:text-black font-mono"
+                    className="data-[state=active]:bg-cyan-500 data-[state=active]:text-black font-mono text-xs"
                   >
                     📊 Logs
                   </TabsTrigger>
                   <TabsTrigger 
                     value="news" 
-                    className="data-[state=active]:bg-cyan-500 data-[state=active]:text-black font-mono"
+                    className="data-[state=active]:bg-cyan-500 data-[state=active]:text-black font-mono text-xs"
                   >
                     📰 News
+                  </TabsTrigger>
+                  <TabsTrigger 
+                    value="ai" 
+                    className="data-[state=active]:bg-cyan-500 data-[state=active]:text-black font-mono text-xs"
+                  >
+                    🧠 AI
                   </TabsTrigger>
                 </TabsList>
                 <TabsContent value="logs" className="mt-4">
@@ -411,6 +430,9 @@ export default function Dashboard() {
                 </TabsContent>
                 <TabsContent value="news" className="mt-4">
                   <NewsFeed />
+                </TabsContent>
+                <TabsContent value="ai" className="mt-4">
+                  <AiThoughtsPanel />
                 </TabsContent>
               </Tabs>
             </div>

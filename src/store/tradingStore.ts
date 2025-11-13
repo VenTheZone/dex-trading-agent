@@ -26,6 +26,8 @@ interface TradingState {
   connectionMode: 'wallet' | 'api' | 'demo';
   aiModel: 'deepseek/deepseek-chat-v3-0324:free' | 'qwen/qwen3-max';
   customPrompt: string;
+  isAiThinking: boolean;
+  aiThoughts: string;
   setBalance: (balance: number) => void;
   setInitialBalance: (balance: number) => void;
   resetBalance: () => void;
@@ -40,6 +42,8 @@ interface TradingState {
   setAiModel: (model: 'deepseek/deepseek-chat-v3-0324:free' | 'qwen/qwen3-max') => void;
   setCustomPrompt: (prompt: string) => void;
   resetPromptToDefault: () => void;
+  setAiThinking: (thinking: boolean) => void;
+  setAiThoughts: (thoughts: string) => void;
 }
 
 export const DEFAULT_PROMPT = `You are an expert crypto trading analyst. Analyze the following market data and provide a trading recommendation.
@@ -94,6 +98,8 @@ export const useTradingStore = create<TradingState>()(
       chartInterval: '15',
       isAutoTrading: false,
       customPrompt: DEFAULT_PROMPT,
+      isAiThinking: false,
+      aiThoughts: '',
       setBalance: (balance) => set({ balance }),
       setInitialBalance: (balance) => set({ initialBalance: balance, balance }),
       resetBalance: () => set((state) => ({ balance: state.initialBalance, position: null })),
@@ -111,6 +117,8 @@ export const useTradingStore = create<TradingState>()(
       setAiModel: (model) => set({ aiModel: model }),
       setCustomPrompt: (prompt) => set({ customPrompt: prompt }),
       resetPromptToDefault: () => set({ customPrompt: DEFAULT_PROMPT }),
+      setAiThinking: (thinking) => set({ isAiThinking: thinking }),
+      setAiThoughts: (thoughts) => set({ aiThoughts: thoughts }),
     }),
     {
       name: 'trading-storage',
