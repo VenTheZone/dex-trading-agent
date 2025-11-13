@@ -12,6 +12,13 @@ export default function Landing() {
   const navigate = useNavigate();
   const [showPreview, setShowPreview] = useState(false);
 
+  // Debug logging
+  console.log('[Landing] Component mounted/updated', {
+    isAuthenticated,
+    showPreview,
+    timestamp: new Date().toISOString()
+  });
+
   return (
     <div className="min-h-screen bg-black text-cyan-100">
       <TradingBackground />
