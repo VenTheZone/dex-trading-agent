@@ -432,22 +432,7 @@ export default function Dashboard() {
               </div>
             </SheetContent>
           </Sheet>
-        </motion.div>
-
-        {/* Footer Credit */}
-        <motion.footer
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.5 }}
-          className="fixed bottom-4 left-4 z-20"
-        >
-          <div className="text-cyan-400/60 text-sm font-mono hover:text-cyan-400 transition-colors">
-            Made by VenTheZone
-          </div>
-        </motion.footer>
-      </div>
-
-      <CloseAllPositionsDialog
+              <CloseAllPositionsDialog
         isOpen={showCloseAllDialog}
         onClose={() => setShowCloseAllDialog(false)}
         onConfirm={confirmCloseAllPositions}
