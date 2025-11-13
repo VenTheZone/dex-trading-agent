@@ -9,7 +9,7 @@ import { TokenTradingModal } from "@/components/TokenTradingModal";
 import { TRADING_TOKENS, TokenData } from "@/lib/tokenData";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
-import { handleError, ErrorConfigs } from "@/lib/error-handler";
+import { handleError, ERROR_MESSAGES } from "@/lib/error-handler";
 
 export default function Landing() {
   const navigate = useNavigate();
@@ -22,7 +22,7 @@ export default function Landing() {
       setSelectedToken(token);
       setShowTokenModal(true);
     } catch (error) {
-      handleError(error, ErrorConfigs.MODAL_OPEN);
+      handleError(error, ERROR_MESSAGES.MODAL_OPEN);
     }
   };
 
@@ -30,7 +30,7 @@ export default function Landing() {
     try {
       navigate('/dashboard');
     } catch (error) {
-      handleError(error, ErrorConfigs.NAVIGATION);
+      handleError(error, ERROR_MESSAGES.NAVIGATION);
     }
   };
 
@@ -38,7 +38,7 @@ export default function Landing() {
     try {
       setShowPreview(true);
     } catch (error) {
-      handleError(error, ErrorConfigs.MODAL_OPEN);
+      handleError(error, ERROR_MESSAGES.PREVIEW_OPEN);
     }
   };
 
@@ -46,7 +46,7 @@ export default function Landing() {
     try {
       setShowTokenModal(false);
     } catch (error) {
-      handleError(error, ErrorConfigs.MODAL_CLOSE);
+      handleError(error, ERROR_MESSAGES.MODAL_CLOSE);
     }
   };
 
