@@ -85,6 +85,18 @@ export const analyzeSingleMarket = action({
       }
 
       const data = await response.json();
+      
+      // Validate response structure
+      if (!data.choices || !Array.isArray(data.choices) || data.choices.length === 0) {
+        console.error('[CONVEX] Invalid API response structure:', data);
+        throw new Error('OpenRouter API returned invalid response structure. No choices array found.');
+      }
+      
+      if (!data.choices[0]?.message?.content) {
+        console.error('[CONVEX] Missing message content in API response:', data.choices[0]);
+        throw new Error('OpenRouter API returned empty message content.');
+      }
+      
       const analysis = JSON.parse(data.choices[0].message.content);
 
       return analysis;
@@ -233,7 +245,19 @@ OUTPUT (JSON only):
       console.log('[CONVEX] OpenRouter API response received', {
         hasChoices: !!data.choices,
         choicesLength: data.choices?.length,
+        fullResponse: JSON.stringify(data).substring(0, 500), // Log first 500 chars for debugging
       });
+      
+      // Validate response structure
+      if (!data.choices || !Array.isArray(data.choices) || data.choices.length === 0) {
+        console.error('[CONVEX] Invalid API response structure:', data);
+        throw new Error('OpenRouter API returned invalid response structure. No choices array found.');
+      }
+      
+      if (!data.choices[0]?.message?.content) {
+        console.error('[CONVEX] Missing message content in API response:', data.choices[0]);
+        throw new Error('OpenRouter API returned empty message content.');
+      }
       
       const analysis = JSON.parse(data.choices[0].message.content);
       console.log('[CONVEX] AI analysis parsed successfully', {
