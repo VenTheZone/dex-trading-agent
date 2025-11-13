@@ -609,8 +609,26 @@ export function useTrading() {
             coinsToFetch: allowedCoins,
           });
           
+          // If no API key in demo mode, skip AI analysis gracefully
+          if (!hasOpenRouterKey) {
+            toast.info('[DEMO] 🔄 Auto-trading paused - No OpenRouter API key', {
+              description: 'Add your OpenRouter key in Settings to enable AI analysis',
+              duration: 5000,
+            });
+            
+            await createLog({
+              action: "auto_pause",
+              symbol: "DEMO",
+              reason: "Demo mode: Auto-trading paused (no API key)",
+              details: "User can add OpenRouter API key in Settings to enable AI-powered auto-trading",
+            });
+            
+            setAutoTrading(false);
+            return;
+          }
+          
           toast.info(`[DEMO] 🔄 Auto-trading cycle started (${allowedCoins.length} coins)`, {
-            description: hasOpenRouterKey ? "Using your OpenRouter key" : "Using DeepSeek Free tier",
+            description: "Using your OpenRouter key",
           });
 
           // Fetch real market data using Convex action (bypasses CORS)
