@@ -140,7 +140,7 @@ export const analyzeMultipleCharts = action({
     }
 
     // Validate AI model
-    const validModels = ['deepseek/deepseek-chat', 'qwen/qwen-2.5-72b-instruct'];
+    const validModels = ['deepseek/deepseek-chat', 'qwen/qwen3-max'];
     const requestedModel = args.aiModel || "deepseek/deepseek-chat";
     if (!validModels.includes(requestedModel)) {
       throw new Error(`Invalid AI model: ${requestedModel}. Valid models: ${validModels.join(', ')}`);

@@ -258,7 +258,7 @@ export function useTrading() {
       const keys = storage.getApiKeys();
       const hasOpenRouterKey = keys?.openRouter && keys.openRouter !== 'DEMO_MODE';
       
-      const modelName = aiModel === 'qwen/qwen-2.5-72b-instruct' ? 'Qwen' : 'DeepSeek';
+      const modelName = aiModel === 'qwen/qwen3-max' ? 'Qwen' : 'DeepSeek';
       
       if (isDemoMode) {
         if (hasOpenRouterKey) {
@@ -327,7 +327,7 @@ export function useTrading() {
       const keys = storage.getApiKeys();
       const hasOpenRouterKey = keys?.openRouter && keys.openRouter !== 'DEMO_MODE';
       
-      const modelName = aiModel === 'qwen/qwen-2.5-72b-instruct' ? 'Qwen' : 'DeepSeek';
+      const modelName = aiModel === 'qwen/qwen3-max' ? 'Qwen' : 'DeepSeek';
       
       if (isDemoMode) {
         if (hasOpenRouterKey) {
@@ -541,7 +541,7 @@ export function useTrading() {
         }
         
         // Validate AI model
-        const validModels = ['deepseek/deepseek-chat', 'qwen/qwen-2.5-72b-instruct'];
+        const validModels = ['deepseek/deepseek-chat', 'qwen/qwen3-max'];
         if (!validModels.includes(aiModel)) {
           toast.error("❌ Invalid AI model selected", {
             description: "Resetting to default model",

@@ -117,8 +117,8 @@ export function TradingControls() {
     }
   };
 
-  const handleAiModelChange = (model: 'deepseek/deepseek-chat' | 'qwen/qwen-2.5-72b-instruct') => {
-    if (model === 'qwen/qwen-2.5-72b-instruct') {
+  const handleAiModelChange = (model: 'deepseek/deepseek-chat' | 'qwen/qwen3-max') => {
+    if (model === 'qwen/qwen3-max') {
       const confirmed = window.confirm(
         '⚠️ QWEN PRICING NOTICE\n\n' +
         'Qwen is a PAID model with the following pricing:\n\n' +
@@ -204,10 +204,10 @@ export function TradingControls() {
               <span className="ml-1 text-green-400">FREE</span>
             </Button>
             <Button
-              variant={aiModel === 'qwen/qwen-2.5-72b-instruct' ? 'default' : 'outline'}
-              onClick={() => handleAiModelChange('qwen/qwen-2.5-72b-instruct')}
+              variant={aiModel === 'qwen/qwen3-max' ? 'default' : 'outline'}
+              onClick={() => handleAiModelChange('qwen/qwen3-max')}
               className={`font-mono text-xs transition-all ${
-                aiModel === 'qwen/qwen-2.5-72b-instruct'
+                aiModel === 'qwen/qwen3-max'
                   ? 'bg-yellow-500 text-black hover:bg-yellow-600 shadow-[0_0_15px_rgba(234,179,8,0.4)]'
                   : 'border-cyan-500/30 text-cyan-400 hover:bg-cyan-500/20'
               }`}
@@ -217,7 +217,7 @@ export function TradingControls() {
             </Button>
           </div>
           
-          {aiModel === 'qwen/qwen-2.5-72b-instruct' && (
+          {aiModel === 'qwen/qwen3-max' && (
             <Alert className="bg-yellow-500/10 border-yellow-500/50">
               <AlertTriangle className="h-4 w-4 text-yellow-500" />
               <AlertDescription className="text-yellow-200 text-xs">

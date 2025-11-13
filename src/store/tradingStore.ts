@@ -24,7 +24,7 @@ interface TradingState {
   chartInterval: string;
   isAutoTrading: boolean;
   connectionMode: 'wallet' | 'api' | 'demo';
-  aiModel: 'deepseek/deepseek-chat' | 'qwen/qwen-2.5-72b-instruct';
+  aiModel: 'deepseek/deepseek-chat' | 'qwen/qwen3-max';
   customPrompt: string;
   setBalance: (balance: number) => void;
   setInitialBalance: (balance: number) => void;
@@ -37,7 +37,7 @@ interface TradingState {
   setChartInterval: (interval: string) => void;
   setAutoTrading: (enabled: boolean) => void;
   setConnectionMode: (mode: 'wallet' | 'api' | 'demo') => void;
-  setAiModel: (model: 'deepseek/deepseek-chat' | 'qwen/qwen-2.5-72b-instruct') => void;
+  setAiModel: (model: 'deepseek/deepseek-chat' | 'qwen/qwen3-max') => void;
   setCustomPrompt: (prompt: string) => void;
   resetPromptToDefault: () => void;
 }
