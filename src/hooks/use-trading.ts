@@ -630,6 +630,10 @@ export function useTrading() {
           toast.info(`[DEMO] 🔄 Auto-trading cycle started (${allowedCoins.length} coins)`, {
             description: "Using your OpenRouter key",
           });
+          
+          toast.info(`[DEMO] 🔄 Auto-trading cycle started (${allowedCoins.length} coins)`, {
+            description: "Using your OpenRouter key",
+          });
 
           // Fetch real market data using Convex action (bypasses CORS)
           console.log('[AUTO-TRADING] Fetching prices for coins:', allowedCoins);
