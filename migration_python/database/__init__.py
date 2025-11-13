@@ -20,7 +20,7 @@ engine = create_engine(
 # Create session factory
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
-# Base class for models
+# Base class for models - MUST be defined before importing schema
 Base = declarative_base()
 
 def get_db() -> Generator[Session, None, None]:
@@ -35,7 +35,8 @@ def get_db() -> Generator[Session, None, None]:
 
 def init_db():
     """
-    Initialize database tables
+    Initialize database - create all tables
+    Import schema AFTER Base is defined to avoid circular imports
     """
-    from .schema import Base
+    from . import schema  # Import here to avoid circular dependency
     Base.metadata.create_all(bind=engine)
