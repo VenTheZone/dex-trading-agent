@@ -15,17 +15,15 @@ export default function Landing() {
 
   // Auto sign-in as guest on mount
   useEffect(() => {
+    console.log('[Landing] Auth check:', { isLoading, isAuthenticated });
+    
     if (!isLoading && !isAuthenticated) {
-      signIn("anonymous").catch(console.error);
+      console.log('[Landing] Signing in as guest...');
+      signIn("anonymous")
+        .then(() => console.log('[Landing] Guest sign-in successful'))
+        .catch((error) => console.error('[Landing] Guest sign-in failed:', error));
     }
   }, [isLoading, isAuthenticated, signIn]);
-
-  // Debug logging
-  console.log('[Landing] Component mounted/updated', {
-    isAuthenticated,
-    showPreview,
-    timestamp: new Date().toISOString()
-  });
 
   return (
     <div className="min-h-screen bg-black text-cyan-100">

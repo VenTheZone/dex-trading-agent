@@ -20,20 +20,23 @@ export function useAuth() {
     timestamp: new Date().toISOString()
   });
 
-  // This effect updates the loading state once auth is loaded and user data is available
-  // It ensures we only show content when both authentication state and user data are ready
+  // This effect updates the loading state once auth is loaded
+  // For guest auth, we don't need to wait for user data
   useEffect(() => {
     console.log('[useAuth] useEffect triggered:', {
       isAuthLoading,
+      isAuthenticated,
       userDefined: user !== undefined,
-      willSetLoadingFalse: !isAuthLoading && user !== undefined
+      willSetLoadingFalse: !isAuthLoading
     });
     
-    if (!isAuthLoading && user !== undefined) {
-      console.log('[useAuth] Setting isLoading to false');
+    // Set loading to false once Convex auth is ready
+    // Don't wait for user query since guest users might not have a user record yet
+    if (!isAuthLoading) {
+      console.log('[useAuth] Setting isLoading to false - auth ready');
       setIsLoading(false);
     }
-  }, [isAuthLoading, user]);
+  }, [isAuthLoading, isAuthenticated, user]);
 
   return {
     isLoading,
