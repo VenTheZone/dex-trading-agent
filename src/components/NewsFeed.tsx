@@ -46,7 +46,9 @@ export function NewsFeed() {
         setNews(result.posts);
       } else {
         console.error('News fetch failed:', result.error);
-        toast.error('Failed to load news. CryptoPanic API may require authentication.');
+        toast.error('Failed to load news', {
+          description: 'Using CryptoPanic public API. Add CRYPTOPANIC_AUTH_TOKEN for higher rate limits.',
+        });
       }
     } catch (error) {
       console.error('Error loading news:', error);

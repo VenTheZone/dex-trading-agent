@@ -50,12 +50,17 @@ export const fetchCryptoNews = action({
       // Limit results to prevent DoS (max 50)
       const limit = Math.max(1, Math.min(args.limit || 20, 50));
       
-      // Build query parameters
+      // Build query parameters for public API access
       const params = new URLSearchParams();
       
-      // CryptoPanic requires auth_token even for public access
-      const authToken = process.env.CRYPTOPANIC_AUTH_TOKEN || 'free';
-      params.append('auth_token', authToken);
+      // Public API access - no auth_token required for basic access
+      // If CRYPTOPANIC_AUTH_TOKEN is set, use it for higher rate limits
+      const authToken = process.env.CRYPTOPANIC_AUTH_TOKEN;
+      if (authToken && authToken !== 'free') {
+        params.append('auth_token', authToken);
+      }
+      
+      // Always set public=true for public posts
       params.append('public', 'true');
       
       if (filter) {
@@ -72,6 +77,7 @@ export const fetchCryptoNews = action({
         signal: AbortSignal.timeout(10000),
         headers: {
           'Accept': 'application/json',
+          'User-Agent': 'DeX-Trading-Agent/1.0',
         },
       });
 
