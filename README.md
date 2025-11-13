@@ -33,6 +33,10 @@ The landing page features a cyberpunk-themed design with:
 - Dynamic CTA button that adapts based on authentication status
 - Responsive design optimized for all screen sizes
 
+## 🔒 Authentication
+
+The application uses **guest-only authentication** for simplicity. No email or password required - just click "Continue as Guest" to access the platform. All API keys are stored locally in your browser.
+
 ## 🔔 Trade Confirmation & Safety Features
 
 - **Trade Confirmation Modal**: Every trade requires explicit confirmation before execution
@@ -82,9 +86,15 @@ You'll also need API keys for:
 
 ## 🚀 Deployment Options
 
-### Option 1: Local Development (Native)
+### Option 1: Docker (Recommended for Production)
 
-### 1. Clone the Repository
+#### Prerequisites
+- Docker and Docker Compose installed
+- Convex account and deployment URL
+
+#### Steps
+
+1. **Clone the Repository**
 
 ### 2. Install Dependencies
 ```

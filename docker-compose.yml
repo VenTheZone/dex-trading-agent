@@ -1,4 +1,13 @@
+version: '3.8'
+
+services:
+  dex-trading-agent:
+    build: .
+    ports:
+      - "5173:5173"
     environment:
-      - NODE_ENV=development
+      - NODE_ENV=production
       - VITE_CONVEX_URL=${VITE_CONVEX_URL}
-      - OPENROUTER_API_KEY=${OPENROUTER_API_KEY}
+    restart: unless-stopped
+    volumes:
+      - ./dist:/app/dist:ro

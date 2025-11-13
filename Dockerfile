@@ -1,41 +1,42 @@
-# Multi-stage build for production-ready Docker image
-FROM node:20-alpine AS base
+# Build stage
+FROM node:20-alpine AS builder
+
+WORKDIR /app
 
 # Install pnpm
-RUN corepack enable && corepack prepare pnpm@latest --activate
-
-# Set working directory
-WORKDIR /app
+RUN npm install -g pnpm
 
 # Copy package files
 COPY package.json pnpm-lock.yaml* ./
 
 # Install dependencies
-FROM base AS deps
 RUN pnpm install --frozen-lockfile
 
-# Build stage
-FROM base AS builder
-COPY --from=deps /app/node_modules ./node_modules
+# Copy source code
 COPY . .
 
 # Build the application
-RUN pnpm run build
+RUN pnpm build
 
 # Production stage
-FROM node:20-alpine AS runner
+FROM node:20-alpine
+
 WORKDIR /app
 
-# Install pnpm and serve for production
-RUN corepack enable && corepack prepare pnpm@latest --activate
-RUN pnpm add -g serve
+# Install pnpm
+RUN npm install -g pnpm
 
-# Copy built assets
+# Copy package files
+COPY package.json pnpm-lock.yaml* ./
+
+# Install production dependencies only
+RUN pnpm install --prod --frozen-lockfile
+
+# Copy built assets from builder
 COPY --from=builder /app/dist ./dist
-COPY --from=builder /app/package.json ./
 
 # Expose port
-EXPOSE 3000
+EXPOSE 5173
 
 # Start the application
-CMD ["serve", "-s", "dist", "-l", "3000"]
+CMD ["pnpm", "preview", "--host", "0.0.0.0", "--port", "5173"]
