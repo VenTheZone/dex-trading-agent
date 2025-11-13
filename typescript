@@ -1,1 +1,11 @@
-pythonApi.getAccountInfo({ walletAddress, isTestnet: network === 'testnet' })
+  interface Position {
+    symbol: string;
+    size: number;
+    entryPrice: number;
+    currentPrice: number;
+    pnl: number;
+    side: 'long' | 'short';
+    stopLoss?: number;
+    takeProfit?: number;
+  }
+  
