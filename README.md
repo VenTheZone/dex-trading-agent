@@ -186,10 +186,10 @@ You have two options for configuring API keys:
 For local or self-hosted deployments, you can configure API keys in the backend environment:
 
 1. **Create a `.env` file** in the root directory (copy from `.env.example`):
-
+```
 VITE_CONVEX_URL=<your-convex-deployment-url>
 OPENROUTER_API_KEY=<your-openrouter-api-key>
-
+```
 **Note:** The `VITE_CONVEX_URL` is automatically generated when you run `npx convex dev`. You can find it in the Convex dashboard or in the terminal output.
 
 ### 7. Run the Development Server
