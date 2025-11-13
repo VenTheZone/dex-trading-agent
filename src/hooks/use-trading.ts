@@ -4,7 +4,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { storage } from "@/lib/storage";
 import { useTradingStore } from "@/store/tradingStore";
 import { toast } from "sonner";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useCallback } from "react";
 
 export function useTrading() {
   const createLog = useMutation((api as any).tradingLogs.createLog);
@@ -20,10 +20,26 @@ export function useTrading() {
   const lastRecordedBalance = useRef(balance);
   const marginWarningShown = useRef(false);
   const isRecordingBalance = useRef(false);
+  const balanceRecordTimeout = useRef<NodeJS.Timeout | null>(null);
 
   // Record balance changes with debouncing to prevent race conditions
   useEffect(() => {
-    if (user && balance !== lastRecordedBalance.current && !isRecordingBalance.current) {
+    if (!user) return;
+    
+    // Clear existing timeout
+    if (balanceRecordTimeout.current) {
+      clearTimeout(balanceRecordTimeout.current);
+    }
+    
+    // Only record if balance changed significantly (more than $0.01)
+    if (Math.abs(balance - lastRecordedBalance.current) < 0.01) {
+      return;
+    }
+    
+    // Debounce balance recording by 2 seconds
+    balanceRecordTimeout.current = setTimeout(() => {
+      if (isRecordingBalance.current) return;
+      
       isRecordingBalance.current = true;
       recordBalance({ balance, mode })
         .then(() => {
@@ -35,7 +51,13 @@ export function useTrading() {
         .finally(() => {
           isRecordingBalance.current = false;
         });
-    }
+    }, 2000);
+    
+    return () => {
+      if (balanceRecordTimeout.current) {
+        clearTimeout(balanceRecordTimeout.current);
+      }
+    };
   }, [balance, mode, user, recordBalance]);
 
   // Poll for live positions if in live mode
@@ -147,7 +169,7 @@ export function useTrading() {
     return () => clearInterval(interval);
   }, [mode, network, user, getHyperliquidPositions, setBalance, setPosition, isAutoTrading, setAutoTrading, createLog, recordPositionSnapshot, settings.leverage]);
 
-  const closePosition = async (positionToClose: typeof position) => {
+  const closePosition = useCallback(async (positionToClose: typeof position) => {
     if (!positionToClose) {
       toast.error("No position to close");
       return;
@@ -201,7 +223,7 @@ export function useTrading() {
       toast.error(`Failed to close position: ${error.message}`);
       throw error;
     }
-  };
+  }, [mode, network, settings.leverage, balance, executeLiveTrade, createLog, setBalance, setPosition]);
 
   const closeAllPositions = async () => {
     try {
@@ -463,11 +485,16 @@ export function useTrading() {
     }
   };
 
-  // Real-time auto-trading loop
+  // Real-time auto-trading loop with improved error handling
   useEffect(() => {
     if (!isAutoTrading || !user) return;
 
+    let isActive = true;
+    let timeoutId: NodeJS.Timeout | null = null;
+
     const runAutoTrading = async () => {
+      if (!isActive) return;
+      
       try {
         const isDemoMode = storage.isDemoMode();
         const allowedCoins = settings.allowedCoins || [];
@@ -487,6 +514,15 @@ export function useTrading() {
           });
           
           setAutoTrading(false);
+          return;
+        }
+        
+        // Validate AI model
+        const validModels = ['deepseek/deepseek-chat', 'qwen/qwen-2.5-72b-instruct'];
+        if (!validModels.includes(aiModel)) {
+          toast.error("❌ Invalid AI model selected", {
+            description: "Resetting to default model",
+          });
           return;
         }
         
@@ -517,10 +553,7 @@ export function useTrading() {
           });
 
           const chartData = await Promise.all(chartDataPromises);
-          const validCharts = chartData.filter((chart) => chart !== null) as Array<{
-            symbol: string;
-            currentPrice: number;
-          }>;
+          const validCharts = chartData.filter((chart): chart is { symbol: string; currentPrice: number } => chart !== null);
 
           if (validCharts.length === 0) {
             toast.error("❌ Auto-trading paused: No market data available", {
@@ -582,17 +615,7 @@ export function useTrading() {
               description: `Confidence: ${analysis.confidence}%`,
             });
             
-            await executeTrade(
-              position.symbol,
-              "close_position",
-              position.side,
-              position.currentPrice,
-              position.size,
-              undefined,
-              undefined,
-              `[DEMO] ${analysis.reasoning}`,
-              true
-            );
+            await closePosition(position);
           } else {
             toast.info(`[DEMO] 📊 AI recommends: ${analysis.action.toUpperCase()}`, {
               description: analysis.reasoning.substring(0, 100) + "...",
@@ -721,6 +744,8 @@ export function useTrading() {
           });
         }
       } catch (error: any) {
+        if (!isActive) return; // Don't show errors if component unmounted
+        
         toast.error(`❌ Auto-trading error: ${error.message}`, {
           description: "Check Trading Logs for details",
           duration: 5000,
@@ -731,7 +756,7 @@ export function useTrading() {
           symbol: "SYSTEM",
           reason: `Auto-trading error: ${error.message}`,
           details: `Stack: ${error.stack || 'N/A'}`,
-        });
+        }).catch(err => console.error("Failed to log error:", err));
       }
     };
 
@@ -739,10 +764,22 @@ export function useTrading() {
     runAutoTrading();
 
     // Then run every 2 minutes while auto-trading is enabled
-    const interval = setInterval(runAutoTrading, 2 * 60 * 1000);
+    const scheduleNext = () => {
+      if (isActive) {
+        timeoutId = setTimeout(() => {
+          runAutoTrading().then(scheduleNext);
+        }, 2 * 60 * 1000);
+      }
+    };
+    scheduleNext();
 
-    return () => clearInterval(interval);
-  }, [isAutoTrading, user, settings.allowedCoins, position, balance, settings, chartType, chartInterval, mode, network, aiModel, customPrompt, fetchPriceWithFallback]);
+    return () => {
+      isActive = false;
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+      }
+    };
+  }, [isAutoTrading, user, settings.allowedCoins, position, balance, settings, chartType, chartInterval, mode, network, aiModel, customPrompt, fetchPriceWithFallback, setAutoTrading, createLog, closePosition]);
 
   return {
     runAIAnalysis,

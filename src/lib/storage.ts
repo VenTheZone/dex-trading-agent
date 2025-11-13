@@ -34,6 +34,13 @@ export const storage = {
         }
       }
 
+      // Validate Hyperliquid keys if not demo mode
+      if (keys.hyperliquid.apiKey !== 'DEMO_MODE') {
+        if (!keys.hyperliquid.apiSecret || keys.hyperliquid.apiSecret.length < 10) {
+          throw new Error('Invalid Hyperliquid API secret');
+        }
+      }
+
       // Check if demo mode
       if (keys.hyperliquid.apiKey === 'DEMO_MODE') {
         localStorage.setItem(`${STORAGE_PREFIX}demo_mode`, 'true');
@@ -86,13 +93,16 @@ export const storage = {
     try {
       // Validate settings before saving
       if (settings.leverage < 1 || settings.leverage > 100) {
-        throw new Error('Invalid leverage value');
+        throw new Error('Invalid leverage value (must be 1-100)');
       }
       if (settings.takeProfitPercent < 0 || settings.takeProfitPercent > 1000) {
-        throw new Error('Invalid take profit percentage');
+        throw new Error('Invalid take profit percentage (must be 0-1000)');
       }
       if (settings.stopLossPercent < 0 || settings.stopLossPercent > 100) {
-        throw new Error('Invalid stop loss percentage');
+        throw new Error('Invalid stop loss percentage (must be 0-100)');
+      }
+      if (!Array.isArray(settings.allowedCoins)) {
+        throw new Error('Invalid allowedCoins format (must be array)');
       }
       
       localStorage.setItem(`${STORAGE_PREFIX}settings`, JSON.stringify(settings));
