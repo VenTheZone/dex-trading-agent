@@ -489,15 +489,36 @@ export function useTrading() {
   useEffect(() => {
     if (!isAutoTrading || !user) return;
 
+    console.log('[AUTO-TRADING] Loop started', {
+      isAutoTrading,
+      user: user?._id,
+      mode,
+      allowedCoins: settings.allowedCoins,
+      timestamp: new Date().toISOString()
+    });
+
     let isActive = true;
     let timeoutId: NodeJS.Timeout | null = null;
 
     const runAutoTrading = async () => {
       if (!isActive) return;
       
+      console.log('[AUTO-TRADING] Cycle starting...', {
+        mode,
+        isDemoMode: storage.isDemoMode(),
+        allowedCoins: settings.allowedCoins,
+        aiModel,
+      });
+      
       try {
         const isDemoMode = storage.isDemoMode();
         const allowedCoins = settings.allowedCoins || [];
+        
+        console.log('[AUTO-TRADING] Validation check', {
+          isDemoMode,
+          allowedCoinsCount: allowedCoins.length,
+          allowedCoins,
+        });
         
         // Validation checks with detailed feedback
         if (allowedCoins.length === 0) {
@@ -531,29 +552,44 @@ export function useTrading() {
           const keys = storage.getApiKeys();
           const hasOpenRouterKey = keys?.openRouter && keys.openRouter !== 'DEMO_MODE';
           
+          console.log('[AUTO-TRADING] Demo mode detected', {
+            hasOpenRouterKey,
+            coinsToFetch: allowedCoins,
+          });
+          
           toast.info(`[DEMO] 🔄 Auto-trading cycle started (${allowedCoins.length} coins)`, {
             description: hasOpenRouterKey ? "Using your OpenRouter key" : "Using DeepSeek Free tier",
           });
 
           // Fetch real market data using Convex action (bypasses CORS)
+          console.log('[AUTO-TRADING] Fetching prices for coins:', allowedCoins);
+          
           const chartDataPromises = allowedCoins.map(async (symbol) => {
             try {
+              console.log(`[AUTO-TRADING] Fetching price for ${symbol}...`);
               const price = await fetchPriceWithFallback({ 
                 symbol,
                 isTestnet: network === 'testnet'
               });
+              console.log(`[AUTO-TRADING] Price fetched for ${symbol}: ${price}`);
               return {
                 symbol,
                 currentPrice: price,
               };
             } catch (error) {
-              console.error(`[DEMO] Failed to fetch price for ${symbol}:`, error);
+              console.error(`[AUTO-TRADING] Failed to fetch price for ${symbol}:`, error);
               return null;
             }
           });
 
           const chartData = await Promise.all(chartDataPromises);
           const validCharts = chartData.filter((chart): chart is { symbol: string; currentPrice: number } => chart !== null);
+
+          console.log('[AUTO-TRADING] Price fetch results', {
+            totalCoins: allowedCoins.length,
+            successfulFetches: validCharts.length,
+            validCharts,
+          });
 
           if (validCharts.length === 0) {
             toast.error("❌ Auto-trading paused: No market data available", {
@@ -582,7 +618,11 @@ export function useTrading() {
           }
 
           // Run real AI analysis with DeepSeek V3.1 free tier
+          console.log('[AUTO-TRADING] Running AI analysis with charts:', validCharts);
+          
           const analysis = await runMultiChartAIAnalysis(validCharts);
+
+          console.log('[AUTO-TRADING] AI analysis result:', analysis);
 
           if (!analysis) {
             toast.warning("⚠️ AI returned no recommendation", {
@@ -745,6 +785,13 @@ export function useTrading() {
         }
       } catch (error: any) {
         if (!isActive) return; // Don't show errors if component unmounted
+        
+        console.error('[AUTO-TRADING] Error in auto-trading loop:', {
+          error: error.message,
+          stack: error.stack,
+          mode,
+          isDemoMode: storage.isDemoMode(),
+        });
         
         toast.error(`❌ Auto-trading error: ${error.message}`, {
           description: "Check Trading Logs for details",

@@ -126,6 +126,13 @@ export const analyzeMultipleCharts = action({
     customPrompt: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
+    console.log('[CONVEX] analyzeMultipleCharts called', {
+      chartsCount: args.charts.length,
+      isDemoMode: args.isDemoMode,
+      aiModel: args.aiModel,
+      hasCustomPrompt: !!args.customPrompt,
+    });
+    
     const apiKey = process.env.OPENROUTER_API_KEY;
     
     if (!apiKey && !args.isDemoMode) {
@@ -154,6 +161,12 @@ export const analyzeMultipleCharts = action({
         multiHeaders["Authorization"] = `Bearer ${apiKey}`;
       }
 
+      console.log('[CONVEX] Calling OpenRouter API', {
+        model,
+        isDemoMode: args.isDemoMode,
+        hasAuthHeader: !!multiHeaders["Authorization"],
+      });
+
       const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
         method: "POST",
         headers: multiHeaders,
@@ -174,15 +187,31 @@ export const analyzeMultipleCharts = action({
       });
 
       if (!response.ok) {
-        throw new Error(`OpenRouter API error: ${response.statusText}`);
+        const errorText = await response.text();
+        console.error('[CONVEX] OpenRouter API error', {
+          status: response.status,
+          statusText: response.statusText,
+          errorText,
+        });
+        throw new Error(`OpenRouter API error (${response.status}): ${response.statusText}`);
       }
 
       const data = await response.json();
+      console.log('[CONVEX] OpenRouter API response received', {
+        hasChoices: !!data.choices,
+        choicesLength: data.choices?.length,
+      });
+      
       const analysis = JSON.parse(data.choices[0].message.content);
+      console.log('[CONVEX] AI analysis parsed successfully', {
+        action: analysis.action,
+        confidence: analysis.confidence,
+        recommendedSymbol: analysis.recommendedSymbol,
+      });
 
       return analysis;
     } catch (error) {
-      console.error("Multi-chart AI Analysis error:", error);
+      console.error("[CONVEX] Multi-chart AI Analysis error:", error);
       throw error;
     }
   },
