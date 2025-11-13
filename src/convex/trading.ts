@@ -6,6 +6,7 @@ import { internal } from "./_generated/api";
 
 /**
  * Analyzes market data for a single symbol using AI
+ * @param apiKey - User's OpenRouter API key
  * @param symbol - Trading pair symbol (e.g., "BTCUSD")
  * @param chartData - Serialized chart data for analysis
  * @param userBalance - Current user balance
@@ -17,6 +18,7 @@ import { internal } from "./_generated/api";
  */
 export const analyzeSingleMarket = action({
   args: {
+    apiKey: v.string(),
     symbol: v.string(),
     chartData: v.string(),
     userBalance: v.number(),
@@ -30,14 +32,12 @@ export const analyzeSingleMarket = action({
     customPrompt: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
-    const apiKey = process.env.OPENROUTER_API_KEY;
-    
-    if (!apiKey && !args.isDemoMode) {
-      throw new Error("OpenRouter API key not configured. Please add OPENROUTER_API_KEY to your environment variables.");
+    // Validate API key format
+    if (!args.apiKey || args.apiKey.trim() === '') {
+      throw new Error("OpenRouter API key is required. Please add your API key in Settings.");
     }
 
-    // Validate API key format if provided
-    if (apiKey && !apiKey.startsWith('sk-or-v1-')) {
+    if (args.apiKey !== 'DEMO_MODE' && !args.apiKey.startsWith('sk-or-v1-')) {
       throw new Error("Invalid OpenRouter API key format. Key must start with 'sk-or-v1-'");
     }
 
@@ -52,13 +52,8 @@ export const analyzeSingleMarket = action({
         "Content-Type": "application/json",
         "HTTP-Referer": "https://dex-trading-agent.vly.site",
         "X-Title": args.isDemoMode ? "DeX Trading Agent Demo" : "DeX Trading Agent",
+        "Authorization": `Bearer ${args.apiKey}`,
       };
-      
-      // Always add Authorization header if API key is available
-      // Free tier models still require authentication, they just don't charge
-      if (apiKey) {
-        headers["Authorization"] = `Bearer ${apiKey}`;
-      }
 
       const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
         method: "POST",
@@ -87,7 +82,6 @@ export const analyzeSingleMarket = action({
 
       const data = await response.json();
       
-      // Validate response structure
       if (!data.choices || !Array.isArray(data.choices) || data.choices.length === 0) {
         console.error('[CONVEX] Invalid API response structure:', data);
         throw new Error('OpenRouter API returned invalid response structure. No choices array found.');
@@ -110,6 +104,7 @@ export const analyzeSingleMarket = action({
 
 /**
  * Analyzes multiple charts simultaneously for correlation-based trading decisions
+ * @param apiKey - User's OpenRouter API key
  * @param charts - Array of chart data with symbols and prices
  * @param userBalance - Current user balance
  * @param settings - Trading risk settings including leverage
@@ -120,6 +115,7 @@ export const analyzeSingleMarket = action({
  */
 export const analyzeMultipleCharts = action({
   args: {
+    apiKey: v.string(),
     charts: v.array(v.object({
       symbol: v.string(),
       currentPrice: v.number(),
@@ -144,12 +140,16 @@ export const analyzeMultipleCharts = action({
       isDemoMode: args.isDemoMode,
       aiModel: args.aiModel,
       hasCustomPrompt: !!args.customPrompt,
+      hasApiKey: !!args.apiKey,
     });
     
-    const apiKey = process.env.OPENROUTER_API_KEY;
-    
-    if (!apiKey && !args.isDemoMode) {
-      throw new Error("OpenRouter API key not configured");
+    // Validate API key
+    if (!args.apiKey || args.apiKey.trim() === '') {
+      throw new Error("OpenRouter API key is required. Please add your API key in Settings.");
+    }
+
+    if (args.apiKey !== 'DEMO_MODE' && !args.apiKey.startsWith('sk-or-v1-')) {
+      throw new Error("Invalid OpenRouter API key format. Key must start with 'sk-or-v1-'");
     }
 
     // Validate AI model
@@ -159,17 +159,14 @@ export const analyzeMultipleCharts = action({
       throw new Error(`Invalid AI model: ${requestedModel}. Valid models: ${validModels.join(', ')}`);
     }
 
-    // Demo mode uses free tier model with :free suffix
     const model = args.isDemoMode ? "deepseek/deepseek-chat-v3.1:free" : (args.aiModel || "deepseek/deepseek-chat-v3.1:free");
 
-    // Simplified market snapshot (similar to Hyper-Alpha-Arena approach)
     const marketSnapshot = args.charts.map(chart => 
       `${chart.symbol}: ${chart.currentPrice.toFixed(2)}`
     ).join('\n');
 
     const basePrompt = args.customPrompt || `You are an expert crypto trading analyst.`;
 
-    // Simplified prompt structure - less data, clearer format
     const prompt = `${basePrompt}
 
 MARKET PRICES:
@@ -200,13 +197,8 @@ OUTPUT (JSON only):
         "Content-Type": "application/json",
         "HTTP-Referer": "https://dex-trading-agent.vly.site",
         "X-Title": args.isDemoMode ? "DeX Trading Agent Demo" : "DeX Trading Agent",
+        "Authorization": `Bearer ${args.apiKey}`,
       };
-      
-      // Always add Authorization header if API key is available
-      // Free tier models still require authentication, they just don't charge
-      if (apiKey) {
-        multiHeaders["Authorization"] = `Bearer ${apiKey}`;
-      }
 
       console.log('[CONVEX] Calling OpenRouter API', {
         model,
@@ -247,10 +239,9 @@ OUTPUT (JSON only):
       console.log('[CONVEX] OpenRouter API response received', {
         hasChoices: !!data.choices,
         choicesLength: data.choices?.length,
-        fullResponse: JSON.stringify(data).substring(0, 500), // Log first 500 chars for debugging
+        fullResponse: JSON.stringify(data).substring(0, 500),
       });
       
-      // Validate response structure
       if (!data.choices || !Array.isArray(data.choices) || data.choices.length === 0) {
         console.error('[CONVEX] Invalid API response structure:', data);
         throw new Error('OpenRouter API returned invalid response structure. No choices array found.');

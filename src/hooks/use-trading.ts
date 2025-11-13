@@ -256,12 +256,29 @@ export function useTrading() {
     try {
       const isDemoMode = storage.isDemoMode();
       const keys = storage.getApiKeys();
-      const hasOpenRouterKey = keys?.openRouter && keys.openRouter !== 'DEMO_MODE';
+      const openRouterKey = keys?.openRouter || '';
+      
+      // Validate API key
+      if (!openRouterKey || openRouterKey.trim() === '') {
+        toast.error('OpenRouter API key required', {
+          description: 'Please add your OpenRouter API key in Settings',
+          duration: 5000,
+        });
+        throw new Error('OpenRouter API key not configured');
+      }
+
+      if (openRouterKey !== 'DEMO_MODE' && !openRouterKey.startsWith('sk-or-v1-')) {
+        toast.error('Invalid OpenRouter API key format', {
+          description: 'Key must start with "sk-or-v1-"',
+          duration: 5000,
+        });
+        throw new Error('Invalid OpenRouter API key format');
+      }
       
       const modelName = aiModel === 'qwen/qwen3-max' ? 'Qwen' : 'DeepSeek';
       
       if (isDemoMode) {
-        if (hasOpenRouterKey) {
+        if (openRouterKey !== 'DEMO_MODE') {
           toast.info(`[DEMO] 🤖 AI analyzing with your OpenRouter key (${modelName})...`);
         } else {
           toast.info(`[DEMO] 🤖 AI analyzing market with ${modelName} Free...`);
@@ -282,6 +299,7 @@ export function useTrading() {
       `;
       
       const analysis = await analyzeMarket({
+        apiKey: openRouterKey,
         symbol,
         chartData,
         userBalance: balance,
@@ -297,7 +315,6 @@ export function useTrading() {
       
       toast.success(`✅ AI analysis complete: ${analysis.action.toUpperCase()}`);
       
-      // Log the AI decision for transparency
       await createLog({
         action: "ai_analysis",
         symbol,
@@ -309,7 +326,6 @@ export function useTrading() {
     } catch (error: any) {
       toast.error(`❌ AI Analysis failed: ${error.message}`);
       
-      // Log the error for debugging
       await createLog({
         action: "ai_error",
         symbol,
@@ -325,12 +341,29 @@ export function useTrading() {
     try {
       const isDemoMode = storage.isDemoMode();
       const keys = storage.getApiKeys();
-      const hasOpenRouterKey = keys?.openRouter && keys.openRouter !== 'DEMO_MODE';
+      const openRouterKey = keys?.openRouter || '';
+      
+      // Validate API key
+      if (!openRouterKey || openRouterKey.trim() === '') {
+        toast.error('OpenRouter API key required', {
+          description: 'Please add your OpenRouter API key in Settings',
+          duration: 5000,
+        });
+        throw new Error('OpenRouter API key not configured');
+      }
+
+      if (openRouterKey !== 'DEMO_MODE' && !openRouterKey.startsWith('sk-or-v1-')) {
+        toast.error('Invalid OpenRouter API key format', {
+          description: 'Key must start with "sk-or-v1-"',
+          duration: 5000,
+        });
+        throw new Error('Invalid OpenRouter API key format');
+      }
       
       const modelName = aiModel === 'qwen/qwen3-max' ? 'Qwen' : 'DeepSeek';
       
       if (isDemoMode) {
-        if (hasOpenRouterKey) {
+        if (openRouterKey !== 'DEMO_MODE') {
           toast.info(`[DEMO] 🤖 AI analyzing multiple charts with your OpenRouter key (${modelName})...`);
         } else {
           toast.info(`[DEMO] 🤖 AI analyzing multiple charts with ${modelName} Free...`);
@@ -357,6 +390,7 @@ export function useTrading() {
       }));
 
       const analysis = await analyzeMultiChart({
+        apiKey: openRouterKey,
         charts: multiChartData,
         userBalance: balance,
         settings: {
@@ -373,7 +407,6 @@ export function useTrading() {
       
       toast.success(`✅ Multi-chart AI analysis complete: ${analysis.action.toUpperCase()}`);
       
-      // Log the AI decision for transparency
       await createLog({
         action: "ai_multi_analysis",
         symbol: analysis.recommendedSymbol || "MULTI",
@@ -385,7 +418,6 @@ export function useTrading() {
     } catch (error: any) {
       toast.error(`❌ Multi-chart AI Analysis failed: ${error.message}`);
       
-      // Log the error for debugging
       await createLog({
         action: "ai_error",
         symbol: "MULTI",
