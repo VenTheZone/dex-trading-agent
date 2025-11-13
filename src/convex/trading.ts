@@ -141,13 +141,38 @@ export const analyzeMultipleCharts = action({
 
     const model = args.aiModel || (args.isDemoMode ? "deepseek/deepseek-chat:free" : "deepseek/deepseek-chat");
 
-    const chartsDescription = args.charts.map(chart => 
-      `${chart.symbol}: $${chart.currentPrice} (${chart.chartType} chart, ${chart.chartInterval})`
+    // Simplified market snapshot (similar to Hyper-Alpha-Arena approach)
+    const marketSnapshot = args.charts.map(chart => 
+      `${chart.symbol}: ${chart.currentPrice.toFixed(2)}`
     ).join('\n');
 
-    const basePrompt = args.customPrompt || `You are an expert crypto trading analyst with multi-chart analysis capabilities.`;
+    const basePrompt = args.customPrompt || `You are an expert crypto trading analyst.`;
 
-    const prompt = `${basePrompt}\n\nMULTI-CHART ANALYSIS:\n${chartsDescription}\n\nCurrent Balance: $${args.userBalance}\nLeverage: ${args.settings.leverage}x ${args.settings.allowAILeverage ? '(AI can adjust)' : '(fixed)'}\nRisk Settings: TP ${args.settings.takeProfitPercent}%, SL ${args.settings.stopLossPercent}%\n\nConsider:\n1. Correlation between assets (BTC dominance, altcoin movements)\n2. Market-wide trends and sentiment\n3. Relative strength across different assets\n4. Risk diversification opportunities\n5. Best risk/reward setup among all charts\n\nProvide your analysis in JSON format with:\n{\n  "recommendedSymbol": "symbol to trade",\n  "action": "open_long" | "open_short" | "close" | "hold",\n  "confidence": 0-100,\n  "reasoning": "detailed multi-chart analysis explanation",\n  "entryPrice": number,\n  "stopLoss": number,\n  "takeProfit": number,\n  "positionSize": number,\n  "marketContext": "overall market analysis across all charts"\n}`;
+    // Simplified prompt structure - less data, clearer format
+    const prompt = `${basePrompt}
+
+MARKET PRICES:
+${marketSnapshot}
+
+ACCOUNT:
+Balance: ${args.userBalance.toFixed(2)}
+Leverage: ${args.settings.leverage}x
+Risk: TP ${args.settings.takeProfitPercent}%, SL ${args.settings.stopLossPercent}%
+
+TASK:
+Analyze these ${args.charts.length} assets and recommend ONE trade.
+
+OUTPUT (JSON only):
+{
+  "recommendedSymbol": "symbol to trade",
+  "action": "open_long" | "open_short" | "close" | "hold",
+  "confidence": 0-100,
+  "reasoning": "brief explanation (max 150 chars)",
+  "entryPrice": number,
+  "stopLoss": number,
+  "takeProfit": number,
+  "positionSize": number
+}`;
 
     try {
       const multiHeaders: Record<string, string> = {
