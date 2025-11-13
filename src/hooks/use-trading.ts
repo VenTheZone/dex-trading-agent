@@ -1041,7 +1041,7 @@ export function useTrading() {
       if (isActive) {
         timeoutId = setTimeout(() => {
           runAutoTrading().then(scheduleNext);
-        }, 10 * 1000); // 10 seconds
+        }, 60 * 1000); // 60 seconds (1 minute)
       }
     };
     scheduleNext();
