@@ -27,13 +27,48 @@ export default function Dashboard() {
   const navigate = useNavigate();
   const [hasApiKeys, setHasApiKeys] = useState(false);
   const [showCloseAllDialog, setShowCloseAllDialog] = useState(false);
-  const { mode, setMode, network, setNetwork, balance, position, initialBalance, resetBalance, settings } = useTradingStore();
+  const { mode, setMode, network, setNetwork, balance, position, initialBalance, resetBalance, settings, setBalance } = useTradingStore();
   const { closePosition, closeAllPositions } = useTrading();
+  const getAccountInfo = useAction((api as any).hyperliquid.getAccountInfo);
   
   useEffect(() => {
     const keys = storage.getApiKeys();
     setHasApiKeys(!!keys);
   }, []);
+
+  // Fetch perpetual wallet balance when network changes or component mounts
+  useEffect(() => {
+    const fetchBalance = async () => {
+      const keys = storage.getApiKeys();
+      if (!keys?.hyperliquid.apiKey) return;
+
+      try {
+        const result = await getAccountInfo({
+          walletAddress: keys.hyperliquid.apiKey, // Master wallet address
+          isTestnet: network === 'testnet',
+        });
+
+        if (result.success) {
+          setBalance(result.perpetualBalance);
+          toast.success(`💰 Balance loaded: ${result.perpetualBalance.toLocaleString()}`, {
+            description: `${network === 'testnet' ? 'Testnet' : 'Mainnet'} - Withdrawable: ${result.withdrawable.toLocaleString()}`,
+            duration: 3000,
+          });
+        } else {
+          toast.error(`Failed to fetch balance: ${result.error}`, {
+            description: `Network: ${network}`,
+          });
+        }
+      } catch (error: any) {
+        console.error("Balance fetch error:", error);
+        toast.error(`Balance fetch failed: ${error.message}`);
+      }
+    };
+
+    if (hasApiKeys) {
+      fetchBalance();
+    }
+  }, [network, hasApiKeys, getAccountInfo, setBalance]);
   
   // Calculate P&L
   const pnl = position?.pnl || 0;

@@ -51,10 +51,10 @@ export const testConnection = action({
 });
 
 /**
- * Get account info from Hyperliquid
- * @param walletAddress - User's wallet address
+ * Get account info from Hyperliquid (Perpetual Wallet Balance)
+ * @param walletAddress - User's master wallet address (NOT agent wallet)
  * @param isTestnet - Whether to use testnet
- * @returns Account balance and margin info
+ * @returns Perpetual account balance and margin info
  */
 export const getAccountInfo = action({
   args: {
@@ -71,21 +71,26 @@ export const getAccountInfo = action({
       
       const infoClient = new hl.InfoClient({ transport });
       
+      // Fetch clearinghouse state for perpetual wallet balance
       const state = await infoClient.clearinghouseState({
         user: args.walletAddress,
       });
       
       return {
         success: true,
-        balance: state.marginSummary.accountValue,
+        perpetualBalance: parseFloat(state.marginSummary.accountValue),
+        withdrawable: parseFloat(state.withdrawable),
+        totalMarginUsed: parseFloat(state.marginSummary.totalMarginUsed || "0"),
         positions: state.assetPositions.length,
         network: args.isTestnet ? "testnet" : "mainnet",
+        spotBalances: state.spotState?.balances || [],
       };
     } catch (error: any) {
       console.error("Failed to get account info:", error);
       return {
         success: false,
         error: error.message,
+        network: args.isTestnet ? "testnet" : "mainnet",
       };
     }
   },

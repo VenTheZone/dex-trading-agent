@@ -351,19 +351,22 @@ export function ApiKeySetup({ onComplete }: ApiKeySetupProps) {
                   />
                   <div className="bg-cyan-500/10 p-2 rounded border border-cyan-500/30">
                     <p className="text-xs text-cyan-300 font-mono font-bold">
-                      💰 This is YOUR main wallet address - where you receive and hold your coins
+                      💰 This is YOUR main wallet address - where your PERPETUAL balance is stored
                     </p>
                     <p className="text-xs text-gray-400 font-mono mt-1">
                       • The address you use to login to Hyperliquid
                     </p>
                     <p className="text-xs text-gray-400 font-mono">
-                      • Where your funds are stored
+                      • Your perpetual wallet balance will be fetched from this address
                     </p>
                     <p className="text-xs text-gray-400 font-mono">
                       • Same as your MetaMask/connected wallet address
                     </p>
                     <p className="text-xs text-yellow-300 font-mono mt-1">
                       📍 Find it: Top right corner when connected to app.hyperliquid.xyz (or use the "Wallet" tab above)
+                    </p>
+                    <p className="text-xs text-purple-300 font-mono mt-1">
+                      🌐 Supports: Ethereum & Arbitrum networks (balance auto-switches with network toggle)
                     </p>
                   </div>
                 </div>
