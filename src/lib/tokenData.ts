@@ -29,13 +29,6 @@ export const TRADING_TOKENS: TokenData[] = [
     tradingViewSymbol: 'SOLUSD',
   },
   {
-    symbol: 'ZEC',
-    pair: 'ZEC-USDC',
-    tradingLink: 'https://app.hyperliquid.xyz/trade/ZEC',
-    maxLeverage: 10,
-    tradingViewSymbol: 'ZECUSD',
-  },
-  {
     symbol: 'HYPE',
     pair: 'HYPE-USDC',
     tradingLink: 'https://app.hyperliquid.xyz/trade/HYPE',

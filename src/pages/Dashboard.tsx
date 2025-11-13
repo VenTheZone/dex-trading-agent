@@ -348,7 +348,6 @@ export default function Dashboard() {
                   <TradingChart symbol="BTCUSD" chartId={1} />
                   <TradingChart symbol="ETHUSD" chartId={2} />
                   <TradingChart symbol="SOLUSD" chartId={3} />
-                  <TradingChart symbol="AVAXUSD" chartId={4} />
                 </>
               )}
             </div>
