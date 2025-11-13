@@ -45,19 +45,22 @@ export interface PositionSnapshot {
 
 export interface AIAnalysisRequest {
   apiKey: string;
-  charts: Array<{
+  symbol?: string;
+  chartData?: string;
+  charts?: Array<{
     symbol: string;
     currentPrice: number;
     chartType: 'time' | 'range';
     chartInterval: string;
+    technicalContext?: string;
   }>;
   userBalance: number;
   settings: {
     takeProfitPercent: number;
     stopLossPercent: number;
     useAdvancedStrategy: boolean;
-    leverage: number;
-    allowAILeverage: boolean;
+    leverage?: number;
+    allowAILeverage?: boolean;
   };
   isDemoMode?: boolean;
   aiModel?: string;
@@ -65,7 +68,7 @@ export interface AIAnalysisRequest {
 }
 
 export interface AIAnalysisResponse {
-  recommendedSymbol: string;
+  recommendedSymbol?: string;
   action: 'open_long' | 'open_short' | 'close' | 'hold';
   confidence: number;
   reasoning: string;
@@ -73,6 +76,17 @@ export interface AIAnalysisResponse {
   stopLoss: number;
   takeProfit: number;
   positionSize: number;
+  marketContext?: string;
+}
+
+export interface HyperliquidConnectionTestResponse {
+  success: boolean;
+  message: string;
+  apiEndpoint?: string;
+  appUrl?: string;
+  assetsCount?: number;
+  availableAssets?: string;
+  error?: string;
 }
 
 class PythonApiClient {
@@ -131,10 +145,12 @@ class PythonApiClient {
     return this.request<BalanceHistory[]>(`/api/balance-history?limit=${limit}`);
   }
 
-  async recordBalance(balance: number, mode: 'paper' | 'live'): Promise<ApiResponse<BalanceHistory>> {
+  async recordBalance(balance: number, mode: 'paper' | 'live' | 'demo'): Promise<ApiResponse<BalanceHistory>> {
+    // Convert demo to paper for backend compatibility
+    const backendMode = mode === 'demo' ? 'paper' : mode;
     return this.request<BalanceHistory>('/api/balance-history', {
       method: 'POST',
-      body: JSON.stringify({ balance, mode }),
+      body: JSON.stringify({ balance, mode: backendMode }),
     });
   }
 
@@ -146,32 +162,90 @@ class PythonApiClient {
     return this.request<PositionSnapshot[]>(`/api/position-snapshots?${params}`);
   }
 
-  async recordPositionSnapshot(snapshot: Omit<PositionSnapshot, 'id' | 'created_at'>): Promise<ApiResponse<PositionSnapshot>> {
+  async recordPositionSnapshot(snapshot: {
+    symbol: string;
+    side: 'long' | 'short';
+    size: number;
+    entry_price: number;
+    current_price: number;
+    unrealized_pnl: number;
+    leverage: number;
+    mode: 'paper' | 'live' | 'demo';
+  }): Promise<ApiResponse<PositionSnapshot>> {
+    // Convert demo to paper for backend compatibility
+    const backendMode = snapshot.mode === 'demo' ? 'paper' : snapshot.mode;
     return this.request<PositionSnapshot>('/api/position-snapshots', {
       method: 'POST',
-      body: JSON.stringify(snapshot),
+      body: JSON.stringify({ ...snapshot, mode: backendMode }),
     });
   }
 
-  // AI Trading Analysis
-  async analyzeMultipleCharts(request: AIAnalysisRequest): Promise<ApiResponse<AIAnalysisResponse>> {
-    return this.request<AIAnalysisResponse>('/api/ai/analyze-multi-chart', {
+  // AI Trading Analysis - Single Chart
+  async analyzeMarket(request: AIAnalysisRequest): Promise<AIAnalysisResponse> {
+    const response = await this.request<AIAnalysisResponse>('/api/ai/analyze', {
       method: 'POST',
       body: JSON.stringify(request),
     });
+    if (!response.success || !response.data) {
+      throw new Error(response.error || 'AI analysis failed');
+    }
+    return response.data;
+  }
+
+  // AI Trading Analysis - Multi Chart
+  async analyzeMultiChart(request: AIAnalysisRequest): Promise<AIAnalysisResponse> {
+    const response = await this.request<AIAnalysisResponse>('/api/ai/analyze-multi-chart', {
+      method: 'POST',
+      body: JSON.stringify(request),
+    });
+    if (!response.success || !response.data) {
+      throw new Error(response.error || 'Multi-chart AI analysis failed');
+    }
+    return response.data;
   }
 
   // Hyperliquid Integration
-  async testHyperliquidConnection(isTestnet: boolean = false): Promise<ApiResponse<any>> {
-    return this.request<any>(`/api/hyperliquid/test-connection?isTestnet=${isTestnet}`);
+  async testHyperliquidConnection(isTestnet: boolean = false): Promise<HyperliquidConnectionTestResponse> {
+    const response = await this.request<HyperliquidConnectionTestResponse>(`/api/hyperliquid/test-connection?isTestnet=${isTestnet}`);
+    return response.data || { success: false, message: response.error || 'Connection test failed' };
   }
 
-  async getHyperliquidAccountInfo(walletAddress: string, isTestnet: boolean = false): Promise<ApiResponse<any>> {
-    return this.request<any>(`/api/hyperliquid/account-info?walletAddress=${walletAddress}&isTestnet=${isTestnet}`);
+  async getHyperliquidPositions(apiSecret: string, walletAddress: string, isTestnet: boolean = false): Promise<ApiResponse<any>> {
+    return this.request<any>('/api/hyperliquid/positions', {
+      method: 'POST',
+      body: JSON.stringify({ apiSecret, walletAddress, isTestnet }),
+    });
   }
 
   async getOrderBook(coin: string, isTestnet: boolean = false): Promise<ApiResponse<any>> {
     return this.request<any>(`/api/hyperliquid/orderbook?coin=${coin}&isTestnet=${isTestnet}`);
+  }
+
+  // Live Trading
+  async executeLiveTrade(trade: {
+    apiSecret: string;
+    symbol: string;
+    side: 'buy' | 'sell';
+    size: number;
+    price: number;
+    stopLoss?: number;
+    takeProfit?: number;
+    leverage: number;
+    isTestnet: boolean;
+  }): Promise<ApiResponse<any>> {
+    return this.request<any>('/api/hyperliquid/execute-trade', {
+      method: 'POST',
+      body: JSON.stringify(trade),
+    });
+  }
+
+  // Price Fetching
+  async fetchPrice(symbol: string, isTestnet: boolean = false): Promise<number> {
+    const response = await this.request<{ price: number }>(`/api/market/price?symbol=${symbol}&isTestnet=${isTestnet}`);
+    if (!response.success || !response.data) {
+      throw new Error(response.error || `Failed to fetch price for ${symbol}`);
+    }
+    return response.data.price;
   }
 
   // Paper Trading

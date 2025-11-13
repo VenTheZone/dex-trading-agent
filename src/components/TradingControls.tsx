@@ -17,8 +17,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { DEFAULT_PROMPT } from '@/store/tradingStore';
 import { sanitizeNumberWithBounds, sanitizeMultilineText } from '@/lib/utils';
 import { TRADING_TOKENS } from '@/lib/tokenData';
-import { useAction } from 'convex/react';
-import { api } from '@/convex/_generated/api';
+import { pythonApi } from '@/lib/python-api-client';
 
 export function TradingControls() {
   const { settings, updateSettings, chartInterval, setChartInterval, chartType, setChartType, isAutoTrading, setAutoTrading, position, aiModel, setAiModel, customPrompt, setCustomPrompt, resetPromptToDefault, mode, network } = useTradingStore();
@@ -26,7 +25,6 @@ export function TradingControls() {
   const [localPrompt, setLocalPrompt] = useState(customPrompt);
   const [testingConnection, setTestingConnection] = useState(false);
   const { closePosition, closeAllPositions } = useTrading();
-  const testConnection = useAction(api.hyperliquid.testConnection);
   
   const timeIntervals = ['1m', '5m', '15m', '1h', '4h', '1d'];
   const rangeIntervals = ['1R', '10R', '100R', '$100'];
@@ -37,7 +35,7 @@ export function TradingControls() {
   const handleTestConnection = async () => {
     setTestingConnection(true);
     try {
-      const result = await testConnection({ isTestnet: network === 'testnet' });
+      const result = await pythonApi.testHyperliquidConnection(network === 'testnet');
       
       if (result.success) {
         toast.success(`✅ ${result.message}`, {

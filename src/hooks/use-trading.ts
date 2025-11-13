@@ -1,22 +1,11 @@
-import { useAction, useMutation } from "convex/react";
-import { api } from "@/convex/_generated/api";
-import { useAuth } from "@/hooks/use-auth";
+import { useCallback, useEffect, useRef } from "react";
 import { storage } from "@/lib/storage";
 import { useTradingStore } from "@/store/tradingStore";
 import { toast } from "sonner";
-import { useEffect, useRef, useCallback } from "react";
+import { pythonApi } from "@/lib/python-api-client";
 
 export function useTrading() {
-  const createLog = useMutation((api as any).tradingLogs.createLog);
-  const recordBalance = useMutation((api as any).balanceHistory.recordBalance);
-  const recordPositionSnapshot = useMutation((api as any).positionSnapshots.recordSnapshot);
-  const analyzeMarket = useAction((api as any).trading.analyzeMarket);
-  const analyzeMultiChart = useAction((api as any).trading.analyzeMultiChart);
-  const executeLiveTrade = useAction((api as any).trading.executeLiveTrade);
-  const getHyperliquidPositions = useAction((api as any).trading.getHyperliquidPositions);
-  const fetchPriceWithFallback = useAction((api as any).marketData.fetchPriceWithFallback);
   const { balance, settings, mode, network, chartType, chartInterval, setBalance, setPosition, position, isAutoTrading, setAutoTrading, aiModel, customPrompt } = useTradingStore();
-  const { user } = useAuth();
   const lastRecordedBalance = useRef(balance);
   const marginWarningShown = useRef(false);
   const isRecordingBalance = useRef(false);
@@ -37,8 +26,6 @@ export function useTrading() {
 
   // Record balance changes with debouncing to prevent race conditions
   useEffect(() => {
-    if (!user) return;
-    
     // Clear existing timeout
     if (balanceRecordTimeout.current) {
       clearTimeout(balanceRecordTimeout.current);
@@ -54,7 +41,7 @@ export function useTrading() {
       if (isRecordingBalance.current) return;
       
       isRecordingBalance.current = true;
-      recordBalance({ balance, mode })
+      pythonApi.recordBalance(balance, mode)
         .then(() => {
           lastRecordedBalance.current = balance;
         })
@@ -71,34 +58,34 @@ export function useTrading() {
         clearTimeout(balanceRecordTimeout.current);
       }
     };
-  }, [balance, mode, user, recordBalance]);
+  }, [balance, mode]);
 
   // Poll for live positions if in live mode with trailing stop loss logic
   useEffect(() => {
-    if (mode !== 'live' || !user) return;
+    if (mode !== 'live') return;
 
     const pollPositions = async () => {
       try {
         const keys = storage.getApiKeys();
         if (!keys?.hyperliquid.apiSecret || !keys?.hyperliquid.walletAddress) return;
 
-        const result = await getHyperliquidPositions({
-          apiSecret: keys.hyperliquid.apiSecret,
-          walletAddress: keys.hyperliquid.walletAddress,
-          isTestnet: network === 'testnet',
-        });
+        const result = await pythonApi.getHyperliquidPositions(
+          keys.hyperliquid.apiSecret,
+          keys.hyperliquid.walletAddress,
+          network === 'testnet'
+        );
 
-        if (result.success && result.positions) {
+        if (result.success && result.data) {
           // Update balance from margin summary
-          if (result.positions.marginSummary?.accountValue) {
-            const accountValue = parseFloat(result.positions.marginSummary.accountValue);
+          if (result.data.marginSummary?.accountValue) {
+            const accountValue = parseFloat(result.data.marginSummary.accountValue);
             setBalance(accountValue);
           }
 
           // Check margin usage and liquidation risk
-          if (result.positions.marginSummary) {
-            const totalMarginUsed = parseFloat(result.positions.marginSummary.totalMarginUsed || "0");
-            const accountValue = parseFloat(result.positions.marginSummary.accountValue || "0");
+          if (result.data.marginSummary) {
+            const totalMarginUsed = parseFloat(result.data.marginSummary.totalMarginUsed || "0");
+            const accountValue = parseFloat(result.data.marginSummary.accountValue || "0");
             
             if (accountValue > 0) {
               const marginUsagePercent = (totalMarginUsed / accountValue) * 100;
@@ -114,7 +101,7 @@ export function useTrading() {
                 }
                 setAutoTrading(false);
                 
-                await createLog({
+                await pythonApi.createTradingLog({
                   action: "auto_pause",
                   symbol: "SYSTEM",
                   reason: `Auto-trading paused due to high margin usage: ${marginUsagePercent.toFixed(1)}%`,
@@ -135,8 +122,8 @@ export function useTrading() {
           }
 
           // Update active positions
-          if (result.positions.assetPositions && result.positions.assetPositions.length > 0) {
-            const pos = result.positions.assetPositions[0];
+          if (result.data.assetPositions && result.data.assetPositions.length > 0) {
+            const pos = result.data.assetPositions[0];
             const size = parseFloat(pos.position.szi);
             const entryPrice = parseFloat(pos.position.entryPx || "0");
             const unrealizedPnl = parseFloat(pos.position.unrealizedPnl || "0");
@@ -173,7 +160,7 @@ export function useTrading() {
                     duration: 5000,
                   });
                   
-                  await createLog({
+                  await pythonApi.createTradingLog({
                     action: "trailing_stop_update",
                     symbol: currentPosition.symbol,
                     reason: `Trailing stop activated - moved SL to break even`,
@@ -184,16 +171,16 @@ export function useTrading() {
             }
 
             // Record position snapshot
-            await recordPositionSnapshot({
+            await pythonApi.recordPositionSnapshot({
               symbol: currentPosition.symbol,
               side: currentPosition.side,
               size: currentPosition.size,
-              entryPrice: currentPosition.entryPrice,
-              currentPrice: currentPosition.currentPrice,
-              unrealizedPnl: currentPosition.pnl,
+              entry_price: currentPosition.entryPrice,
+              current_price: currentPosition.currentPrice,
+              unrealized_pnl: currentPosition.pnl,
               leverage: settings.leverage,
               mode,
-            }).catch((error) => {
+            }).catch((error: any) => {
               console.error("Failed to record position snapshot:", error);
             });
           } else {
@@ -211,7 +198,7 @@ export function useTrading() {
     pollPositions(); // Initial fetch
 
     return () => clearInterval(interval);
-  }, [mode, network, user, getHyperliquidPositions, setBalance, setPosition, isAutoTrading, setAutoTrading, createLog, recordPositionSnapshot, settings.leverage]);
+  }, [mode, network, setBalance, setPosition, isAutoTrading, setAutoTrading, settings.leverage]);
 
   const closePosition = useCallback(async (positionToClose: typeof position) => {
     if (!positionToClose) {
@@ -229,7 +216,7 @@ export function useTrading() {
           return;
         }
 
-        const result = await executeLiveTrade({
+        const result = await pythonApi.executeLiveTrade({
           apiSecret: keys.hyperliquid.apiSecret,
           symbol: positionToClose.symbol,
           side: positionToClose.side === 'long' ? 'sell' : 'buy',
@@ -248,7 +235,7 @@ export function useTrading() {
         toast.success("📄 Paper position closed");
       }
 
-      await createLog({
+      await pythonApi.createTradingLog({
         action: "close_position",
         symbol: positionToClose.symbol,
         side: positionToClose.side,
@@ -267,7 +254,7 @@ export function useTrading() {
       toast.error(`Failed to close position: ${error.message}`);
       throw error;
     }
-  }, [mode, network, settings.leverage, balance, executeLiveTrade, createLog, setBalance, setPosition]);
+  }, [mode, network, settings.leverage, balance, setBalance, setPosition]);
 
   const closeAllPositions = async () => {
     try {
@@ -364,7 +351,7 @@ export function useTrading() {
         5. Format your response as valid JSON
       `;
       
-      const analysis = await analyzeMarket({
+      const analysis = await pythonApi.analyzeMarket({
         apiKey: openRouterKey,
         symbol,
         chartData,
@@ -381,7 +368,7 @@ export function useTrading() {
       
       toast.success(`✅ AI analysis complete: ${analysis.action.toUpperCase()}`);
       
-      await createLog({
+      await pythonApi.createTradingLog({
         action: "ai_analysis",
         symbol,
         reason: `AI Decision: ${analysis.action} (Confidence: ${analysis.confidence}%)`,
@@ -392,7 +379,7 @@ export function useTrading() {
     } catch (error: any) {
       toast.error(`❌ AI Analysis failed: ${error.message}`);
       
-      await createLog({
+      await pythonApi.createTradingLog({
         action: "ai_error",
         symbol,
         reason: `AI Analysis Error: ${error.message}`,
@@ -424,7 +411,7 @@ export function useTrading() {
           duration: 5000,
         });
         
-        await createLog({
+        await pythonApi.createTradingLog({
           action: "ai_skip",
           symbol: "DEMO",
           reason: "Demo mode: AI analysis skipped (no API key)",
@@ -491,7 +478,7 @@ export function useTrading() {
       const currentThoughts = useTradingStore.getState().aiThoughts;
       setAiThoughts(`${currentThoughts}\n\n⏳ Sending request to ${modelName}...\nWaiting for AI response...`);
       
-      const analysis = await analyzeMultiChart({
+      const analysis = await pythonApi.analyzeMultiChart({
         apiKey: openRouterKey,
         charts: multiChartData,
         userBalance: balance,
@@ -511,7 +498,7 @@ export function useTrading() {
       
       toast.success(`✅ Multi-chart AI analysis complete: ${analysis.action.toUpperCase()}`);
       
-      await createLog({
+      await pythonApi.createTradingLog({
         action: "ai_multi_analysis",
         symbol: analysis.recommendedSymbol || "MULTI",
         reason: `AI Decision: ${analysis.action} on ${analysis.recommendedSymbol} (Confidence: ${analysis.confidence}%)`,
@@ -523,7 +510,7 @@ export function useTrading() {
       setAiThoughts(`❌ AI Analysis Error\n\n${error.message}\n\nPlease check your API keys and try again.`);
       toast.error(`❌ Multi-chart AI Analysis failed: ${error.message}`);
       
-      await createLog({
+      await pythonApi.createTradingLog({
         action: "ai_error",
         symbol: "MULTI",
         reason: `Multi-chart AI Analysis Error: ${error.message}`,
@@ -583,7 +570,7 @@ export function useTrading() {
 
         toast.info(`📡 Executing live trade on ${network}...`);
         
-        const result = await executeLiveTrade({
+        const result = await pythonApi.executeLiveTrade({
           apiSecret: keys.hyperliquid.apiSecret,
           symbol,
           side: side === 'long' ? 'buy' : 'sell',
@@ -656,7 +643,7 @@ export function useTrading() {
         toast.info("📄 Executing paper trade...");
       }
 
-      await createLog({
+      await pythonApi.createTradingLog({
         action,
         symbol,
         side,
@@ -678,11 +665,10 @@ export function useTrading() {
 
   // Real-time auto-trading loop with improved error handling
   useEffect(() => {
-    if (!isAutoTrading || !user) return;
+    if (!isAutoTrading) return;
 
     console.log('[AUTO-TRADING] Loop started', {
       isAutoTrading,
-      user: user?.id,
       mode,
       allowedCoins: settings.allowedCoins,
       timestamp: new Date().toISOString()
@@ -720,7 +706,7 @@ export function useTrading() {
             duration: 5000,
           });
           
-          await createLog({
+          await pythonApi.createTradingLog({
             action: "auto_pause",
             symbol: "SYSTEM",
             reason: "Auto-trading paused: No allowed coins selected",
@@ -763,7 +749,7 @@ export function useTrading() {
               duration: 5000,
             });
             
-            await createLog({
+            await pythonApi.createTradingLog({
               action: "auto_pause",
               symbol: "DEMO",
               reason: "Demo mode: Auto-trading paused (no API key)",
@@ -777,21 +763,14 @@ export function useTrading() {
           toast.info(`[DEMO] 🔄 Auto-trading cycle started (${allowedCoins.length} coins)`, {
             description: "Using your OpenRouter key",
           });
-          
-          toast.info(`[DEMO] 🔄 Auto-trading cycle started (${allowedCoins.length} coins)`, {
-            description: "Using your OpenRouter key",
-          });
 
-          // Fetch real market data using Convex action (bypasses CORS)
+          // Fetch real market data using Python API
           console.log('[AUTO-TRADING] Fetching prices for coins:', allowedCoins);
           
           const chartDataPromises = allowedCoins.map(async (symbol) => {
             try {
               console.log(`[AUTO-TRADING] Fetching price for ${symbol}...`);
-              const price = await fetchPriceWithFallback({ 
-                symbol,
-                isTestnet: network === 'testnet'
-              });
+              const price = await pythonApi.fetchPrice(symbol, network === 'testnet');
               console.log(`[AUTO-TRADING] Price fetched for ${symbol}: ${price}`);
               return {
                 symbol,
@@ -818,7 +797,7 @@ export function useTrading() {
               duration: 5000,
             });
             
-            await createLog({
+            await pythonApi.createTradingLog({
               action: "auto_pause",
               symbol: "SYSTEM",
               reason: "Auto-trading paused: No valid market data",
@@ -862,7 +841,7 @@ export function useTrading() {
                 description: 'Skipping this trade recommendation',
               });
               
-              await createLog({
+              await pythonApi.createTradingLog({
                 action: "trade_skipped",
                 symbol: recommendedSymbol,
                 reason: `[DEMO] AI recommended ${recommendedSymbol} but it's not in allowed coins: ${allowedCoins.join(', ')}`,
@@ -908,11 +887,11 @@ export function useTrading() {
         const keys = storage.getApiKeys();
         if (!keys?.openRouter || keys.openRouter === 'DEMO_MODE') {
           toast.error("❌ Auto-trading paused: OpenRouter API key required", {
-            description: "Configure your API key in Settings",
+            description: "Configure your API key in Settings or use Demo mode",
             duration: 5000,
           });
           
-          await createLog({
+          await pythonApi.createTradingLog({
             action: "auto_pause",
             symbol: "SYSTEM",
             reason: "Auto-trading paused: OpenRouter API key not configured",
@@ -925,13 +904,10 @@ export function useTrading() {
 
         toast.info(`🔄 Auto-trading cycle started (${allowedCoins.length} coins)`);
 
-        // Fetch current market data using Convex action (bypasses CORS)
+        // Fetch current market data using Python API
         const chartDataPromises = allowedCoins.map(async (symbol) => {
           try {
-            const price = await fetchPriceWithFallback({ 
-              symbol,
-              isTestnet: network === 'testnet'
-            });
+            const price = await pythonApi.fetchPrice(symbol, network === 'testnet');
             return {
               symbol,
               currentPrice: price,
@@ -954,7 +930,7 @@ export function useTrading() {
             duration: 5000,
           });
           
-          await createLog({
+            await pythonApi.createTradingLog({
             action: "auto_pause",
             symbol: "SYSTEM",
             reason: "Auto-trading paused: No valid market data",
@@ -994,7 +970,7 @@ export function useTrading() {
               description: 'Skipping this trade recommendation',
             });
             
-            await createLog({
+            await pythonApi.createTradingLog({
               action: "trade_skipped",
               symbol: recommendedSymbol,
               reason: `AI recommended ${recommendedSymbol} but it's not in allowed coins: ${allowedCoins.join(', ')}`,
@@ -1018,7 +994,8 @@ export function useTrading() {
             analysis.positionSize,
             analysis.stopLoss,
             analysis.takeProfit,
-            analysis.reasoning
+            analysis.reasoning,
+            true
           );
         } else if (analysis.action === "close" && position) {
           toast.info(`📊 AI recommends closing ${position.symbol}`, {
@@ -1033,7 +1010,8 @@ export function useTrading() {
             position.size,
             undefined,
             undefined,
-            analysis.reasoning
+            analysis.reasoning,
+            true
           );
         } else {
           toast.info(`📊 AI recommends: ${analysis.action.toUpperCase()}`, {
@@ -1055,7 +1033,7 @@ export function useTrading() {
           duration: 5000,
         });
         
-        await createLog({
+          await pythonApi.createTradingLog({
           action: "auto_error",
           symbol: "SYSTEM",
           reason: `Auto-trading error: ${error.message}`,
@@ -1069,7 +1047,7 @@ export function useTrading() {
     // Run immediately on enable
     runAutoTrading();
 
-    // Then run every 10 seconds while auto-trading is enabled
+    // Then run every 60 seconds while auto-trading is enabled
     const scheduleNext = () => {
       if (isActive) {
         timeoutId = setTimeout(() => {
@@ -1085,7 +1063,7 @@ export function useTrading() {
         clearTimeout(timeoutId);
       }
     };
-  }, [isAutoTrading, user, settings.allowedCoins, position, balance, settings, chartType, chartInterval, mode, network, aiModel, customPrompt, fetchPriceWithFallback, setAutoTrading, createLog, closePosition]);
+  }, [isAutoTrading, settings.allowedCoins, position, balance, settings, chartType, chartInterval, mode, network, aiModel, customPrompt, setAutoTrading, closePosition]);
 
   return {
     runAIAnalysis,
