@@ -904,12 +904,12 @@ export function useTrading() {
     // Run immediately on enable
     runAutoTrading();
 
-    // Then run every 2 minutes while auto-trading is enabled
+    // Then run every 10 seconds while auto-trading is enabled
     const scheduleNext = () => {
       if (isActive) {
         timeoutId = setTimeout(() => {
           runAutoTrading().then(scheduleNext);
-        }, 2 * 60 * 1000);
+        }, 10 * 1000); // 10 seconds
       }
     };
     scheduleNext();

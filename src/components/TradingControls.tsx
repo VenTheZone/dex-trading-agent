@@ -82,7 +82,7 @@ export function TradingControls() {
       const modeText = isDemoMode ? '[DEMO]' : mode.toUpperCase();
       
       toast.success(`🤖 AI Auto-Trading Enabled ${modeText}`, {
-        description: `Analyzing ${coinCount} coin${coinCount > 1 ? 's' : ''} every 2 minutes`,
+        description: `Analyzing ${coinCount} coin${coinCount > 1 ? 's' : ''} every 10 seconds`,
         duration: 5000,
       });
     } else {
