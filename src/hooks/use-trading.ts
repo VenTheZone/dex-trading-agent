@@ -600,7 +600,7 @@ export function useTrading() {
         }
         
         // Validate AI model
-        const validModels = ['deepseek/deepseek-chat-v3.1:free', 'qwen/qwen3-max'];
+        const validModels = ['deepseek/deepseek-chat-v3-0324:free', 'qwen/qwen3-max'];
         if (!validModels.includes(aiModel)) {
           toast.error("❌ Invalid AI model selected", {
             description: "Resetting to default model",

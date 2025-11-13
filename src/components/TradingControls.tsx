@@ -117,7 +117,7 @@ export function TradingControls() {
     }
   };
 
-  const handleAiModelChange = (model: 'deepseek/deepseek-chat-v3.1:free' | 'qwen/qwen3-max') => {
+  const handleAiModelChange = (model: 'deepseek/deepseek-chat-v3-0324:free' | 'qwen/qwen3-max') => {
     if (model === 'qwen/qwen3-max') {
       const confirmed = window.confirm(
         '⚠️ QWEN PRICING NOTICE\n\n' +
@@ -182,20 +182,20 @@ export function TradingControls() {
               AI Model
             </Label>
             <span className={`text-xs font-mono px-2 py-1 rounded ${
-              aiModel === 'deepseek/deepseek-chat-v3.1:free' 
+              aiModel === 'deepseek/deepseek-chat-v3-0324:free' 
                 ? 'bg-green-500/20 text-green-400' 
                 : 'bg-yellow-500/20 text-yellow-400'
             }`}>
-              {aiModel === 'deepseek/deepseek-chat-v3.1:free' ? '✓ FREE' : '💰 PAID'}
+              {aiModel === 'deepseek/deepseek-chat-v3-0324:free' ? '✓ FREE' : '💰 PAID'}
             </span>
           </div>
           
           <div className="grid grid-cols-2 gap-2">
             <Button
-              variant={aiModel === 'deepseek/deepseek-chat-v3.1:free' ? 'default' : 'outline'}
-              onClick={() => handleAiModelChange('deepseek/deepseek-chat-v3.1:free')}
+              variant={aiModel === 'deepseek/deepseek-chat-v3-0324:free' ? 'default' : 'outline'}
+              onClick={() => handleAiModelChange('deepseek/deepseek-chat-v3-0324:free')}
               className={`font-mono text-xs transition-all ${
-                aiModel === 'deepseek/deepseek-chat-v3.1:free'
+                aiModel === 'deepseek/deepseek-chat-v3-0324:free'
                   ? 'bg-cyan-500 text-black hover:bg-cyan-600 shadow-[0_0_15px_rgba(0,255,255,0.4)]'
                   : 'border-cyan-500/30 text-cyan-400 hover:bg-cyan-500/20'
               }`}
@@ -227,7 +227,7 @@ export function TradingControls() {
           )}
           
           <p className="text-xs text-gray-500 font-mono">
-            {aiModel === 'deepseek/deepseek-chat-v3.1:free' 
+            {aiModel === 'deepseek/deepseek-chat-v3-0324:free' 
               ? 'DeepSeek is free and recommended for most users' 
               : 'Qwen offers advanced reasoning but has usage costs'}
           </p>
