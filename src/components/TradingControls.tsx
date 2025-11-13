@@ -103,8 +103,8 @@ export function TradingControls() {
         allowedCoins: currentCoins.filter(c => c !== coin),
       });
     } else {
-      if (currentCoins.length >= 5) {
-        toast.error('❌ Maximum 5 coins allowed', {
+      if (currentCoins.length >= 4) {
+        toast.error('❌ Maximum 4 coins allowed', {
           description: 'Remove a coin before adding another',
         });
         return;
@@ -292,7 +292,7 @@ export function TradingControls() {
           <div className="flex items-center justify-between">
             <Label className="text-cyan-400 font-mono font-bold">Allowed Coins</Label>
             <span className="text-xs text-gray-500 font-mono bg-black/50 px-2 py-1 rounded">
-              {(localSettings.allowedCoins || []).length}/5 selected
+              {(localSettings.allowedCoins || []).length}/4 selected
             </span>
           </div>
           <div className="grid grid-cols-2 gap-2 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar">
@@ -319,7 +319,7 @@ export function TradingControls() {
             })}
           </div>
           <p className="text-xs text-gray-500 font-mono">
-            AI will only trade selected coins (max 5)
+            AI will only trade selected coins (max 4)
           </p>
         </motion.div>
         
