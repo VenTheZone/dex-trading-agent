@@ -1,4 +1,1 @@
-if (result.positions.marginSummary?.accountValue) {
-  const accountValue = parseFloat(result.positions.marginSummary.accountValue);
-  setBalance(accountValue);
-}
+const model = args.isDemoMode ? "deepseek/deepseek-chat-v3.1:free" : (args.aiModel || "deepseek/deepseek-chat");

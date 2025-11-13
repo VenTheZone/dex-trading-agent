@@ -147,7 +147,7 @@ export const analyzeMultipleCharts = action({
     }
 
     // Demo mode uses free tier model with :free suffix
-    const model = args.isDemoMode ? "deepseek/deepseek-chat-v3.1:free" : (args.aiModel || "deepseek/deepseek-chat");
+    const model = args.isDemoMode ? "deepseek/deepseek-chat-v3.1:free" : (args.aiModel || "deepseek/deepseek-chat-v3.1:free");
 
     // Simplified market snapshot (similar to Hyper-Alpha-Arena approach)
     const marketSnapshot = args.charts.map(chart => 
