@@ -5,8 +5,29 @@ import { action, internalAction } from "./_generated/server";
 import { internal } from "./_generated/api";
 
 /**
+ * Get OpenRouter API key from environment or client
+ * Priority: Client-provided key > Backend environment variable
+ */
+function getOpenRouterKey(clientKey: string): string {
+  // If client provides a valid key, use it
+  if (clientKey && clientKey !== 'DEMO_MODE' && clientKey.startsWith('sk-or-v1-')) {
+    return clientKey;
+  }
+  
+  // Fallback to backend environment variable
+  const backendKey = process.env.OPENROUTER_API_KEY;
+  if (backendKey && backendKey.startsWith('sk-or-v1-')) {
+    console.log('[CONVEX] Using backend OpenRouter API key');
+    return backendKey;
+  }
+  
+  // No valid key available
+  throw new Error("OpenRouter API key is required. Please add your API key in Settings or configure OPENROUTER_API_KEY in backend environment.");
+}
+
+/**
  * Analyzes market data for a single symbol using AI
- * @param apiKey - User's OpenRouter API key
+ * @param apiKey - User's OpenRouter API key (optional if backend key is configured)
  * @param symbol - Trading pair symbol (e.g., "BTCUSD")
  * @param chartData - Serialized chart data for analysis
  * @param userBalance - Current user balance
@@ -32,22 +53,13 @@ export const analyzeSingleMarket = action({
     customPrompt: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
-    // Validate API key format (must be a real key, no DEMO_MODE allowed)
-    console.log('[CONVEX] Validating API key', {
-      hasKey: !!args.apiKey,
-      keyLength: args.apiKey?.length,
-      keyPrefix: args.apiKey?.substring(0, 10),
-      isDemoMode: args.isDemoMode,
-    });
-
-    if (!args.apiKey || args.apiKey.trim() === '' || args.apiKey === 'DEMO_MODE') {
-      console.error('[CONVEX] Invalid API key: missing or DEMO_MODE');
-      throw new Error("OpenRouter API key is required. Please add your API key in Settings.");
-    }
-
-    if (!args.apiKey.startsWith('sk-or-v1-')) {
-      console.error('[CONVEX] Invalid API key format:', args.apiKey.substring(0, 10));
-      throw new Error("Invalid OpenRouter API key format. Key must start with 'sk-or-v1-'");
+    // Get API key (client or backend)
+    let apiKey: string;
+    try {
+      apiKey = getOpenRouterKey(args.apiKey);
+    } catch (error: any) {
+      console.error('[CONVEX] API key error:', error.message);
+      throw error;
     }
 
     const model = args.aiModel || "deepseek/deepseek-chat-v3-0324:free";
@@ -61,7 +73,7 @@ export const analyzeSingleMarket = action({
         "Content-Type": "application/json",
         "HTTP-Referer": "https://dex-trading-agent.vly.site",
         "X-Title": args.isDemoMode ? "DeX Trading Agent Demo" : "DeX Trading Agent",
-        "Authorization": `Bearer ${args.apiKey}`,
+        "Authorization": `Bearer ${apiKey}`,
       };
 
       const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
@@ -113,7 +125,7 @@ export const analyzeSingleMarket = action({
 
 /**
  * Analyzes multiple charts simultaneously for correlation-based trading decisions
- * @param apiKey - User's OpenRouter API key
+ * @param apiKey - User's OpenRouter API key (optional if backend key is configured)
  * @param charts - Array of chart data with symbols and prices
  * @param userBalance - Current user balance
  * @param settings - Trading risk settings including leverage
@@ -149,26 +161,16 @@ export const analyzeMultipleCharts = action({
       isDemoMode: args.isDemoMode,
       aiModel: args.aiModel,
       hasCustomPrompt: !!args.customPrompt,
-      hasApiKey: !!args.apiKey,
+      hasClientKey: !!args.apiKey && args.apiKey !== 'DEMO_MODE',
     });
     
-    // Validate API key (must be a real key, no DEMO_MODE allowed)
-    console.log('[CONVEX] analyzeMultipleCharts - Validating API key', {
-      hasKey: !!args.apiKey,
-      keyLength: args.apiKey?.length,
-      keyPrefix: args.apiKey?.substring(0, 10),
-      isDemoMode: args.isDemoMode,
-      chartsCount: args.charts.length,
-    });
-
-    if (!args.apiKey || args.apiKey.trim() === '' || args.apiKey === 'DEMO_MODE') {
-      console.error('[CONVEX] Invalid API key: missing or DEMO_MODE');
-      throw new Error("OpenRouter API key is required. Please add your API key in Settings.");
-    }
-
-    if (!args.apiKey.startsWith('sk-or-v1-')) {
-      console.error('[CONVEX] Invalid API key format:', args.apiKey.substring(0, 10));
-      throw new Error("Invalid OpenRouter API key format. Key must start with 'sk-or-v1-'");
+    // Get API key (client or backend)
+    let apiKey: string;
+    try {
+      apiKey = getOpenRouterKey(args.apiKey);
+    } catch (error: any) {
+      console.error('[CONVEX] API key error:', error.message);
+      throw error;
     }
 
     // Validate AI model
@@ -186,43 +188,21 @@ export const analyzeMultipleCharts = action({
 
     const basePrompt = args.customPrompt || `You are an expert crypto trading analyst.`;
 
-    const prompt = `${basePrompt}
-
-MARKET PRICES:
-${marketSnapshot}
-
-ACCOUNT:
-Balance: ${args.userBalance.toFixed(2)}
-Leverage: ${args.settings.leverage}x
-Risk: TP ${args.settings.takeProfitPercent}%, SL ${args.settings.stopLossPercent}%
-
-TASK:
-Analyze these ${args.charts.length} assets and recommend ONE trade.
-
-OUTPUT (JSON only):
-{
-  "recommendedSymbol": "symbol to trade",
-  "action": "open_long" | "open_short" | "close" | "hold",
-  "confidence": 0-100,
-  "reasoning": "brief explanation (max 150 chars)",
-  "entryPrice": number,
-  "stopLoss": number,
-  "takeProfit": number,
-  "positionSize": number
-}`;
+    const prompt = `${basePrompt}\n\nMARKET PRICES:\n${marketSnapshot}\n\nACCOUNT:\nBalance: ${args.userBalance.toFixed(2)}\nLeverage: ${args.settings.leverage}x\nRisk: TP ${args.settings.takeProfitPercent}%, SL ${args.settings.stopLossPercent}%\n\nTASK:\nAnalyze these ${args.charts.length} assets and recommend ONE trade.\n\nOUTPUT (JSON only):\n{\n  "recommendedSymbol": "symbol to trade",\n  "action": "open_long" | "open_short" | "close" | "hold",\n  "confidence": 0-100,\n  "reasoning": "brief explanation (max 150 chars)",\n  "entryPrice": number,\n  "stopLoss": number,\n  "takeProfit": number,\n  "positionSize": number\n}`;
 
     try {
       const multiHeaders: Record<string, string> = {
         "Content-Type": "application/json",
         "HTTP-Referer": "https://dex-trading-agent.vly.site",
         "X-Title": args.isDemoMode ? "DeX Trading Agent Demo" : "DeX Trading Agent",
-        "Authorization": `Bearer ${args.apiKey}`,
+        "Authorization": `Bearer ${apiKey}`,
       };
 
       console.log('[CONVEX] Calling OpenRouter API', {
         model,
         isDemoMode: args.isDemoMode,
         hasAuthHeader: !!multiHeaders["Authorization"],
+        usingBackendKey: args.apiKey === '' || args.apiKey === 'DEMO_MODE',
       });
 
       const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {

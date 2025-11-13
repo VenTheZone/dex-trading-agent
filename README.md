@@ -85,10 +85,6 @@ You'll also need API keys for:
 ### Option 1: Local Development (Native)
 
 ### 1. Clone the Repository
-```
-git clone https://github.com/VenTheZone/dex-trading-agent.git
-cd dex-trading-agent
-```
 
 ### 2. Install Dependencies
 ```
