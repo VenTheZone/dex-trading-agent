@@ -1,9 +1,8 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { useAuth } from '@/hooks/use-auth';
 import { useNavigate } from 'react-router';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { TradingBackground } from '@/components/CyberpunkBackground';
 import { ApiKeySetup } from '@/components/ApiKeySetup';
@@ -12,7 +11,7 @@ import { TradingControls } from '@/components/TradingControls';
 import { LogoDropdown } from '@/components/LogoDropdown';
 import { storage } from '@/lib/storage';
 import { useTradingStore } from '@/store/tradingStore';
-import { Activity, DollarSign, TrendingUp, Settings, Loader2, LineChart, Network, X } from 'lucide-react';
+import { Activity, DollarSign, TrendingUp, Settings, LineChart, Network, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { TradingLogs } from '@/components/TradingLogs';
 import { NewsFeed } from '@/components/NewsFeed';
@@ -25,30 +24,11 @@ import { CloseAllPositionsDialog } from '@/components/CloseAllPositionsDialog';
 import { UpdateNotification } from '@/components/UpdateNotification';
 
 export default function Dashboard() {
-  const { isLoading, isAuthenticated } = useAuth();
   const navigate = useNavigate();
   const [hasApiKeys, setHasApiKeys] = useState(false);
   const [showCloseAllDialog, setShowCloseAllDialog] = useState(false);
   const { mode, setMode, network, setNetwork, balance, position, initialBalance, resetBalance, settings } = useTradingStore();
   const { closePosition, closeAllPositions } = useTrading();
-  
-  // Only redirect if auth is fully loaded and user is definitely not authenticated
-  // Give auth system time to initialize before redirecting
-  useEffect(() => {
-    // Wait for auth to fully load before making redirect decisions
-    if (!isLoading) {
-      if (!isAuthenticated) {
-        console.warn('[Dashboard] User not authenticated after loading, redirecting to landing');
-        // Small delay to allow auth state to propagate
-        const timer = setTimeout(() => {
-          if (!isAuthenticated) {
-            navigate('/');
-          }
-        }, 100);
-        return () => clearTimeout(timer);
-      }
-    }
-  }, [isLoading, isAuthenticated, navigate]);
   
   useEffect(() => {
     const keys = storage.getApiKeys();
@@ -63,7 +43,7 @@ export default function Dashboard() {
     const newMode = mode === 'paper' ? 'live' : 'paper';
     if (newMode === 'live') {
       const confirmed = window.confirm(
-        '⚠️ WARNING: You are about to switch to LIVE TRADING mode.\n\n' +
+        '⚠️ WARNING: You are about to switch to LIVE TRADING mode.\\n\\n' +
         'Real funds will be at risk. Are you sure you want to continue?'
       );
       if (!confirmed) return;
@@ -75,7 +55,7 @@ export default function Dashboard() {
   const handleNetworkToggle = () => {
     const newNetwork = network === 'mainnet' ? 'testnet' : 'mainnet';
     const confirmed = window.confirm(
-      `Switch to Hyperliquid ${newNetwork.toUpperCase()}?\n\n` +
+      `Switch to Hyperliquid ${newNetwork.toUpperCase()}?\\n\\n` +
       (newNetwork === 'testnet' 
         ? 'Testnet uses test funds and is safe for experimentation.' 
         : '⚠️ MAINNET uses real funds. Ensure you understand the risks.')
@@ -108,14 +88,6 @@ export default function Dashboard() {
       console.error("Failed to close all positions:", error);
     }
   };
-  
-  if (isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-black">
-        <Loader2 className="h-8 w-8 animate-spin text-cyan-400" />
-      </div>
-    );
-  }
   
   if (!hasApiKeys) {
     return (
@@ -231,8 +203,8 @@ export default function Dashboard() {
                 className="border-cyan-500/30 text-cyan-400 hover:bg-cyan-500/20"
                 onClick={() => {
                   const confirmed = window.confirm(
-                    '⚠️ Clear all API keys and settings?\n\n' +
-                    'This will remove all stored API keys and reset your configuration.\n\n' +
+                    '⚠️ Clear all API keys and settings?\\n\\n' +
+                    'This will remove all stored API keys and reset your configuration.\\n\\n' +
                     'Are you sure you want to continue?'
                   );
                   if (confirmed) {

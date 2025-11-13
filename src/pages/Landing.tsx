@@ -1,34 +1,14 @@
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
-import { useAuth } from "@/hooks/use-auth";
 import { useNavigate } from "react-router";
-import { useEffect } from "react";
 import { TradingBackground } from "@/components/CyberpunkBackground";
 import { Activity, Brain, Shield, TrendingUp, Zap, Eye } from "lucide-react";
 import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 export default function Landing() {
-  const { isAuthenticated, signIn, isLoading } = useAuth();
   const navigate = useNavigate();
   const [showPreview, setShowPreview] = useState(false);
-
-  // Auto sign-in as guest on mount - only if not already authenticated
-  useEffect(() => {
-    console.log('[Landing] Auth check:', { isLoading, isAuthenticated });
-    
-    // Only attempt sign-in if auth is fully loaded and user is not authenticated
-    if (!isLoading && !isAuthenticated) {
-      console.log('[Landing] Attempting guest sign-in...');
-      signIn("anonymous")
-        .then(() => {
-          console.log('[Landing] Guest sign-in successful');
-        })
-        .catch((error) => {
-          console.error('[Landing] Guest sign-in failed:', error);
-        });
-    }
-  }, [isLoading, isAuthenticated, signIn]);
 
   return (
     <div className="min-h-screen bg-black text-cyan-100">
