@@ -9,11 +9,44 @@ interface PriceCache {
 
 const priceCache: PriceCache = {};
 
+/**
+ * Fetches price from Hyperliquid (primary source)
+ */
+async function fetchFromHyperliquid(symbol: string): Promise<number | null> {
+  try {
+    const hlSymbol = symbol.replace('USD', '');
+    
+    const response = await fetch('https://api.hyperliquid.xyz/info', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ type: 'allMids' }),
+      signal: AbortSignal.timeout(API_CONFIG.BINANCE.TIMEOUT)
+    });
+    
+    if (response.ok) {
+      const data = await response.json();
+      if (data[hlSymbol]) {
+        return parseFloat(data[hlSymbol]);
+      }
+    }
+  } catch (error) {
+    console.warn(`Hyperliquid API failed for ${symbol}:`, error);
+  }
+  return null;
+}
+
 export async function fetchPriceWithFallback(symbol: string): Promise<number> {
   // Check cache first
   const cached = priceCache[symbol];
   if (cached && Date.now() - cached.timestamp < TRADING_CONSTANTS.PRICE_CACHE_DURATION) {
     return cached.price;
+  }
+
+  // Try Hyperliquid first (most accurate)
+  let price = await fetchFromHyperliquid(symbol);
+  if (price) {
+    priceCache[symbol] = { price, timestamp: Date.now() };
+    return price;
   }
 
   // Convert symbol format (e.g., BTCUSD -> BTCUSDT for most exchanges)

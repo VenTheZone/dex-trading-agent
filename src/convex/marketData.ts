@@ -264,30 +264,73 @@ export const fetchSymbolMarketData = action({
 });
 
 /**
+ * Fetches price from Hyperliquid (primary source)
+ */
+async function fetchFromHyperliquid(symbol: string, isTestnet: boolean = false): Promise<number | null> {
+  try {
+    const baseUrl = isTestnet 
+      ? 'https://api.hyperliquid-testnet.xyz' 
+      : 'https://api.hyperliquid.xyz';
+    
+    // Convert BTCUSD to BTC format for Hyperliquid
+    const hlSymbol = symbol.replace('USD', '');
+    
+    const response = await fetch(`${baseUrl}/info`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ type: 'allMids' }),
+      signal: AbortSignal.timeout(5000)
+    });
+    
+    if (response.ok) {
+      const data = await response.json();
+      if (data[hlSymbol]) {
+        return parseFloat(data[hlSymbol]);
+      }
+    }
+  } catch (error) {
+    console.warn(`Hyperliquid API failed for ${symbol}:`, error);
+  }
+  return null;
+}
+
+/**
  * Fetches current price with automatic fallback to multiple exchanges
+ * Prioritizes Hyperliquid API for exact execution prices
  * Includes caching to reduce API calls
  * @param symbol - Trading pair symbol (e.g., "BTCUSD")
+ * @param isTestnet - Whether to use testnet (default: false)
  * @returns Current price as number
  */
 export const fetchCurrentPrice = action({
   args: {
     symbol: v.string(),
+    isTestnet: v.optional(v.boolean()),
   },
   handler: async (ctx, args) => {
+    const isTestnet = args.isTestnet || false;
+    
     // Check cache first
     const cached = priceCache[args.symbol];
     if (cached && Date.now() - cached.timestamp < CACHE_DURATION) {
       return cached.price;
     }
 
-    // Try Binance first (fastest, most reliable when not geo-blocked)
-    let price = await fetchFromBinance(args.symbol);
+    // Try Hyperliquid first (most accurate for execution)
+    let price = await fetchFromHyperliquid(args.symbol, isTestnet);
     if (price) {
       priceCache[args.symbol] = { price, timestamp: Date.now() };
       return price;
     }
 
-    // Try KuCoin (widely accessible)
+    // Try Binance (fast CEX fallback)
+    price = await fetchFromBinance(args.symbol);
+    if (price) {
+      priceCache[args.symbol] = { price, timestamp: Date.now() };
+      return price;
+    }
+
+    // Try KuCoin (global accessibility)
     price = await fetchFromKuCoin(args.symbol);
     if (price) {
       priceCache[args.symbol] = { price, timestamp: Date.now() };

@@ -502,7 +502,10 @@ export function useTrading() {
           // Fetch real market data using Convex action (bypasses CORS)
           const chartDataPromises = allowedCoins.map(async (symbol) => {
             try {
-              const price = await fetchPriceWithFallback({ symbol });
+              const price = await fetchPriceWithFallback({ 
+                symbol,
+                isTestnet: network === 'testnet'
+              });
               return {
                 symbol,
                 currentPrice: price,
@@ -623,7 +626,10 @@ export function useTrading() {
         // Fetch current market data using Convex action (bypasses CORS)
         const chartDataPromises = allowedCoins.map(async (symbol) => {
           try {
-            const price = await fetchPriceWithFallback({ symbol });
+            const price = await fetchPriceWithFallback({ 
+              symbol,
+              isTestnet: network === 'testnet'
+            });
             return {
               symbol,
               currentPrice: price,

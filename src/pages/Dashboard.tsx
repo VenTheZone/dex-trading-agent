@@ -28,7 +28,7 @@ export default function Dashboard() {
   const navigate = useNavigate();
   const [hasApiKeys, setHasApiKeys] = useState(false);
   const [showCloseAllDialog, setShowCloseAllDialog] = useState(false);
-  const { mode, setMode, network, setNetwork, balance, position, initialBalance, resetBalance } = useTradingStore();
+  const { mode, setMode, network, setNetwork, balance, position, initialBalance, resetBalance, settings } = useTradingStore();
   const { closePosition, closeAllPositions } = useTrading();
   
   useEffect(() => {
@@ -341,12 +341,20 @@ export default function Dashboard() {
             transition={{ delay: 0.2 }}
             className="grid grid-cols-1 lg:grid-cols-3 gap-4"
           >
-            {/* Charts - 2/3 width */}
+            {/* Charts - 2/3 width - Dynamically render based on allowed coins */}
             <div className="lg:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-4">
-              <TradingChart symbol="BTCUSD" chartId={1} />
-              <TradingChart symbol="ETHUSD" chartId={2} />
-              <TradingChart symbol="SOLUSD" chartId={3} />
-              <TradingChart symbol="AVAXUSD" chartId={4} />
+              {settings.allowedCoins && settings.allowedCoins.length > 0 ? (
+                settings.allowedCoins.slice(0, 4).map((symbol, index) => (
+                  <TradingChart key={symbol} symbol={symbol} chartId={index + 1} />
+                ))
+              ) : (
+                <>
+                  <TradingChart symbol="BTCUSD" chartId={1} />
+                  <TradingChart symbol="ETHUSD" chartId={2} />
+                  <TradingChart symbol="SOLUSD" chartId={3} />
+                  <TradingChart symbol="AVAXUSD" chartId={4} />
+                </>
+              )}
             </div>
             
             {/* Logs and News - 1/3 width */}
