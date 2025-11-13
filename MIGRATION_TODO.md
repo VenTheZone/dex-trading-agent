@@ -17,9 +17,9 @@
 ## Phase 3: API Layer
 - [ ] Review `api_routes.py` pseudo-code
 - [ ] Implement FastAPI routes
-- [ ] Add authentication middleware
+- [ ] ~~Add authentication middleware~~ (NOT NEEDED - local use)
 - [ ] Implement WebSocket endpoints
-- [ ] Add CORS configuration
+- [ ] Add CORS configuration (allow localhost only)
 
 ## Phase 4: Business Logic
 - [ ] Review `trading_service.py` pseudo-code

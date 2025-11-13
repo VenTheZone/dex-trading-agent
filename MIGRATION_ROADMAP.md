@@ -9,11 +9,12 @@ Replace Convex serverless backend with a Python-based backend (FastAPI/Flask) wh
 
 ### 1. Choose Your Python Stack
 - [ ] **Web Framework**: FastAPI (recommended) or Flask
-- [ ] **Database**: PostgreSQL, MongoDB, or SQLite
+- [ ] **Database**: PostgreSQL, MongoDB, or SQLite (SQLite recommended for local use)
 - [ ] **ORM**: SQLAlchemy (SQL) or Motor (MongoDB)
 - [ ] **WebSocket**: FastAPI WebSockets or Socket.IO
 - [ ] **Task Queue**: Celery + Redis (for cron jobs)
-- [ ] **Deployment**: Docker + Docker Compose
+- [ ] **Deployment**: Local development (no auth needed for private use)
+- [ ] **Authentication**: ❌ NOT NEEDED - Local/private use only
 
 ### 2. Set Up Development Environment
 - [ ] Install Python 3.11+
