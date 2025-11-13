@@ -140,7 +140,7 @@ export default function Landing() {
             initial={{ y: 50, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{ delay: 1.2 }}
-            className="mt-24 max-w-6xl w-full pb-16"
+            className="mt-24 max-w-6xl w-full"
           >
             <h2 className="text-3xl font-bold text-cyan-400 font-mono text-center mb-8">
               🎯 Available Trading Pairs
@@ -172,6 +172,171 @@ export default function Landing() {
                 </motion.div>
               ))}
             </div>
+          </motion.div>
+
+          {/* Getting Started Guide */}
+          <motion.div
+            initial={{ y: 50, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ delay: 1.5 }}
+            className="mt-24 max-w-6xl w-full pb-16"
+          >
+            <h2 className="text-3xl font-bold text-cyan-400 font-mono text-center mb-8">
+              🚀 Getting Started Guide
+            </h2>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Live Trading Setup */}
+              <Card className="bg-gradient-to-br from-purple-900/20 to-black/80 border-purple-500/50 p-6 shadow-[0_0_30px_rgba(168,85,247,0.2)]">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="w-12 h-12 bg-purple-500/20 rounded-lg flex items-center justify-center">
+                    <span className="text-2xl">🟣</span>
+                  </div>
+                  <h3 className="text-2xl font-bold text-purple-400 font-mono">
+                    Live Trading (Mainnet)
+                  </h3>
+                </div>
+                
+                <div className="space-y-4">
+                  <div className="flex items-start gap-3">
+                    <div className="w-8 h-8 bg-purple-500/20 rounded-full flex items-center justify-center flex-shrink-0 mt-1">
+                      <span className="text-purple-400 font-mono font-bold">1</span>
+                    </div>
+                    <div>
+                      <p className="text-cyan-100 font-mono mb-2">
+                        <strong className="text-purple-400">Deposit USDC</strong>
+                      </p>
+                      <p className="text-gray-400 text-sm">
+                        Visit <a href="https://app.hyperliquid.xyz/" target="_blank" rel="noopener noreferrer" className="text-cyan-400 hover:text-cyan-300 underline">app.hyperliquid.xyz</a> and deposit USDC into your perpetual wallet to start trading with real funds.
+                      </p>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-start gap-3">
+                    <div className="w-8 h-8 bg-purple-500/20 rounded-full flex items-center justify-center flex-shrink-0 mt-1">
+                      <span className="text-purple-400 font-mono font-bold">2</span>
+                    </div>
+                    <div>
+                      <p className="text-cyan-100 font-mono mb-2">
+                        <strong className="text-purple-400">Configure API Keys</strong>
+                      </p>
+                      <p className="text-gray-400 text-sm">
+                        In the Dashboard, go to Settings and add your Hyperliquid API secret and wallet address. Keys are stored securely in your browser only.
+                      </p>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-start gap-3">
+                    <div className="w-8 h-8 bg-purple-500/20 rounded-full flex items-center justify-center flex-shrink-0 mt-1">
+                      <span className="text-purple-400 font-mono font-bold">3</span>
+                    </div>
+                    <div>
+                      <p className="text-cyan-100 font-mono mb-2">
+                        <strong className="text-purple-400">Start Trading</strong>
+                      </p>
+                      <p className="text-gray-400 text-sm">
+                        Select "Live" mode, choose your coins, configure leverage and risk settings, then enable AI auto-trading or trade manually.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="mt-6 p-4 bg-purple-500/10 border border-purple-500/30 rounded">
+                  <p className="text-xs text-purple-300 font-mono">
+                    ⚠️ <strong>Real Funds:</strong> Live trading uses real USDC. Start with small amounts and test thoroughly.
+                  </p>
+                </div>
+              </Card>
+
+              {/* Testnet Setup */}
+              <Card className="bg-gradient-to-br from-blue-900/20 to-black/80 border-blue-500/50 p-6 shadow-[0_0_30px_rgba(59,130,246,0.2)]">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="w-12 h-12 bg-blue-500/20 rounded-lg flex items-center justify-center">
+                    <span className="text-2xl">🔵</span>
+                  </div>
+                  <h3 className="text-2xl font-bold text-blue-400 font-mono">
+                    Test Trading (Testnet)
+                  </h3>
+                </div>
+                
+                <div className="space-y-4">
+                  <div className="flex items-start gap-3">
+                    <div className="w-8 h-8 bg-blue-500/20 rounded-full flex items-center justify-center flex-shrink-0 mt-1">
+                      <span className="text-blue-400 font-mono font-bold">1</span>
+                    </div>
+                    <div>
+                      <p className="text-cyan-100 font-mono mb-2">
+                        <strong className="text-blue-400">Get Test Funds</strong>
+                      </p>
+                      <p className="text-gray-400 text-sm">
+                        Visit <a href="https://app.hyperliquid-testnet.xyz/drip" target="_blank" rel="noopener noreferrer" className="text-cyan-400 hover:text-cyan-300 underline">app.hyperliquid-testnet.xyz/drip</a> to receive free testnet USDC for practice trading.
+                      </p>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-start gap-3">
+                    <div className="w-8 h-8 bg-blue-500/20 rounded-full flex items-center justify-center flex-shrink-0 mt-1">
+                      <span className="text-blue-400 font-mono font-bold">2</span>
+                    </div>
+                    <div>
+                      <p className="text-cyan-100 font-mono mb-2">
+                        <strong className="text-blue-400">Switch to Testnet</strong>
+                      </p>
+                      <p className="text-gray-400 text-sm">
+                        In the Dashboard header, click the network badge to toggle between Mainnet and Testnet. Your balance will update automatically.
+                      </p>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-start gap-3">
+                    <div className="w-8 h-8 bg-blue-500/20 rounded-full flex items-center justify-center flex-shrink-0 mt-1">
+                      <span className="text-blue-400 font-mono font-bold">3</span>
+                    </div>
+                    <div>
+                      <p className="text-cyan-100 font-mono mb-2">
+                        <strong className="text-blue-400">Practice Risk-Free</strong>
+                      </p>
+                      <p className="text-gray-400 text-sm">
+                        Test AI strategies, leverage settings, and risk management with zero risk. Perfect for learning before going live.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="mt-6 p-4 bg-blue-500/10 border border-blue-500/30 rounded">
+                  <p className="text-xs text-blue-300 font-mono">
+                    ✅ <strong>Safe Testing:</strong> Testnet uses fake funds. Experiment freely without financial risk.
+                  </p>
+                </div>
+              </Card>
+            </div>
+
+            {/* Paper Trading Note */}
+            <motion.div
+              initial={{ y: 20, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ delay: 1.7 }}
+              className="mt-6"
+            >
+              <Card className="bg-gradient-to-br from-cyan-900/20 to-black/80 border-cyan-500/50 p-6 shadow-[0_0_30px_rgba(0,255,255,0.2)]">
+                <div className="flex items-start gap-4">
+                  <div className="w-12 h-12 bg-cyan-500/20 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <span className="text-2xl">📄</span>
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-bold text-cyan-400 font-mono mb-2">
+                      Paper Trading Mode
+                    </h3>
+                    <p className="text-gray-400 text-sm mb-3">
+                      No setup required! Paper trading simulates trades locally in your browser with a virtual $10,000 balance. Perfect for testing strategies without any external accounts.
+                    </p>
+                    <p className="text-xs text-cyan-300 font-mono">
+                      💡 <strong>Tip:</strong> Start with Paper mode to learn the interface, then move to Testnet for realistic execution, and finally go Live when ready.
+                    </p>
+                  </div>
+                </div>
+              </Card>
+            </motion.div>
           </motion.div>
         </motion.div>
         
