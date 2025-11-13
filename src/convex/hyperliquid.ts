@@ -141,6 +141,11 @@ export const getOrderBook = action({
           });
       });
       
+      // Validate orderbook response
+      if (!orderbook || !orderbook.levels || !Array.isArray(orderbook.levels)) {
+        throw new Error(`Invalid orderbook data received for ${args.coin}`);
+      }
+      
       // Format the response
       const bids = orderbook.levels[0].map((level: any) => ({
         price: parseFloat(level.px),
@@ -208,7 +213,7 @@ export const getBulkOrderBooks = action({
         try {
           const orderbook = await infoClient.l2Book({ coin });
           
-          if (!orderbook || !orderbook.levels) {
+          if (!orderbook || !orderbook.levels || !Array.isArray(orderbook.levels)) {
             console.error(`Invalid orderbook data for ${coin}`);
             return null;
           }
