@@ -21,6 +21,19 @@ export function useTrading() {
   const marginWarningShown = useRef(false);
   const isRecordingBalance = useRef(false);
   const balanceRecordTimeout = useRef<NodeJS.Timeout | null>(null);
+  
+  // Paper trading engine instance (persisted across renders)
+  const paperEngineRef = useRef<any>(null);
+  
+  // Initialize paper trading engine
+  useEffect(() => {
+    if (mode === 'paper' && !paperEngineRef.current) {
+      // Dynamically import to avoid "use node" issues
+      import('@/lib/paper-trading-engine').then(({ PaperTradingEngine }) => {
+        paperEngineRef.current = new PaperTradingEngine(balance);
+      });
+    }
+  }, [mode, balance]);
 
   // Record balance changes with debouncing to prevent race conditions
   useEffect(() => {
@@ -523,6 +536,58 @@ export function useTrading() {
         }
 
         toast.success(`✅ Live trade executed on ${network}`);
+      } else if (mode === "paper" && paperEngineRef.current) {
+        // Execute paper trade
+        toast.info("📄 Executing paper trade...");
+        
+        if (action === "close_position" && position) {
+          const result = paperEngineRef.current.closePosition(symbol, price, "manual");
+          if (result.success) {
+            setBalance(paperEngineRef.current.getBalance());
+            setPosition(null);
+            toast.success(`📄 Paper position closed - P&L: $${result.pnl.toFixed(2)}`);
+          }
+        } else if (side) {
+          // Open new position
+          const order = paperEngineRef.current.placeOrder(
+            symbol,
+            side === 'long' ? 'buy' : 'sell',
+            size,
+            price,
+            'market'
+          );
+          
+          if (order.status === 'filled') {
+            // Set stop loss and take profit if provided
+            if (stopLoss) {
+              paperEngineRef.current.setStopLoss(symbol, stopLoss);
+            }
+            if (takeProfit) {
+              paperEngineRef.current.setTakeProfit(symbol, takeProfit);
+            }
+            
+            // Update balance and position
+            setBalance(paperEngineRef.current.getBalance());
+            const paperPosition = paperEngineRef.current.getPosition(symbol);
+            
+            if (paperPosition) {
+              setPosition({
+                symbol: paperPosition.symbol,
+                size: paperPosition.size,
+                entryPrice: paperPosition.entryPrice,
+                currentPrice: paperPosition.currentPrice,
+                pnl: paperPosition.unrealizedPnl,
+                side: paperPosition.side,
+                stopLoss: paperPosition.stopLoss,
+                takeProfit: paperPosition.takeProfit,
+              });
+            }
+            
+            toast.success(`📄 Paper trade executed: ${side.toUpperCase()} ${symbol}`);
+          } else {
+            throw new Error("Paper trade failed - insufficient balance");
+          }
+        }
       } else {
         toast.info("📄 Executing paper trade...");
       }
