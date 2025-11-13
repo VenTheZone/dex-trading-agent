@@ -8,7 +8,9 @@
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "format": "prettier --write .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "start": "node -e \"require('child_process').execSync(process.platform === 'win32' ? 'start.bat' : './start.sh', {stdio: 'inherit'})\"",
+    "stop": "node -e \"require('child_process').execSync(process.platform === 'win32' ? 'stop.bat' : './stop.sh', {stdio: 'inherit'})\""
   },
   "dependencies": {
     "@convex-dev/auth": "^0.0.86",

@@ -377,9 +377,13 @@ Docker provides an isolated, consistent environment for running the DeX Trading 
 - **Convex account** with your project deployed
 - **API Keys** (OpenRouter, CryptoPanic)
 
-#### Quick Start
+## 🚀 Quick Start
 
-1. **Clone the Repository**
+### Automated Setup (Recommended)
+
+The easiest way to get started is using the automated launcher scripts:
+
+**Linux/Mac:**
 
 ### 2. Install Dependencies
 ```
