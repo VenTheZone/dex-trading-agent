@@ -37,8 +37,21 @@ export const API_CONFIG = {
     TIMEOUT: 30000,
   },
   BINANCE: {
-    BASE_URL: 'https://api.binance.com/api/v3',
-    FALLBACK_URL: 'https://api1.binance.com/api/v3',
+    BASE_URLS: [
+      'https://api.binance.com/api/v3',
+      'https://api1.binance.com/api/v3',
+      'https://api2.binance.com/api/v3',
+      'https://api3.binance.com/api/v3',
+    ],
+    US_URL: 'https://api.binance.us/api/v3',
+    TIMEOUT: 10000,
+  },
+  COINBASE: {
+    BASE_URL: 'https://api.coinbase.com/v2/prices',
+    TIMEOUT: 10000,
+  },
+  KRAKEN: {
+    BASE_URL: 'https://api.kraken.com/0/public/Ticker',
     TIMEOUT: 10000,
   },
   HYPERLIQUID: {
@@ -56,4 +69,5 @@ export const ERROR_MESSAGES = {
   POSITION_NOT_FOUND: 'Position not found.',
   MARGIN_TOO_HIGH: 'Margin usage too high. Cannot open new positions.',
   AI_ANALYSIS_FAILED: 'AI analysis failed. Please try again.',
+  PRICE_FETCH_FAILED: 'Failed to fetch market prices from all sources. Please try again.',
 } as const;

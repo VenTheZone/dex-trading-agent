@@ -19,42 +19,49 @@ export async function fetchPriceWithFallback(symbol: string): Promise<number> {
   // Convert symbol format (e.g., BTCUSD -> BTCUSDT for Binance)
   const binanceSymbol = symbol.replace('USD', 'USDT');
 
-  // Try primary Binance API
-  try {
-    const response = await fetch(
-      `${API_CONFIG.BINANCE.BASE_URL}/ticker/price?symbol=${binanceSymbol}`,
-      { signal: AbortSignal.timeout(API_CONFIG.BINANCE.TIMEOUT) }
-    );
-    
-    if (response.ok) {
-      const data = await response.json();
-      const price = parseFloat(data.price);
+  // Try all Binance API endpoints
+  for (const baseUrl of API_CONFIG.BINANCE.BASE_URLS) {
+    try {
+      const response = await fetch(
+        `${baseUrl}/ticker/price?symbol=${binanceSymbol}`,
+        { signal: AbortSignal.timeout(API_CONFIG.BINANCE.TIMEOUT) }
+      );
       
-      // Cache the result
-      priceCache[symbol] = { price, timestamp: Date.now() };
-      return price;
+      if (response.ok) {
+        const data = await response.json();
+        // Check if response has error code (geo-restriction)
+        if (data.code !== undefined) {
+          console.warn(`Binance endpoint ${baseUrl} returned error:`, data.msg);
+          continue;
+        }
+        const price = parseFloat(data.price);
+        
+        // Cache the result
+        priceCache[symbol] = { price, timestamp: Date.now() };
+        return price;
+      }
+    } catch (error) {
+      console.warn(`Binance endpoint ${baseUrl} failed:`, error);
     }
-  } catch (error) {
-    console.warn('Primary Binance API failed, trying fallback...', error);
   }
 
-  // Try fallback Binance API
+  // Try Binance US as fallback
   try {
     const response = await fetch(
-      `${API_CONFIG.BINANCE.FALLBACK_URL}/ticker/price?symbol=${binanceSymbol}`,
+      `${API_CONFIG.BINANCE.US_URL}/ticker/price?symbol=${binanceSymbol}`,
       { signal: AbortSignal.timeout(API_CONFIG.BINANCE.TIMEOUT) }
     );
     
     if (response.ok) {
       const data = await response.json();
-      const price = parseFloat(data.price);
-      
-      // Cache the result
-      priceCache[symbol] = { price, timestamp: Date.now() };
-      return price;
+      if (data.code === undefined) {
+        const price = parseFloat(data.price);
+        priceCache[symbol] = { price, timestamp: Date.now() };
+        return price;
+      }
     }
   } catch (error) {
-    console.error('Fallback Binance API also failed', error);
+    console.warn('Binance US API failed:', error);
   }
 
   // If both APIs fail, return cached value if available (even if stale)

@@ -7,6 +7,123 @@ import { action } from "./_generated/server";
 const priceCache: Record<string, { price: number; timestamp: number }> = {};
 const CACHE_DURATION = 5000; // 5 seconds
 
+// Multiple API endpoints for redundancy
+const API_ENDPOINTS = {
+  BINANCE: [
+    'https://api.binance.com/api/v3',
+    'https://api1.binance.com/api/v3',
+    'https://api2.binance.com/api/v3',
+    'https://api3.binance.com/api/v3',
+  ],
+  BINANCE_US: 'https://api.binance.us/api/v3',
+  COINBASE: 'https://api.coinbase.com/v2/prices',
+  KRAKEN: 'https://api.kraken.com/0/public/Ticker',
+};
+
+/**
+ * Fetches price from Coinbase as fallback
+ */
+async function fetchFromCoinbase(symbol: string): Promise<number | null> {
+  try {
+    // Convert BTCUSD to BTC-USD format for Coinbase
+    const coinbaseSymbol = symbol.replace('USD', '-USD');
+    const response = await fetch(
+      `${API_ENDPOINTS.COINBASE}/${coinbaseSymbol}/spot`,
+      { signal: AbortSignal.timeout(5000) }
+    );
+    
+    if (response.ok) {
+      const data = await response.json();
+      return parseFloat(data.data.amount);
+    }
+  } catch (error) {
+    console.warn(`Coinbase API failed for ${symbol}:`, error);
+  }
+  return null;
+}
+
+/**
+ * Fetches price from Kraken as fallback
+ */
+async function fetchFromKraken(symbol: string): Promise<number | null> {
+  try {
+    // Convert BTCUSD to XXBTZUSD format for Kraken
+    const krakenMap: Record<string, string> = {
+      'BTCUSD': 'XXBTZUSD',
+      'ETHUSD': 'XETHZUSD',
+      'SOLUSD': 'SOLUSD',
+      'AVAXUSD': 'AVAXUSD',
+      'BNBUSD': 'BNBUSD',
+      'ADAUSD': 'ADAUSD',
+      'DOTUSD': 'DOTUSD',
+      'MATICUSD': 'MATICUSD',
+    };
+    
+    const krakenSymbol = krakenMap[symbol] || symbol;
+    const response = await fetch(
+      `${API_ENDPOINTS.KRAKEN}?pair=${krakenSymbol}`,
+      { signal: AbortSignal.timeout(5000) }
+    );
+    
+    if (response.ok) {
+      const data = await response.json();
+      const result = data.result[Object.keys(data.result)[0]];
+      return parseFloat(result.c[0]); // Current price
+    }
+  } catch (error) {
+    console.warn(`Kraken API failed for ${symbol}:`, error);
+  }
+  return null;
+}
+
+/**
+ * Fetches price from Binance with multiple endpoint fallbacks
+ */
+async function fetchFromBinance(symbol: string): Promise<number | null> {
+  const binanceSymbol = symbol.replace('USD', 'USDT');
+  
+  // Try all Binance endpoints
+  for (const endpoint of API_ENDPOINTS.BINANCE) {
+    try {
+      const response = await fetch(
+        `${endpoint}/ticker/price?symbol=${binanceSymbol}`,
+        { signal: AbortSignal.timeout(5000) }
+      );
+      
+      if (response.ok) {
+        const data = await response.json();
+        // Check if response has error code (geo-restriction)
+        if (data.code !== undefined) {
+          console.warn(`Binance endpoint ${endpoint} returned error:`, data.msg);
+          continue;
+        }
+        return parseFloat(data.price);
+      }
+    } catch (error) {
+      console.warn(`Binance endpoint ${endpoint} failed:`, error);
+    }
+  }
+  
+  // Try Binance US as last resort
+  try {
+    const response = await fetch(
+      `${API_ENDPOINTS.BINANCE_US}/ticker/price?symbol=${binanceSymbol}`,
+      { signal: AbortSignal.timeout(5000) }
+    );
+    
+    if (response.ok) {
+      const data = await response.json();
+      if (data.code === undefined) {
+        return parseFloat(data.price);
+      }
+    }
+  } catch (error) {
+    console.warn('Binance US API failed:', error);
+  }
+  
+  return null;
+}
+
 /**
  * Fetches comprehensive market data for a trading symbol
  * @param symbol - Trading pair symbol (e.g., "BTC/USD")
@@ -51,7 +168,7 @@ export const fetchSymbolMarketData = action({
 });
 
 /**
- * Fetches current price with automatic fallback to backup API
+ * Fetches current price with automatic fallback to multiple exchanges
  * Includes caching to reduce API calls
  * @param symbol - Trading pair symbol (e.g., "BTCUSD")
  * @returns Current price as number
@@ -67,55 +184,35 @@ export const fetchCurrentPrice = action({
       return cached.price;
     }
 
-    // Convert symbol format (e.g., BTCUSD -> BTCUSDT for Binance)
-    const binanceSymbol = args.symbol.replace('USD', 'USDT');
-
-    // Try primary Binance API
-    try {
-      const response = await fetch(
-        `https://api.binance.com/api/v3/ticker/price?symbol=${binanceSymbol}`,
-        { signal: AbortSignal.timeout(5000) }
-      );
-      
-      if (response.ok) {
-        const data = await response.json();
-        const price = parseFloat(data.price);
-        
-        // Cache the result
-        priceCache[args.symbol] = { price, timestamp: Date.now() };
-        return price;
-      }
-    } catch (error) {
-      console.warn('Primary Binance API failed, trying fallback...', error);
+    // Try Binance first (fastest)
+    let price = await fetchFromBinance(args.symbol);
+    if (price) {
+      priceCache[args.symbol] = { price, timestamp: Date.now() };
+      return price;
     }
 
-    // Try fallback Binance API
-    try {
-      const response = await fetch(
-        `https://api1.binance.com/api/v3/ticker/price?symbol=${binanceSymbol}`,
-        { signal: AbortSignal.timeout(5000) }
-      );
-      
-      if (response.ok) {
-        const data = await response.json();
-        const price = parseFloat(data.price);
-        
-        // Cache the result
-        priceCache[args.symbol] = { price, timestamp: Date.now() };
-        return price;
-      }
-    } catch (error) {
-      console.error('Fallback Binance API also failed', error);
+    // Try Coinbase
+    price = await fetchFromCoinbase(args.symbol);
+    if (price) {
+      priceCache[args.symbol] = { price, timestamp: Date.now() };
+      return price;
     }
 
-    // If both APIs fail, return cached value if available (even if stale)
+    // Try Kraken
+    price = await fetchFromKraken(args.symbol);
+    if (price) {
+      priceCache[args.symbol] = { price, timestamp: Date.now() };
+      return price;
+    }
+
+    // If all APIs fail, return cached value if available (even if stale)
     if (cached) {
-      console.warn(`Using stale cached price for ${args.symbol}`);
+      console.warn(`Using stale cached price for ${args.symbol} (age: ${Date.now() - cached.timestamp}ms)`);
       return cached.price;
     }
 
     // Last resort: throw error
-    throw new Error(`Failed to fetch price for ${args.symbol} from all sources`);
+    throw new Error(`Failed to fetch price for ${args.symbol} from all sources (Binance, Coinbase, Kraken)`);
   },
 });
 
@@ -140,48 +237,28 @@ export const fetchBulkPrices = action({
           return { symbol, price: cached.price };
         }
 
-        // Convert symbol format (e.g., BTCUSD -> BTCUSDT for Binance)
-        const binanceSymbol = symbol.replace('USD', 'USDT');
-
-        // Try primary Binance API
-        try {
-          const response = await fetch(
-            `https://api.binance.com/api/v3/ticker/price?symbol=${binanceSymbol}`,
-            { signal: AbortSignal.timeout(5000) }
-          );
-          
-          if (response.ok) {
-            const data = await response.json();
-            const price = parseFloat(data.price);
-            
-            // Cache the result
-            priceCache[symbol] = { price, timestamp: Date.now() };
-            return { symbol, price };
-          }
-        } catch (error) {
-          console.warn(`Primary Binance API failed for ${symbol}, trying fallback...`);
+        // Try Binance first
+        let price = await fetchFromBinance(symbol);
+        if (price) {
+          priceCache[symbol] = { price, timestamp: Date.now() };
+          return { symbol, price };
         }
 
-        // Try fallback Binance API
-        try {
-          const response = await fetch(
-            `https://api1.binance.com/api/v3/ticker/price?symbol=${binanceSymbol}`,
-            { signal: AbortSignal.timeout(5000) }
-          );
-          
-          if (response.ok) {
-            const data = await response.json();
-            const price = parseFloat(data.price);
-            
-            // Cache the result
-            priceCache[symbol] = { price, timestamp: Date.now() };
-            return { symbol, price };
-          }
-        } catch (error) {
-          console.error(`Fallback Binance API also failed for ${symbol}`);
+        // Try Coinbase
+        price = await fetchFromCoinbase(symbol);
+        if (price) {
+          priceCache[symbol] = { price, timestamp: Date.now() };
+          return { symbol, price };
         }
 
-        // If both APIs fail, return cached value if available (even if stale)
+        // Try Kraken
+        price = await fetchFromKraken(symbol);
+        if (price) {
+          priceCache[symbol] = { price, timestamp: Date.now() };
+          return { symbol, price };
+        }
+
+        // If all APIs fail, return cached value if available (even if stale)
         if (cached) {
           console.warn(`Using stale cached price for ${symbol}`);
           return { symbol, price: cached.price };
