@@ -41,7 +41,7 @@ export const analyzeSingleMarket = action({
       throw new Error("Invalid OpenRouter API key format. Key must start with 'sk-or-v1-'");
     }
 
-    const model = args.aiModel || "deepseek/deepseek-chat";
+    const model = args.aiModel || "deepseek/deepseek-chat-v3.1:free";
 
     const basePrompt = args.customPrompt || `You are an expert crypto trading analyst. Analyze the following market data and provide a trading recommendation.`;
 
@@ -140,8 +140,8 @@ export const analyzeMultipleCharts = action({
     }
 
     // Validate AI model
-    const validModels = ['deepseek/deepseek-chat', 'qwen/qwen3-max'];
-    const requestedModel = args.aiModel || "deepseek/deepseek-chat";
+    const validModels = ['deepseek/deepseek-chat-v3.1:free', 'qwen/qwen3-max'];
+    const requestedModel = args.aiModel || "deepseek/deepseek-chat-v3.1:free";
     if (!validModels.includes(requestedModel)) {
       throw new Error(`Invalid AI model: ${requestedModel}. Valid models: ${validModels.join(', ')}`);
     }

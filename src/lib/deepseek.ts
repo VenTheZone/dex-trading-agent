@@ -132,7 +132,7 @@ Provide your trading recommendation.`;
 
     try {
       const response = await this.client.chat.completions.create({
-        model: "deepseek/deepseek-chat",
+        model: "deepseek/deepseek-chat-v3.1:free",
         messages: [
           { role: "system", content: systemPrompt },
           { role: "user", content: userPrompt },
