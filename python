@@ -1,0 +1,9 @@
+# Their approach (simplified):
+prompt = f"""
+Market: {symbol}
+Price: ${current_price}
+24h Change: {change_24h}%
+Balance: ${balance}
+
+Decide: open_long, open_short, hold, or close
+"""
