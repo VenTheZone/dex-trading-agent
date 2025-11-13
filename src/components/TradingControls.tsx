@@ -9,7 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { toast } from 'sonner';
 import { motion } from 'framer-motion';
-import { Bot, BotOff, Sparkles, X, Brain, AlertTriangle, FileText, RotateCcw } from 'lucide-react';
+import { Bot, BotOff, Sparkles, X, Brain, AlertTriangle, FileText, RotateCcw, Network } from 'lucide-react';
 import { storage } from '@/lib/storage';
 import { useTrading } from '@/hooks/use-trading';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -19,9 +19,10 @@ import { sanitizeNumberWithBounds, sanitizeMultilineText } from '@/lib/utils';
 import { TRADING_TOKENS } from '@/lib/tokenData';
 
 export function TradingControls() {
-  const { settings, updateSettings, chartInterval, setChartInterval, chartType, setChartType, isAutoTrading, setAutoTrading, position, aiModel, setAiModel, customPrompt, setCustomPrompt, resetPromptToDefault, mode } = useTradingStore();
+  const { settings, updateSettings, chartInterval, setChartInterval, chartType, setChartType, isAutoTrading, setAutoTrading, position, aiModel, setAiModel, customPrompt, setCustomPrompt, resetPromptToDefault, mode, network } = useTradingStore();
   const [localSettings, setLocalSettings] = useState(settings);
   const [localPrompt, setLocalPrompt] = useState(customPrompt);
+  const [testingConnection, setTestingConnection] = useState(false);
   const { closePosition, closeAllPositions } = useTrading();
   
   const timeIntervals = ['1m', '5m', '15m', '1h', '4h', '1d'];
@@ -30,6 +31,35 @@ export function TradingControls() {
   // Use centralized token list
   const availableCoins = TRADING_TOKENS.map((token) => token.tradingViewSymbol || `${token.symbol}USD`);
   
+  const handleTestConnection = async () => {
+    setTestingConnection(true);
+    try {
+      const { useAction } = await import('@/hooks/use-auth');
+      const testConnection = useAction((api: any) => api.hyperliquid.testConnection);
+      
+      const result = await testConnection({ isTestnet: network === 'testnet' });
+      
+      if (result.success) {
+        toast.success(`✅ ${result.message}`, {
+          description: `Connected to ${result.endpoint} - ${result.assetsCount} assets available`,
+          duration: 5000,
+        });
+      } else {
+        toast.error(`❌ ${result.message}`, {
+          description: result.error,
+          duration: 5000,
+        });
+      }
+    } catch (error: any) {
+      toast.error('❌ Connection test failed', {
+        description: error.message,
+        duration: 5000,
+      });
+    } finally {
+      setTestingConnection(false);
+    }
+  };
+
   const handleClosePosition = async () => {
     if (!position) return;
     try {
@@ -169,6 +199,41 @@ export function TradingControls() {
       </CardHeader>
       
       <CardContent className="space-y-6 pt-6">
+        {/* Network Connection Test */}
+        <motion.div 
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="space-y-3 pb-4 border-b border-cyan-500/30"
+        >
+          <Label className="text-cyan-400 font-mono font-bold flex items-center gap-2">
+            <Network className="h-4 w-4" />
+            Hyperliquid Connection
+          </Label>
+          <Button
+            variant="outline"
+            onClick={handleTestConnection}
+            disabled={testingConnection}
+            className="w-full border-cyan-500/30 text-cyan-400 hover:bg-cyan-500/20 font-mono"
+          >
+            {testingConnection ? (
+              <>
+                <Bot className="mr-2 h-4 w-4 animate-spin" />
+                Testing Connection...
+              </>
+            ) : (
+              <>
+                <Network className="mr-2 h-4 w-4" />
+                Test {network === 'testnet' ? 'Testnet' : 'Mainnet'} Connection
+              </>
+            )}
+          </Button>
+          <p className="text-xs text-gray-500 font-mono">
+            Current network: <span className={network === 'testnet' ? 'text-blue-400' : 'text-purple-400'}>
+              {network === 'testnet' ? 'Hyperliquid Testnet' : 'Hyperliquid Mainnet'}
+            </span>
+          </p>
+        </motion.div>
+
         {/* AI Model Selector */}
         <motion.div 
           initial={{ opacity: 0, y: 10 }}

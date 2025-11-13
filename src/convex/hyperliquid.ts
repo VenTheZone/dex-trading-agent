@@ -1,112 +1,88 @@
 "use node";
 
+import { action } from "./_generated/server";
 import { v } from "convex/values";
-import { internalAction } from "./_generated/server";
 
-export const placeOrder = internalAction({
+/**
+ * Test connection to Hyperliquid (mainnet or testnet)
+ * @param isTestnet - Whether to test testnet connection
+ * @returns Connection status and network info
+ */
+export const testConnection = action({
   args: {
-    apiKey: v.string(),
-    apiSecret: v.string(),
-    symbol: v.string(),
-    side: v.union(v.literal("buy"), v.literal("sell")),
-    price: v.string(),
-    size: v.string(),
-    reduceOnly: v.optional(v.boolean()),
+    isTestnet: v.optional(v.boolean()),
   },
   handler: async (ctx, args) => {
-    // Import Hyperliquid SDK dynamically
-    const hl = await import("@nktkas/hyperliquid");
-    const { privateKeyToAccount } = await import("viem/accounts");
-
     try {
-      const transport = new hl.HttpTransport({ isTestnet: false });
-      const account = privateKeyToAccount(args.apiSecret as `0x${string}`);
-      const exchClient = new hl.ExchangeClient({ wallet: account, transport });
-
-      const result = await exchClient.order({
-        orders: [{
-          a: 0, // Asset index (BTC)
-          b: args.side === "buy",
-          p: args.price,
-          s: args.size,
-          r: args.reduceOnly || false,
-          t: { limit: { tif: "Gtc" } },
-        }],
-        grouping: "na",
+      const hl = await import("@nktkas/hyperliquid");
+      
+      const transport = new hl.HttpTransport({ 
+        isTestnet: args.isTestnet ?? false 
       });
-
-      return { success: true, result };
-    } catch (error: any) {
-      console.error("Hyperliquid order error:", error);
-      return { success: false, error: error.message };
-    }
-  },
-});
-
-export const setStopLoss = internalAction({
-  args: {
-    apiKey: v.string(),
-    apiSecret: v.string(),
-    symbol: v.string(),
-    side: v.union(v.literal("buy"), v.literal("sell")),
-    triggerPrice: v.string(),
-    size: v.string(),
-  },
-  handler: async (ctx, args) => {
-    const hl = await import("@nktkas/hyperliquid");
-    const { privateKeyToAccount } = await import("viem/accounts");
-
-    try {
-      const transport = new hl.HttpTransport({ isTestnet: false });
-      const account = privateKeyToAccount(args.apiSecret as `0x${string}`);
-      const exchClient = new hl.ExchangeClient({ wallet: account, transport });
-
-      const result = await exchClient.order({
-        orders: [{
-          a: 0,
-          b: args.side === "buy",
-          p: args.triggerPrice,
-          s: args.size,
-          r: true, // Reduce-only
-          t: {
-            trigger: {
-              isMarket: true,
-              triggerPx: args.triggerPrice,
-              tpsl: "sl",
-            },
-          },
-        }],
-        grouping: "positionTpsl",
-      });
-
-      return { success: true, result };
-    } catch (error: any) {
-      console.error("Stop loss error:", error);
-      return { success: false, error: error.message };
-    }
-  },
-});
-
-export const getUserPositions = internalAction({
-  args: {
-    apiKey: v.string(),
-    walletAddress: v.string(),
-  },
-  handler: async (ctx, args) => {
-    const hl = await import("@nktkas/hyperliquid");
-
-    try {
-      const transport = new hl.HttpTransport({ isTestnet: false });
+      
       const infoClient = new hl.InfoClient({ transport });
+      
+      // Fetch meta to verify connection
+      const meta = await infoClient.meta();
+      
+      return {
+        success: true,
+        network: args.isTestnet ? "testnet" : "mainnet",
+        endpoint: args.isTestnet 
+          ? "https://api.hyperliquid-testnet.xyz" 
+          : "https://api.hyperliquid.xyz",
+        assetsCount: meta.universe.length,
+        message: `Successfully connected to Hyperliquid ${args.isTestnet ? 'Testnet' : 'Mainnet'}`,
+      };
+    } catch (error: any) {
+      console.error("Hyperliquid connection test failed:", error);
+      return {
+        success: false,
+        network: args.isTestnet ? "testnet" : "mainnet",
+        error: error.message,
+        message: `Failed to connect to Hyperliquid ${args.isTestnet ? 'Testnet' : 'Mainnet'}`,
+      };
+    }
+  },
+});
 
+/**
+ * Get account info from Hyperliquid
+ * @param walletAddress - User's wallet address
+ * @param isTestnet - Whether to use testnet
+ * @returns Account balance and margin info
+ */
+export const getAccountInfo = action({
+  args: {
+    walletAddress: v.string(),
+    isTestnet: v.optional(v.boolean()),
+  },
+  handler: async (ctx, args) => {
+    try {
+      const hl = await import("@nktkas/hyperliquid");
+      
+      const transport = new hl.HttpTransport({ 
+        isTestnet: args.isTestnet ?? false 
+      });
+      
+      const infoClient = new hl.InfoClient({ transport });
+      
       const state = await infoClient.clearinghouseState({
         user: args.walletAddress,
       });
-
-      return { success: true, positions: state };
+      
+      return {
+        success: true,
+        balance: state.marginSummary.accountValue,
+        positions: state.assetPositions.length,
+        network: args.isTestnet ? "testnet" : "mainnet",
+      };
     } catch (error: any) {
-      console.error("Get positions error:", error);
-      return { success: false, error: error.message };
+      console.error("Failed to get account info:", error);
+      return {
+        success: false,
+        error: error.message,
+      };
     }
   },
 });
