@@ -49,8 +49,8 @@ export function TradingControls() {
   
   const handleSaveSettings = () => {
     updateSettings(localSettings);
-    toast.success('✅ Risk settings updated', {
-      description: 'Your trading parameters have been saved',
+    toast.success('✅ Settings updated', {
+      description: 'Your trading parameters have been saved. Charts will update automatically.',
     });
   };
   

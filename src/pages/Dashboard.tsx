@@ -330,10 +330,18 @@ export default function Dashboard() {
             className="grid grid-cols-1 lg:grid-cols-3 gap-4"
           >
             {/* Charts - 2/3 width - Dynamically render based on allowed coins */}
-            <div className="lg:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className={`lg:col-span-2 grid gap-4 ${
+              settings.allowedCoins && settings.allowedCoins.length === 1 
+                ? 'grid-cols-1' 
+                : settings.allowedCoins && settings.allowedCoins.length === 2
+                ? 'grid-cols-1 md:grid-cols-2'
+                : settings.allowedCoins && settings.allowedCoins.length === 3
+                ? 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3'
+                : 'grid-cols-1 md:grid-cols-2'
+            }`}>
               {settings.allowedCoins && settings.allowedCoins.length > 0 ? (
-                settings.allowedCoins.slice(0, 4).map((symbol, index) => (
-                  <TradingChart key={symbol} symbol={symbol} chartId={index + 1} />
+                settings.allowedCoins.map((symbol, index) => (
+                  <TradingChart key={`${symbol}-${index}`} symbol={symbol} chartId={index + 1} />
                 ))
               ) : (
                 <>
@@ -380,7 +388,7 @@ export default function Dashboard() {
           transition={{ delay: 0.3 }}
           className="fixed top-20 right-6 z-30"
         >
-          <Sheet>
+          <Sheet modal={false}>
             <SheetTrigger asChild>
               <Button
                 size="lg"
@@ -390,33 +398,12 @@ export default function Dashboard() {
                 Trading Controls
               </Button>
             </SheetTrigger>
-            <SheetContent side="right" className="w-[400px] bg-black/95 border-cyan-500/50 overflow-y-auto">
+            <SheetContent side="right" className="w-[450px] bg-black/98 border-cyan-500/50 overflow-y-auto backdrop-blur-sm">
               <SheetHeader>
                 <SheetTitle className="text-cyan-400 font-mono">Trading Controls</SheetTitle>
               </SheetHeader>
               <div className="mt-6">
-                <Tabs defaultValue="controls" className="w-full">
-                  <TabsList className="grid w-full grid-cols-2 bg-black/50">
-                    <TabsTrigger 
-                      value="controls" 
-                      className="data-[state=active]:bg-cyan-500 data-[state=active]:text-black font-mono"
-                    >
-                      Controls
-                    </TabsTrigger>
-                    <TabsTrigger 
-                      value="logs" 
-                      className="data-[state=active]:bg-cyan-500 data-[state=active]:text-black font-mono"
-                    >
-                      Logs
-                    </TabsTrigger>
-                  </TabsList>
-                  <TabsContent value="controls" className="mt-4">
-                    <TradingControls />
-                  </TabsContent>
-                  <TabsContent value="logs" className="mt-4">
-                    <TradingLogs />
-                  </TabsContent>
-                </Tabs>
+                <TradingControls />
               </div>
             </SheetContent>
           </Sheet>
