@@ -138,11 +138,13 @@ This will:
 ### 4. Configure Environment Variables
 
 Create a `.env.local` file in the root directory:
-
+```
 VITE_CONVEX_URL=<your-convex-deployment-url>
-
-OPENROUTER_API_KEY=<your-openrouter-api-key>
-
+OPENROUTER_API_KEY=
+HYPERLIQUID_MASTER_ADDRESS=
+HYPERLIQUID_AGENT_PRIVATE_KEY=
+HYPERLIQUID_AGENT_ADDRESS=
+```
 
 **Note:** The `VITE_CONVEX_URL` is automatically generated when you run `npx convex dev`. You can find it in the Convex dashboard or in the terminal output.
 
