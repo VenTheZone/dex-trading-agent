@@ -10,6 +10,7 @@ interface TokenData {
   pair: string;
   tradingLink: string;
   maxLeverage: number;
+  tradingViewSymbol?: string;
 }
 
 interface TokenTradingModalProps {
@@ -139,9 +140,17 @@ function TimeChart({ symbol, interval }: { symbol: string; interval: string }) {
     script.async = true;
     script.onload = () => {
       if (typeof window.TradingView !== 'undefined') {
+        // Try multiple symbol formats for better compatibility
+        const symbolFormats = [
+          `HYPERLIQUID:${symbol}USDC`,
+          `BINANCE:${symbol}USDT`,
+          `COINBASE:${symbol}USD`,
+          `${symbol}USD`
+        ];
+        
         new window.TradingView.widget({
           autosize: true,
-          symbol: `HYPERLIQUID:${symbol}USDC`,
+          symbol: symbolFormats[0], // Primary: Hyperliquid
           interval: interval,
           timezone: 'Etc/UTC',
           theme: 'dark',
@@ -150,7 +159,7 @@ function TimeChart({ symbol, interval }: { symbol: string; interval: string }) {
           toolbar_bg: '#0a0a0a',
           enable_publishing: false,
           hide_side_toolbar: false,
-          allow_symbol_change: false,
+          allow_symbol_change: true,
           container_id: `tradingview_time_${symbol}`,
           backgroundColor: '#000000',
           gridColor: 'rgba(0, 255, 255, 0.1)',
@@ -176,18 +185,35 @@ function RangeChart({ symbol, range }: { symbol: string; range: string }) {
     script.async = true;
     script.onload = () => {
       if (typeof window.TradingView !== 'undefined') {
+        // Map range to TradingView interval format
+        const rangeToInterval: Record<string, string> = {
+          '10': '1',    // 10R -> 1 minute
+          '100': '5',   // 100R -> 5 minutes
+          '1000': '15'  // 1000R -> 15 minutes
+        };
+        
+        const tvInterval = rangeToInterval[range] || '5';
+        
+        // Try multiple symbol formats with fallback
+        const symbolFormats = [
+          `BINANCE:${symbol}USDT`,  // Binance has best range support
+          `HYPERLIQUID:${symbol}USDC`,
+          `COINBASE:${symbol}USD`,
+          `${symbol}PERP`
+        ];
+        
         new window.TradingView.widget({
           autosize: true,
-          symbol: `HYPERLIQUID:${symbol}USDC`,
-          interval: range,
+          symbol: symbolFormats[0], // Primary: Binance for range charts
+          interval: tvInterval,
           timezone: 'Etc/UTC',
           theme: 'dark',
-          style: '3',
+          style: '3', // Range chart style
           locale: 'en',
           toolbar_bg: '#0a0a0a',
           enable_publishing: false,
           hide_side_toolbar: false,
-          allow_symbol_change: false,
+          allow_symbol_change: true,
           container_id: `tradingview_range_${symbol}`,
           backgroundColor: '#000000',
           gridColor: 'rgba(0, 255, 255, 0.1)',

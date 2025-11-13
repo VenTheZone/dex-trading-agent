@@ -16,6 +16,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Textarea } from '@/components/ui/textarea';
 import { DEFAULT_PROMPT } from '@/store/tradingStore';
 import { sanitizeNumberWithBounds, sanitizeMultilineText } from '@/lib/utils';
+import { TRADING_TOKENS } from '@/lib/tokenData';
 
 export function TradingControls() {
   const { settings, updateSettings, chartInterval, setChartInterval, chartType, setChartType, isAutoTrading, setAutoTrading, position, aiModel, setAiModel, customPrompt, setCustomPrompt, resetPromptToDefault, mode } = useTradingStore();
@@ -26,10 +27,8 @@ export function TradingControls() {
   const timeIntervals = ['1m', '5m', '15m', '1h', '4h', '1d'];
   const rangeIntervals = ['1R', '10R', '100R', '$100'];
   
-  const availableCoins = [
-    'BTCUSD', 'ETHUSD', 'SOLUSD', 'AVAXUSD', 'BNBUSD', 'ADAUSD', 'DOTUSD', 'MATICUSD',
-    'DOGEUSD', 'SHIBUSD', 'PEPEUSD', 'WIFUSD', 'BONKUSD'
-  ];
+  // Use centralized token list
+  const availableCoins = TRADING_TOKENS.map((token) => token.tradingViewSymbol || `${token.symbol}USD`);
   
   const handleClosePosition = async () => {
     if (!position) return;
