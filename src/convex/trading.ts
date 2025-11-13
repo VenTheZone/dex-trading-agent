@@ -139,7 +139,15 @@ export const analyzeMultipleCharts = action({
       throw new Error("OpenRouter API key not configured");
     }
 
-    const model = args.aiModel || (args.isDemoMode ? "deepseek/deepseek-chat:free" : "deepseek/deepseek-chat");
+    // Validate AI model
+    const validModels = ['deepseek/deepseek-chat', 'qwen/qwen-2.5-72b-instruct'];
+    const requestedModel = args.aiModel || "deepseek/deepseek-chat";
+    if (!validModels.includes(requestedModel)) {
+      throw new Error(`Invalid AI model: ${requestedModel}. Valid models: ${validModels.join(', ')}`);
+    }
+
+    // Demo mode uses same model but with free tier headers (no :free suffix needed)
+    const model = args.aiModel || "deepseek/deepseek-chat";
 
     // Simplified market snapshot (similar to Hyper-Alpha-Arena approach)
     const marketSnapshot = args.charts.map(chart => 

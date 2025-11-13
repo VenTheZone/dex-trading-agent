@@ -499,10 +499,12 @@ export function useTrading() {
 
     let isActive = true;
     let timeoutId: NodeJS.Timeout | null = null;
+    let isRunning = false; // Prevent concurrent executions
 
     const runAutoTrading = async () => {
-      if (!isActive) return;
+      if (!isActive || isRunning) return;
       
+      isRunning = true;
       console.log('[AUTO-TRADING] Cycle starting...', {
         mode,
         isDemoMode: storage.isDemoMode(),
@@ -804,6 +806,8 @@ export function useTrading() {
           reason: `Auto-trading error: ${error.message}`,
           details: `Stack: ${error.stack || 'N/A'}`,
         }).catch(err => console.error("Failed to log error:", err));
+      } finally {
+        isRunning = false;
       }
     };
 
