@@ -134,6 +134,15 @@ export default function Landing() {
                 <Eye className="mr-2 h-6 w-6" />
                 PREVIEW DASHBOARD
               </Button>
+              
+              <Button
+                size="lg"
+                variant="outline"
+                onClick={() => navigate('/docs')}
+                className="text-xl px-8 py-6 border-2 border-purple-500 text-purple-400 hover:bg-purple-500/20 font-bold font-mono shadow-[0_0_20px_rgba(168,85,247,0.4)]"
+              >
+                📚 DOCUMENTATION
+              </Button>
             </motion.div>
           </motion.div>
           
