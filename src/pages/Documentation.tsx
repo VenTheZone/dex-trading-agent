@@ -172,6 +172,114 @@ export default function Documentation() {
               </CardContent>
             </Card>
           </motion.div>
+
+          {/* Tech Stack Section */}
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3 }}
+            className="mt-6"
+          >
+            <Card className="bg-gradient-to-br from-cyan-900/20 to-black/80 border-cyan-500/50 shadow-[0_0_30px_rgba(0,255,255,0.2)]">
+              <CardHeader>
+                <CardTitle className="text-2xl text-cyan-400 font-mono flex items-center gap-2">
+                  🛠️ Tech Stack
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <h4 className="text-lg font-bold text-cyan-400 font-mono mb-3">Frontend</h4>
+                    <ul className="space-y-2 text-sm text-gray-300">
+                      <li className="flex items-center gap-2">
+                        <CheckCircle className="h-4 w-4 text-cyan-400" />
+                        React 19 + TypeScript + Vite
+                      </li>
+                      <li className="flex items-center gap-2">
+                        <CheckCircle className="h-4 w-4 text-cyan-400" />
+                        React Router v7 for routing
+                      </li>
+                      <li className="flex items-center gap-2">
+                        <CheckCircle className="h-4 w-4 text-cyan-400" />
+                        Tailwind CSS v4 + Shadcn UI
+                      </li>
+                      <li className="flex items-center gap-2">
+                        <CheckCircle className="h-4 w-4 text-cyan-400" />
+                        Framer Motion for animations
+                      </li>
+                      <li className="flex items-center gap-2">
+                        <CheckCircle className="h-4 w-4 text-cyan-400" />
+                        Zustand for state management
+                      </li>
+                    </ul>
+                  </div>
+                  <div>
+                    <h4 className="text-lg font-bold text-purple-400 font-mono mb-3">Backend</h4>
+                    <ul className="space-y-2 text-sm text-gray-300">
+                      <li className="flex items-center gap-2">
+                        <CheckCircle className="h-4 w-4 text-purple-400" />
+                        Python FastAPI (REST + WebSockets)
+                      </li>
+                      <li className="flex items-center gap-2">
+                        <CheckCircle className="h-4 w-4 text-purple-400" />
+                        SQLite (local) / PostgreSQL (production)
+                      </li>
+                      <li className="flex items-center gap-2">
+                        <CheckCircle className="h-4 w-4 text-purple-400" />
+                        SQLAlchemy ORM
+                      </li>
+                      <li className="flex items-center gap-2">
+                        <CheckCircle className="h-4 w-4 text-purple-400" />
+                        Celery + Redis for background tasks
+                      </li>
+                    </ul>
+                  </div>
+                  <div>
+                    <h4 className="text-lg font-bold text-green-400 font-mono mb-3">Integrations</h4>
+                    <ul className="space-y-2 text-sm text-gray-300">
+                      <li className="flex items-center gap-2">
+                        <CheckCircle className="h-4 w-4 text-green-400" />
+                        Hyperliquid SDK (@nktkas/hyperliquid)
+                      </li>
+                      <li className="flex items-center gap-2">
+                        <CheckCircle className="h-4 w-4 text-green-400" />
+                        OpenRouter API (DeepSeek/Qwen3 Max)
+                      </li>
+                      <li className="flex items-center gap-2">
+                        <CheckCircle className="h-4 w-4 text-green-400" />
+                        CryptoPanic News API (optional)
+                      </li>
+                      <li className="flex items-center gap-2">
+                        <CheckCircle className="h-4 w-4 text-green-400" />
+                        Binance API (price data fallback)
+                      </li>
+                    </ul>
+                  </div>
+                  <div>
+                    <h4 className="text-lg font-bold text-orange-400 font-mono mb-3">Deployment</h4>
+                    <ul className="space-y-2 text-sm text-gray-300">
+                      <li className="flex items-center gap-2">
+                        <CheckCircle className="h-4 w-4 text-orange-400" />
+                        Docker + Docker Compose
+                      </li>
+                      <li className="flex items-center gap-2">
+                        <CheckCircle className="h-4 w-4 text-orange-400" />
+                        Local-only deployment (no cloud)
+                      </li>
+                      <li className="flex items-center gap-2">
+                        <CheckCircle className="h-4 w-4 text-orange-400" />
+                        Frontend: Port 5173
+                      </li>
+                      <li className="flex items-center gap-2">
+                        <CheckCircle className="h-4 w-4 text-orange-400" />
+                        Backend: Port 8000
+                      </li>
+                    </ul>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </motion.div>
         </motion.div>
 
         {/* Main Content */}
