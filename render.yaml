@@ -1,0 +1,53 @@
+services:
+  # FastAPI Backend Service
+  - type: web
+    name: dex-trading-backend
+    env: docker
+    dockerfilePath: ./Dockerfile
+    dockerContext: ./migration_python
+    plan: free
+    healthCheckPath: /health
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: dex-trading-db
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          name: dex-trading-redis
+          type: redis
+          property: connectionString
+      - key: OPENROUTER_API_KEY
+        sync: false
+      - key: CRYPTOPANIC_AUTH_TOKEN
+        sync: false
+      - key: HYPERLIQUID_API_SECRET
+        sync: false
+      - key: HYPERLIQUID_WALLET_ADDRESS
+        sync: false
+      - key: PORT
+        value: 8000
+
+  # React Frontend Static Site
+  - type: web
+    name: dex-trading-frontend
+    env: static
+    buildCommand: pnpm install && pnpm build
+    staticPublishPath: ./dist
+    plan: free
+    envVars:
+      - key: VITE_PYTHON_API_URL
+        value: https://dex-trading-backend.onrender.com
+      - key: VITE_DOCKER_DEPLOYMENT
+        value: false
+
+databases:
+  # PostgreSQL Database (Free for 90 days)
+  - name: dex-trading-db
+    databaseName: dex_trading
+    user: dex_user
+    plan: free
+
+  # Redis Instance (Free 25MB)
+  - name: dex-trading-redis
+    plan: free

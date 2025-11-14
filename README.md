@@ -73,21 +73,51 @@ DeX Trading Agent is an advanced AI-driven trading system for **Hyperliquid perp
 
 ---
 
+## 🚀 Quick Start
+
+### Option 1: Free Cloud Deployment (Render.com)
+
+Deploy to Render's free tier in minutes:
+
+1. **Fork this repository** to your GitHub account
+2. **Sign up** at [render.com](https://render.com)
+3. **Create Blueprint** from your forked repo
+4. **Set environment variables** (OpenRouter API key required)
+5. **Deploy** - Render handles everything automatically
+
+📖 **Full guide:** See [DEPLOYMENT.md](./DEPLOYMENT.md)
+
+**Note:** Free tier services sleep after 15min inactivity (~30s wake time).
+
+---
+
+### Option 2: Local Development with Docker
+
+See [README.Docker.md](./README.Docker.md) for full Docker setup instructions.
+
+---
+
+### Option 3: Local Development without Docker
+
+See [README.LOCAL.md](./README.LOCAL.md) for local development setup instructions.
+
+---
+
 ## 📋 Prerequisites
 
-**Required Software:**
+**Required API Keys:**
+- **OpenRouter API Key** (for AI analysis) - [Get it here](https://openrouter.ai)
+- **Hyperliquid API Wallet** (for live trading) - [Generate here](https://app.hyperliquid.xyz/API)
+
+**Optional:**
+- **CryptoPanic API Key** (for news feed) - [Get it here](https://cryptopanic.com/developers/api/)
+
+**For Local Development:**
 - Node.js (v18+)
 - pnpm (v8+)
 - Python (v3.11+)
 - Redis (for background tasks)
 - Git
-
-**Required API Keys:**
-- **Hyperliquid API Wallet** (Agent wallet recommended - cannot withdraw funds)
-  - Generate at https://app.hyperliquid.xyz/API
-  - Provides: Master Account Address + Agent Wallet Private Key
-- **OpenRouter API Key** (for AI analysis) - https://openrouter.ai
-- **CryptoPanic API Key** (optional, for news feed)
 
 **Network Information:**
 - Hyperliquid Mainnet: Independent L1 blockchain
@@ -95,8 +125,8 @@ DeX Trading Agent is an advanced AI-driven trading system for **Hyperliquid perp
 
 ---
 
-## 🚀 Quick Start
+## 📚 Documentation
 
-### Option 1: Docker (Recommended)
+📖 **Full guide:** See [DEPLOYMENT.md](./DEPLOYMENT.md)
 
-See [README.Docker.md](./README.Docker.md) for full Docker setup instructions.
+**Note:** Free tier services sleep after 15min inactivity (~30s wake time).
