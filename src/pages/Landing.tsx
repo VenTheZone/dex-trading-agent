@@ -11,12 +11,15 @@ import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { handleError, ERROR_MESSAGES } from "@/lib/error-handler";
 import { UpdateNotification } from "@/components/UpdateNotification";
+import { useLiveMarketData } from "@/hooks/use-live-market-data";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export default function Landing() {
   const navigate = useNavigate();
   const [showPreview, setShowPreview] = useState(false);
   const [selectedToken, setSelectedToken] = useState<TokenData | null>(null);
   const [showTokenModal, setShowTokenModal] = useState(false);
+  const { marketData, isInitialLoad } = useLiveMarketData();
 
   const handleTokenClick = (token: TokenData) => {
     try {
@@ -175,42 +178,84 @@ export default function Landing() {
             ))}
           </motion.div>
           
-          {/* Token List Section - Moved to Bottom */}
+          {/* Token List Section with Live Prices */}
           <motion.div
             initial={{ y: 50, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{ delay: 1.2 }}
             className="mt-24 max-w-6xl w-full"
           >
-            <h2 className="text-3xl font-bold text-cyan-400 font-mono text-center mb-8">
-              🎯 Available Trading Pairs
-            </h2>
+            <div className="flex items-center justify-center gap-3 mb-8">
+              <h2 className="text-3xl font-bold text-cyan-400 font-mono text-center">
+                🎯 Available Trading Pairs
+              </h2>
+              {!isInitialLoad && (
+                <Badge variant="outline" className="bg-green-500/20 text-green-400 border-green-500 font-mono animate-pulse">
+                  🟢 LIVE
+                </Badge>
+              )}
+            </div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {TRADING_TOKENS.map((token, i) => (
-                <motion.div
-                  key={token.symbol}
-                  initial={{ y: 20, opacity: 0 }}
-                  animate={{ y: 0, opacity: 1 }}
-                  transition={{ delay: 1.3 + i * 0.05 }}
-                >
-                  <Card
-                    onClick={() => handleTokenClick(token)}
-                    className="bg-black/80 border-cyan-500/50 p-6 cursor-pointer hover:border-cyan-500 transition-all hover:shadow-[0_0_30px_rgba(0,255,255,0.3)] hover:scale-105"
+              {TRADING_TOKENS.map((token, i) => {
+                const symbolKey = `${token.symbol}USD`;
+                const liveData = marketData[symbolKey];
+                const isLoading = isInitialLoad || liveData?.isLoading;
+                
+                return (
+                  <motion.div
+                    key={token.symbol}
+                    initial={{ y: 20, opacity: 0 }}
+                    animate={{ y: 0, opacity: 1 }}
+                    transition={{ delay: 1.3 + i * 0.05 }}
                   >
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <h3 className="text-xl font-bold text-cyan-400 font-mono mb-2">
-                          {token.pair}
-                        </h3>
-                        <Badge variant="outline" className="bg-purple-500/20 text-purple-400 border-purple-500 font-mono">
-                          {token.maxLeverage}x Leverage
-                        </Badge>
+                    <Card
+                      onClick={() => handleTokenClick(token)}
+                      className="bg-black/80 border-cyan-500/50 p-6 cursor-pointer hover:border-cyan-500 transition-all hover:shadow-[0_0_30px_rgba(0,255,255,0.3)] hover:scale-105"
+                    >
+                      <div className="flex items-center justify-between mb-3">
+                        <div>
+                          <h3 className="text-xl font-bold text-cyan-400 font-mono mb-2">
+                            {token.pair}
+                          </h3>
+                          <Badge variant="outline" className="bg-purple-500/20 text-purple-400 border-purple-500 font-mono">
+                            {token.maxLeverage}x Leverage
+                          </Badge>
+                        </div>
+                        <TrendingUp className="h-8 w-8 text-cyan-400" />
                       </div>
-                      <TrendingUp className="h-8 w-8 text-cyan-400" />
-                    </div>
-                  </Card>
-                </motion.div>
-              ))}
+                      
+                      {/* Live Price Display */}
+                      <div className="mt-4 pt-4 border-t border-cyan-500/30">
+                        {isLoading ? (
+                          <div className="space-y-2">
+                            <Skeleton className="h-4 w-24 bg-cyan-500/20" />
+                            <Skeleton className="h-6 w-32 bg-cyan-500/20" />
+                          </div>
+                        ) : liveData?.error ? (
+                          <div className="text-xs text-red-400 font-mono">
+                            Price unavailable
+                          </div>
+                        ) : liveData?.price ? (
+                          <div>
+                            <div className="text-xs text-gray-400 font-mono mb-1">
+                              Live Price
+                            </div>
+                            <div className="text-lg font-bold text-cyan-100 font-mono">
+                              ${liveData.price.toLocaleString(undefined, {
+                                minimumFractionDigits: 2,
+                                maximumFractionDigits: 2,
+                              })}
+                            </div>
+                            <div className="text-xs text-gray-500 font-mono mt-1">
+                              Updated {Math.floor((Date.now() - liveData.lastUpdated) / 1000)}s ago
+                            </div>
+                          </div>
+                        ) : null}
+                      </div>
+                    </Card>
+                  </motion.div>
+                );
+              })}
             </div>
           </motion.div>
 
