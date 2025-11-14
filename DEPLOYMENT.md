@@ -20,5 +20,11 @@ Docker provides an isolated, consistent environment across different machines.
 ### Quick Start
 
 1. **Clone the repository**
+```
+git clone https://github.com/VenTheZone/dex-trading-agent.git
+cd dex-trading-agent
+```
 
-
+2. **Start the application**
+```docker-compose up --build
+```
