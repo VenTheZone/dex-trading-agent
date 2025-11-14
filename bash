@@ -1,2 +1,1 @@
-railway up
-# or automatic GitHub deploys
+rm render.yaml

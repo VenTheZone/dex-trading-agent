@@ -222,4 +222,4 @@ You have two ways to configure your API keys:
 
 📖 **Full deployment guide:** See [DEPLOYMENT.md](./DEPLOYMENT.md) for detailed setup instructions.
 
-**Local Deployment:** This project is designed for local deployment only. Choose between Docker (recommended) or manual setup based on your preference.
+**⚠️ Local Deployment Only:** This project is designed exclusively for local deployment. Cloud deployment configurations have been removed. Choose between Docker (recommended) or manual setup.
