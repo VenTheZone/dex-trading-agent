@@ -16,10 +16,10 @@ The DeX Trading Agent is a full-stack AI-powered trading system with a React fro
 │                                           (React 19 + TypeScript)                                          │
 │                                           Port: 5173 (Frontend)                                            │
 └────────────────────────────┬────────────────────────────────────┘
-                                                            _______│_______
-                                                          │ HTTP/WebSocket |
-                                                           |_______________|
-                                                                   │
+                                         _______│_______
+                                        │ HTTP/WebSocket |
+                                         |_______________|
+                                                │
 ┌────────────────────────────▼────────────────────────────────────┐
 │                                                      PYTHON BACKEND                                        │
 │                                                   (FastAPI + SQLAlchemy)                                   │
