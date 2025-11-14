@@ -1,11 +1,12 @@
-# Stop Docker daemon
-sudo systemctl stop docker
+# 1. Clean up Docker build cache (safe)
+docker builder prune -a
 
-# Clean up the overlay2 directory issue
-sudo rm -rf /home/jt/Games/Docker-Projects/docker/image/overlay2/layerdb/tmp/*
+# 2. Remove dangling images (safe)
+docker image prune -a
 
-# Restart Docker
-sudo systemctl start docker
+# 3. Restart Docker daemon (safe)
+sudo systemctl restart docker
 
-# Rebuild
-docker-compose up --build
+# 4. Try building again with --no-cache
+docker-compose build --no-cache
+docker-compose up
