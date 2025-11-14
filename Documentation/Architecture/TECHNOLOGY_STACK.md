@@ -4,7 +4,7 @@
 
 The DeX Trading Agent is built with a modern, full-stack architecture combining React 19 for the frontend and Python FastAPI for the backend. This document provides a detailed breakdown of all technologies, libraries, and tools used in the system.
 
-**Last Updated:** November 15, 2025
+**Last Updated:** November 14, 2025
 
 ---
 
@@ -832,6 +832,6 @@ The DeX Trading Agent is built with a modern, full-stack architecture combining 
 
 ---
 
-**Last Updated:** November 14, 2025  
+**Last Updated:** November 15, 2025  
 **Version:** 1.0.0  
-**Maintainer:** DeX Trading Agent Team
+**Maintainer:** VenTheZone
