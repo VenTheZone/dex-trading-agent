@@ -235,16 +235,34 @@ export function canOpenPosition(
 export function getAssetMaxLeverage(symbol: string): number {
   const maxLeverageMap: Record<string, number> = {
     'BTC': 50,
+    'BTCUSD': 50,
+    'BTCUSDC': 50,
     'ETH': 50,
+    'ETHUSD': 50,
+    'ETHUSDC': 50,
     'SOL': 40,
+    'SOLUSD': 40,
+    'SOLUSDC': 40,
     'DOGE': 25,
+    'DOGEUSD': 25,
+    'DOGEUSDC': 25,
     'SHIB': 20,
+    'SHIBUSD': 20,
     'PEPE': 20,
+    'PEPEUSD': 20,
     'WIF': 20,
+    'WIFUSD': 20,
     'BONK': 20,
+    'BONKUSD': 20,
     // Add more assets as needed
   };
   
+  // Try exact match first
+  if (maxLeverageMap[symbol]) {
+    return maxLeverageMap[symbol];
+  }
+  
+  // Try base symbol without USD/USDC suffix
   const baseSymbol = symbol.replace('USD', '').replace('USDC', '').replace('-PERP', '');
   return maxLeverageMap[baseSymbol] || 20; // Default to 20x
 }
