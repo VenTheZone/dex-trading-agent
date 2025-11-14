@@ -1,2 +1,5 @@
-sed -i "271s/'90% margin usage'/'Excessive leverage'/" src/lib/__tests__/liquidation-protection.test.ts
-sed -i "288s/'Position size too large'/'Excessive leverage'/" src/lib/__tests__/liquidation-protection.test.ts
+# 1. Test frontend (should pass)
+pnpm diagnose:price
+
+# 2. Check backend errors
+docker-compose logs backend | grep -i "price"

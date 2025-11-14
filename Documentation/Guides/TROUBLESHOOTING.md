@@ -1093,6 +1093,78 @@ docker-compose run --user $(id -u):$(id -g) backend
 
 ---
 
+### Issue: "Failed to Fetch Prices for All Coins"
+
+**Symptoms:**
+- Auto-trading paused with "No market data available"
+- Backend logs show "404 Not Found" for price fetches
+- Error: "Failed to fetch prices for BTCUSD, ETHUSD, etc."
+
+**Solutions:**
+
+1. **Test frontend price fetching:**
+   
+   1. **Verify TradingView widget is loaded:**
+      - Check if `tvWidget` object exists in browser console
+      - Ensure TradingView script is loaded
+
+   2. **Test individual coin price fetching:**
+      
+      ```javascript
+      // In browser console
+      // Test BTC price
+      fetch('http://localhost:8000/api/hyperliquid/price?symbol=BTCUSD')
+        .then(response => response.json())
+        .then(data => console.log('BTC Price:', data))
+        .catch(error => console.error('BTC Price Error:', error));
+      
+      // Test ETH price
+      fetch('http://localhost:8000/api/hyperliquid/price?symbol=ETHUSD')
+        .then(response => response.json())
+        .then(data => console.log('ETH Price:', data))
+        .catch(error => console.error('ETH Price Error:', error));
+      ```
+
+   3. **Check backend price endpoint:**
+      ```bash
+      # Test price endpoint
+      curl "http://localhost:8000/api/hyperliquid/price?symbol=BTCUSD"
+      curl "http://localhost:8000/api/hyperliquid/price?symbol=ETHUSD"
+      ```
+
+   4. **Verify Hyperliquid API status:**
+      - Check [status.hyperliquid.xyz](https://status.hyperliquid.xyz)
+      - Ensure Hyperliquid is not experiencing downtime
+
+   5. **Check network connectivity:**
+      ```bash
+      # Test connection to Hyperliquid
+      curl https://api.hyperliquid.xyz/info
+      ```
+
+   6. **Verify API key permissions:**
+      - Ensure API key has read access to price data
+      - Check key format and permissions in API Key Setup
+
+   7. **Check backend logs for price fetch errors:**
+      ```bash
+      docker-compose logs backend | grep "price fetch"
+      ```
+
+   8. **Test with fewer coins:**
+      - Temporarily disable trading for 3+ coins
+      - Test if price fetching works with 1-2 coins
+
+   9. **Check system resources:**
+      - High CPU/RAM usage can cause price fetching failures
+      - Monitor with `docker stats`
+
+   10. **Clear browser cache and cookies:**
+      - Clear localStorage related to price data
+      - Restart browser
+
+---
+
 ## 12. Emergency Procedures
 
 ### Emergency: Need to Close All Positions Immediately
