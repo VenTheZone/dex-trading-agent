@@ -12,31 +12,32 @@ The DeX Trading Agent is a full-stack AI-powered trading system with a React fro
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│                         USER INTERFACE                          │
-│                    (React 19 + TypeScript)                      │
-│                     Port: 5173 (Frontend)                       │
+│                                             USER INTERFACE                                                 │
+│                                           (React 19 + TypeScript)                                          │
+│                                           Port: 5173 (Frontend)                                            │
 └────────────────────────────┬────────────────────────────────────┘
-                             │
-                             │ HTTP/WebSocket
-                             │
+                                                            _______│_______
+                                                          │ HTTP/WebSocket |
+                                                           |_______________|
+                                                                   │
 ┌────────────────────────────▼────────────────────────────────────┐
-│                      PYTHON BACKEND                             │
-│                   (FastAPI + SQLAlchemy)                        │
-│                     Port: 8000 (Backend)                        │
-│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐         │
-│  │   REST API   │  │  WebSockets  │  │  Background  │         │
-│  │  Endpoints   │  │  Real-time   │  │    Tasks     │         │
-│  └──────────────┘  └──────────────┘  └──────────────┘         │
+│                                                      PYTHON BACKEND                                        │
+│                                                   (FastAPI + SQLAlchemy)                                   │
+│                                                     Port: 8000 (Backend)                                   │
+│                ┌──────────────┐  ┌──────────────┐  ┌──────────────┐        │
+│                │   REST API             │  │      WebSockets        │  │      Background      │        │
+│                │  Endpoints             │  │      Real-time         │  │        Tasks         │        │
+│                └──────────────┘  └──────────────┘  └──────────────┘        │
 └────────────────────────────┬────────────────────────────────────┘
                              │
         ┌────────────────────┼────────────────────┐
-        │                    │                    │
-        ▼                    ▼                    ▼
+        │                                 │                                  │
+        ▼                                 ▼                                  ▼
 ┌──────────────┐    ┌──────────────┐    ┌──────────────┐
-│  Hyperliquid │    │  OpenRouter  │    │   Binance    │
-│     SDK      │    │   AI API     │    │     API      │
-│  (Trading)   │    │ (DeepSeek/   │    │ (Price Data) │
-│              │    │  Qwen3 Max)  │    │              │
+│  Hyperliquid          │    │       OpenRouter       │    │       Binance         │
+│     SDK               │    │        AI API          │    │         API           │
+│  (Trading)            │    │      (DeepSeek/        │    │     (Price Data)      │
+│                       │    │      Qwen3 Max)        │    │                       │
 └──────────────┘    └──────────────┘    └──────────────┘
 ```
 
