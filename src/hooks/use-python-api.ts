@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { pythonApi, ApiResponse } from '@/lib/python-api-client';
+import { pythonApi } from '@/lib/python-api-client';
 
 /**
  * Hook for fetching trading logs from Python backend

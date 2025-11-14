@@ -2,8 +2,6 @@ import { useEffect, useRef, useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { useTradingStore } from '@/store/tradingStore';
 import { Badge } from '@/components/ui/badge';
-import { toast } from 'sonner';
-import { pythonApi } from '@/lib/python-api-client';
 
 interface TradingChartProps {
   symbol: string;
@@ -13,11 +11,9 @@ interface TradingChartProps {
 export function TradingChart({ symbol, chartId }: TradingChartProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const widgetRef = useRef<any>(null);
-  const { chartInterval, chartType, position, mode, balance } = useTradingStore();
-  const [stopLoss, setStopLoss] = useState<number | null>(null);
-  const [takeProfit, setTakeProfit] = useState<number | null>(null);
+  const { chartInterval, chartType, position, balance } = useTradingStore();
   const [previousBalance, setPreviousBalance] = useState(balance);
-  const [balanceChange, setBalanceChange] = useState(0);
+  const [, setBalanceChange] = useState(0);
   
   // Track balance changes for visual feedback
   useEffect(() => {
@@ -78,27 +74,6 @@ export function TradingChart({ symbol, chartId }: TradingChartProps) {
     };
   }, [symbol, chartInterval, chartType, chartId, position]);
 
-  const handleUpdateStopLoss = async (newPrice: number) => {
-    if (!position) return;
-
-    try {
-      await pythonApi.createTradingLog({
-        action: "update_stop_loss",
-        symbol: position.symbol,
-        reason: `Stop loss updated to ${newPrice.toFixed(2)}`,
-        price: newPrice,
-        size: position.size,
-        side: position.side,
-        mode: mode,
-      });
-      
-      setStopLoss(newPrice);
-      toast.success(`Stop loss updated to ${newPrice.toFixed(2)}`);
-    } catch (error: any) {
-      toast.error(`Failed to update stop loss: ${error.message}`);
-    }
-  };
-  
   return (
     <Card className="h-full bg-black/80 border-cyan-500/30 overflow-hidden relative">
       {position && position.symbol === symbol && (

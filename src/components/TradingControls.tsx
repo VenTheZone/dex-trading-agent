@@ -5,7 +5,7 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useTradingStore } from '@/store/tradingStore';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { toast } from 'sonner';
 import { motion } from 'framer-motion';
@@ -20,7 +20,7 @@ import { TRADING_TOKENS } from '@/lib/tokenData';
 import { pythonApi } from '@/lib/python-api-client';
 
 export function TradingControls() {
-  const { settings, updateSettings, chartInterval, setChartInterval, chartType, setChartType, isAutoTrading, setAutoTrading, position, aiModel, setAiModel, customPrompt, setCustomPrompt, resetPromptToDefault, mode, network } = useTradingStore();
+  const { settings, updateSettings, chartInterval, setChartInterval, chartType, setChartType, isAutoTrading, setAutoTrading, position, aiModel, setAiModel, customPrompt, setCustomPrompt, mode, network } = useTradingStore();
   const [localSettings, setLocalSettings] = useState(settings);
   const [localPrompt, setLocalPrompt] = useState(customPrompt);
   const [testingConnection, setTestingConnection] = useState(false);

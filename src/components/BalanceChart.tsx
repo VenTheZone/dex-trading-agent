@@ -1,7 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Area, AreaChart } from 'recharts';
-import { motion } from 'framer-motion';
-import { TrendingUp, DollarSign, Activity } from 'lucide-react';
+import { TrendingUp, DollarSign } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useBalanceHistory, usePositionHistory } from '@/hooks/use-python-api';
 
@@ -154,10 +153,10 @@ export function BalanceChart() {
                       fontFamily: 'monospace',
                     }}
                     labelStyle={{ color: '#00ffff' }}
-                    formatter={(value: number, name: string, props: any) => [
-                      `$${value.toFixed(2)}`,
-                      `P&L (${props.payload.symbol})`
-                    ]}
+                  formatter={(value: number, _name: string, props: any) => [
+                    `$${value.toFixed(2)}`,
+                    `P&L (${props.payload.symbol})`
+                  ]}
                   />
                   <Line 
                     type="monotone" 

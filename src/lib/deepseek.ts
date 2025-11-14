@@ -82,16 +82,6 @@ When analyzing Range charts, focus on:
 - Always account for liquidation risk when recommending leverage`
       : `LEVERAGE DISABLED: User has set leverage to ${riskSettings.leverage}x. Do not recommend changing leverage.`;
 
-    // Calculate liquidation price for context
-    const calculateLiquidationPrice = (entryPrice: number, leverage: number, side: 'long' | 'short'): number => {
-      const liquidationPercent = (100 / leverage) * 0.9; // 90% of max to account for maintenance margin
-      if (side === 'long') {
-        return entryPrice * (1 - liquidationPercent / 100);
-      } else {
-        return entryPrice * (1 + liquidationPercent / 100);
-      }
-    };
-
     // Funding rate context
     const fundingContext = marketData.fundingRate !== undefined
       ? `

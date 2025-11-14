@@ -28,11 +28,9 @@ export class PaperTradingEngine {
   private orders: Map<string, Order> = new Map();
   private positions: Map<string, Position> = new Map();
   private balance: number;
-  private initialBalance: number;
 
   constructor(initialBalance: number = 10000) {
     this.balance = initialBalance;
-    this.initialBalance = initialBalance;
   }
 
   placeOrder(

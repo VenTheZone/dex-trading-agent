@@ -118,7 +118,7 @@ Remember: You are a decision-support tool. Prioritize capital preservation over 
 
 export const useTradingStore = create<TradingState>()(
   persist(
-    (set, get) => ({
+    (set) => ({
       balance: 10000,
       initialBalance: 10000,
       position: null,

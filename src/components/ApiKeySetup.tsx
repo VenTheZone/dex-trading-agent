@@ -22,7 +22,7 @@ export function ApiKeySetup({ onComplete }: ApiKeySetupProps) {
     hyperliquid: { apiKey: '', apiSecret: '', walletAddress: '' },
     openRouter: '',
   });
-  const [mode, setMode] = useState<'wallet' | 'api' | 'demo'>('wallet');
+  const [, setMode] = useState<'wallet' | 'api' | 'demo'>('wallet');
   const [backendKeysConfigured, setBackendKeysConfigured] = useState(false);
 
   useEffect(() => {
