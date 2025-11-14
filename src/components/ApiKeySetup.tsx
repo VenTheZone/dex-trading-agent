@@ -306,7 +306,7 @@ export function ApiKeySetup({ onComplete }: ApiKeySetupProps) {
                 </h3>
 
                 <div className="space-y-5">
-                  {/* Master Account Address */}
+                  {/* Hyperliquid Wallet Address */}
                   <div className="space-y-2">
                     <Label className="text-cyan-400 font-mono text-base font-bold">
                       1️⃣ Hyperliquid Wallet Address *
