@@ -13,7 +13,6 @@
     "stop": "node -e \"require('child_process').execSync(process.platform === 'win32' ? 'stop.bat' : './stop.sh', {stdio: 'inherit'})\""
   },
   "dependencies": {
-    "@convex-dev/auth": "^0.0.86",
     "@faker-js/faker": "^9.8.0",
     "@hookform/resolvers": "^5.0.1",
     "@jridgewell/trace-mapping": "^0.3.25",
@@ -54,8 +53,6 @@
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "cmdk": "^1.1.1",
-    "convex": "^1.29.0",
-    "crud": "link:convex-helpers/server/crud",
     "date-fns": "^4.1.0",
     "embla-carousel-react": "^8.6.0",
     "framer-motion": "^12.15.0",

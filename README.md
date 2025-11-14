@@ -338,10 +338,10 @@ The landing page features a cyberpunk-themed design with:
 - **Database**: SQLite (local) / PostgreSQL (production)
 - **Background Tasks**: Celery + Redis
 - **Authentication**: None (local/private use only)
+- **Data Layer**: Python backend with SQLAlchemy ORM
 - **AI**: DeepSeek V3.1 (Free) and Qwen3 Max (Paid) via OpenRouter API
 - **Trading**: Hyperliquid SDK (@nktkas/hyperliquid)
 - **State Management**: Zustand
-- **Data Layer**: Python backend replaces Convex (migration complete)
 
 ## 📋 Prerequisites
 
@@ -433,14 +433,6 @@ In a new terminal (keep Convex dev running):
 pnpm dev
 ```
 
-Within VITE, in order to show the webapp
-```
---host
-```
-
-
-The application will be available at `http://localhost:5173`
-
 ### 6. Configure API Keys
 
 You have two options for configuring API keys:
@@ -480,12 +472,6 @@ In a new terminal (keep Convex dev running):
 ```
 pnpm dev
 ```
-
-Within VITE, in order to show the webapp
-```
---host
-```
-
 
 The application will be available at `http://localhost:5173`
 
