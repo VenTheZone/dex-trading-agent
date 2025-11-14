@@ -6,7 +6,7 @@ The DeX Trading Agent is designed for **local and private use only**, eliminatin
 
 **Design Philosophy:** Simplicity and security through network isolation rather than application-level authentication.
 
-**Last Updated:** November 14, 2025
+**Last Updated:** November 15, 2025
 
 ---
 

@@ -8,7 +8,7 @@ The DeX Trading Agent frontend uses a **TypeScript API client** (`python-api-cli
 
 **Base URL:** Configured via `VITE_PYTHON_API_URL` environment variable (default: `http://localhost:8000`)
 
-**Last Updated:** November 14, 2025
+**Last Updated:** November 15, 2025
 
 ---
 

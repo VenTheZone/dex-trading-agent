@@ -8,7 +8,7 @@ The DeX Trading Agent uses a **Python FastAPI backend** to handle trading operat
 
 **API Version:** 1.0.0
 
-**Last Updated:** November 14, 2025
+**Last Updated:** November 15, 2025
 
 ---
 
@@ -1059,6 +1059,6 @@ The API maintains compatibility with the previous Convex backend:
 
 ---
 
-**Last Updated:** November 14, 2025  
+**Last Updated:** November 15, 2025  
 **API Version:** 1.0.0  
-**Maintained By:** DeX Trading Agent Team
+**Maintained By:** VenTheZone

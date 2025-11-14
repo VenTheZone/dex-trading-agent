@@ -10,7 +10,7 @@ The DeX Trading Agent integrates with **Hyperliquid**, a decentralized perpetual
 - **Mainnet:** `https://api.hyperliquid.xyz` (real funds)
 - **Testnet:** `https://api.hyperliquid-testnet.xyz` (test funds)
 
-**Last Updated:** November 14, 2025
+**Last Updated:** November 15, 2025
 
 ---
 
