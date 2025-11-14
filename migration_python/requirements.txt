@@ -22,7 +22,7 @@ requests==2.31.0  # For health checks and simple HTTP requests
 websockets==12.0
 
 # Crypto/Trading APIs
-ccxt==4.1.0  # Multi-exchange library
+ccxt==4.5.18  # Multi-exchange library
 eth-account==0.9.0  # For Hyperliquid wallet signing
 
 # AI/ML
