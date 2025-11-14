@@ -181,9 +181,9 @@ This will automatically:
 **Required for Live Trading:**
 - **OpenRouter API Key** (for AI analysis) - [Get it here](https://openrouter.ai)
 - **Hyperliquid Wallet** (for live trading):
-  - Your main wallet address (where funds are stored)
-  - Agent wallet private key (generate at [app.hyperliquid.xyz/API](https://app.hyperliquid.xyz/API))
-  - **Note:** No separate "API key" needed - Hyperliquid uses wallet-based authentication
+  - Your **Hyperliquid wallet address** (where funds are stored)
+  - **Agent wallet private key** (generate at [app.hyperliquid.xyz/API](https://app.hyperliquid.xyz/API))
+  - **Note:** Hyperliquid uses wallet-based authentication - no separate "API key" exists
 
 **Optional:**
 - **CryptoPanic API Key** (for news feed) - [Get it here](https://cryptopanic.com/developers/api/)

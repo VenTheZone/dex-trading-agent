@@ -267,14 +267,14 @@ export function ApiKeySetup({ onComplete }: ApiKeySetupProps) {
                   <Card className="bg-black/50 border-cyan-500/30">
                     <CardHeader className="pb-3">
                       <CardTitle className="text-base font-bold text-cyan-400 font-mono">
-                        STEP 1: Get Your Main Wallet Address
+                        STEP 1: Get Your Hyperliquid Wallet Address
                       </CardTitle>
                     </CardHeader>
                     <CardContent className="text-sm text-gray-300 space-y-2">
                       <p>• Go to <a href="https://app.hyperliquid.xyz" target="_blank" rel="noopener noreferrer" className="text-cyan-400 hover:underline">app.hyperliquid.xyz</a></p>
                       <p>• Connect your wallet (MetaMask, etc.)</p>
                       <p>• Copy your wallet address (top right corner)</p>
-                      <p className="text-yellow-300 font-mono">👉 This goes in "Master Account Address" below</p>
+                      <p className="text-yellow-300 font-mono">👉 This goes in "Hyperliquid Wallet Address" below</p>
                     </CardContent>
                   </Card>
 
@@ -309,7 +309,7 @@ export function ApiKeySetup({ onComplete }: ApiKeySetupProps) {
                   {/* Master Account Address */}
                   <div className="space-y-2">
                     <Label className="text-cyan-400 font-mono text-base font-bold">
-                      1️⃣ Master Account Address (Your Main Wallet) *
+                      1️⃣ Hyperliquid Wallet Address *
                     </Label>
                     <Input
                       placeholder="0x1234...5678"
@@ -324,7 +324,7 @@ export function ApiKeySetup({ onComplete }: ApiKeySetupProps) {
                       className="bg-black/50 border-cyan-500/30 text-cyan-100 font-mono focus:border-cyan-500 h-12"
                     />
                     <p className="text-xs text-gray-400 font-mono">
-                      💰 Your main wallet address from Hyperliquid (where your balance is stored)
+                      💰 Your Hyperliquid wallet address (where your funds are stored)
                     </p>
                   </div>
 
