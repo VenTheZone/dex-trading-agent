@@ -205,11 +205,111 @@ export default function Landing() {
             </div>
           </motion.div>
 
-          {/* Getting Started Guide */}
+          {/* Risk Management Section */}
           <motion.div
             initial={{ y: 50, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{ delay: 1.5 }}
+            className="mt-24 max-w-6xl w-full"
+          >
+            <h2 className="text-3xl font-bold text-cyan-400 font-mono text-center mb-8">
+              🛡️ 8-Layer Risk Management Framework
+            </h2>
+            <p className="text-center text-gray-400 mb-8 max-w-3xl mx-auto">
+              Advanced perpetual futures risk management designed to protect your capital and maximize profitability
+            </p>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              {[
+                { 
+                  icon: '🎯', 
+                  title: 'Liquidation Protection', 
+                  desc: 'Real-time monitoring with 15-20% safety buffers from liquidation price'
+                },
+                { 
+                  icon: '⚖️', 
+                  title: 'Position Sizing', 
+                  desc: 'Dynamic sizing based on leverage, volatility, and AI confidence levels'
+                },
+                { 
+                  icon: '💰', 
+                  title: 'Funding Rate Management', 
+                  desc: 'Tracks 8-hour funding costs and detects crowded positions'
+                },
+                { 
+                  icon: '🎚️', 
+                  title: 'Smart TP/SL', 
+                  desc: 'Intelligent stop-loss placement with trailing stops and 1:2 risk/reward minimum'
+                },
+                { 
+                  icon: '📊', 
+                  title: 'Market Structure', 
+                  desc: 'Open interest monitoring and long/short ratio analysis'
+                },
+                { 
+                  icon: '🤖', 
+                  title: 'AI Risk Assessment', 
+                  desc: 'Multi-factor scoring with confidence-based execution'
+                },
+                { 
+                  icon: '🚨', 
+                  title: 'Emergency Controls', 
+                  desc: 'Auto-pause at 80% margin usage and manual override options'
+                },
+                { 
+                  icon: '📡', 
+                  title: 'Real-Time Monitoring', 
+                  desc: 'Live P&L tracking with liquidation distance alerts'
+                },
+              ].map((feature, i) => (
+                <motion.div
+                  key={i}
+                  initial={{ y: 20, opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
+                  transition={{ delay: 1.6 + i * 0.05 }}
+                >
+                  <Card className="bg-gradient-to-br from-purple-900/20 to-black/80 border-purple-500/50 p-4 h-full hover:border-purple-500 transition-all hover:shadow-[0_0_30px_rgba(168,85,247,0.3)]">
+                    <div className="text-3xl mb-3">{feature.icon}</div>
+                    <h3 className="text-lg font-bold text-purple-400 font-mono mb-2">
+                      {feature.title}
+                    </h3>
+                    <p className="text-sm text-gray-400">{feature.desc}</p>
+                  </Card>
+                </motion.div>
+              ))}
+            </div>
+            
+            <motion.div
+              initial={{ y: 20, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ delay: 2.0 }}
+              className="mt-6"
+            >
+              <Card className="bg-gradient-to-br from-cyan-900/20 to-black/80 border-cyan-500/50 p-6 shadow-[0_0_30px_rgba(0,255,255,0.2)]">
+                <div className="flex items-start gap-4">
+                  <div className="w-12 h-12 bg-cyan-500/20 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <Shield className="h-6 w-6 text-cyan-400" />
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-bold text-cyan-400 font-mono mb-2">
+                      Risk Management Philosophy
+                    </h3>
+                    <p className="text-gray-400 text-sm">
+                      The Trading Agent prioritizes <strong className="text-cyan-300">capital preservation over aggressive gains</strong>. 
+                      It's designed to survive market volatility and avoid catastrophic losses through disciplined risk management, 
+                      proper position sizing, and AI-driven decision making that accounts for the unique risks of leveraged perpetual futures trading.
+                    </p>
+                  </div>
+                </div>
+              </Card>
+            </motion.div>
+          </motion.div>
+
+          {/* Getting Started Guide */}
+          <motion.div
+            initial={{ y: 50, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ delay: 2.2 }}
             className="mt-24 max-w-6xl w-full pb-16"
           >
             <h2 className="text-3xl font-bold text-cyan-400 font-mono text-center mb-8">
