@@ -6,6 +6,8 @@ The DeX Trading Agent is a full-stack AI-powered trading system with a React fro
 
 **Deployment Model:** Local-only deployment (no cloud configurations)
 
+**Last Updated:** November 14, 2025
+
 ## High-Level Architecture
 
 
