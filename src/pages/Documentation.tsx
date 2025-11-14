@@ -137,6 +137,41 @@ export default function Documentation() {
               </p>
             </div>
           </div>
+
+          {/* Developer Inspiration Section */}
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}
+            className="mt-6"
+          >
+            <Card className="bg-gradient-to-br from-purple-900/20 to-black/80 border-purple-500/50 shadow-[0_0_30px_rgba(168,85,247,0.2)]">
+              <CardContent className="p-6">
+                <div className="flex items-start gap-4">
+                  <div className="w-12 h-12 bg-purple-500/20 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <Brain className="h-6 w-6 text-purple-400" />
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-bold text-purple-400 font-mono mb-2">
+                      💡 Project Inspiration
+                    </h3>
+                    <p className="text-gray-300 text-sm leading-relaxed">
+                      This project is inspired by{' '}
+                      <a 
+                        href="https://nof1.ai/" 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="text-cyan-400 hover:text-cyan-300 underline font-semibold"
+                      >
+                        Nof1's Alpha Arena
+                      </a>
+                      . I saw how well DeepSeek and Qwen3 Max performed during the competition. But it's obvious people at Nof1 have never traded before in their life, so I decided to build my own version. As a seasonal futures trader, I wanted to create a system that actually understands risk management, liquidation protection, and the realities of leveraged perpetual futures trading.
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </motion.div>
         </motion.div>
 
         {/* Main Content */}
