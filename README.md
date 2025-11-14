@@ -178,9 +178,12 @@ This will automatically:
 
 ## 📋 Prerequisites
 
-**Required API Keys:**
+**Required for Live Trading:**
 - **OpenRouter API Key** (for AI analysis) - [Get it here](https://openrouter.ai)
-- **Hyperliquid API Wallet** (for live trading) - [Generate here](https://app.hyperliquid.xyz/API)
+- **Hyperliquid Wallet** (for live trading):
+  - Your main wallet address (where funds are stored)
+  - Agent wallet private key (generate at [app.hyperliquid.xyz/API](https://app.hyperliquid.xyz/API))
+  - **Note:** No separate "API key" needed - Hyperliquid uses wallet-based authentication
 
 **Optional:**
 - **CryptoPanic API Key** (for news feed) - [Get it here](https://cryptopanic.com/developers/api/)
@@ -193,12 +196,6 @@ You have two ways to configure your API keys:
    - Set API keys in the Python backend's `.env` file before deployment
    - Keys are loaded on server startup
    - Best for permanent installations and Docker deployments
-   - Example:
-     
-     ```env
-     OPENROUTER_API_KEY=your_openrouter_key
-     HYPERLIQUID_API_KEY=your_hyperliquid_key
-     ```
 
 2. **Browser Configuration (via UI):**
    - API keys can be set directly in the DeX Trading Agent web interface
