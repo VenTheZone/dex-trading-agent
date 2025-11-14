@@ -12,6 +12,48 @@ DeX Trading Agent is an advanced AI-driven trading system for **Hyperliquid perp
 
 ---
 
+## 📊 System Workflow
+
+The DeX Trading Agent follows a comprehensive system workflow designed to maximize profitability while minimizing risk in perpetual futures trading:
+
+1. **Market Data Collection & Analysis**
+   - Aggregates real-time price data, funding rates, and open interest from Hyperliquid
+   - Performs multi-chart correlation analysis across 4 TradingView charts
+   - Monitors mark price vs index price discrepancies
+   - Evaluates order book depth and liquidity
+
+2. **AI-Powered Decision Engine**
+   - DeepSeek V3.1 / Qwen3 Max AI models analyze technical patterns, market sentiment, and derivatives-specific factors
+   - Calculates liquidation prices with safety buffers based on leverage and position size
+   - Determines optimal position sizing considering account balance, volatility, and confidence level
+   - Evaluates funding rate impact on profitability and position hold duration
+
+3. **Risk Assessment & Position Sizing**
+   - Multi-factor risk scoring combines technical, fundamental, and derivatives-specific indicators
+   - Confidence-based execution only when threshold is met
+   - Dynamic position sizing adjusts to market conditions and volatility
+   - AI leverage recommendations (1x-40x) based on market analysis
+
+4. **Trade Execution & Position Management**
+   - Smart stop loss placement at key technical levels with 15-20% buffer from liquidation price
+   - Take profit optimization with minimum 1:2 risk/reward ratio
+   - Trailing stop loss dynamically adjusts as position moves into profit
+   - Real-time monitoring of liquidation distance and margin usage
+
+5. **Risk Management & Emergency Protocols**
+   - Auto-pause when margin usage >80% or consecutive losses exceed threshold
+   - Emergency override button to instantly close all positions
+   - Daily loss limits to prevent catastrophic drawdowns
+   - Position limits for concurrent trades
+
+6. **Performance Monitoring & Analytics**
+   - Live P&L tracking with real-time risk metrics
+   - Comprehensive trading logs with AI reasoning
+   - Performance metrics and historical P&L analysis
+   - Alert system for approaching liquidation, high funding rates, and price discrepancies
+
+---
+
 ## ✨ Key Features
 
 ### 🤖 AI-Powered Perpetual Futures Analysis
