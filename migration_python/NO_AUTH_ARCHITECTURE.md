@@ -34,9 +34,11 @@ This project is designed for **local and private use only**. No authentication s
 - CORS: Allow `localhost:5173` (Vite dev server) only
 
 ### Security Considerations
-- **Local only**: Bind to `127.0.0.1` (not `0.0.0.0`)
-- **Firewall**: Block external access
-- **API keys**: Store in `.env` file (never commit)
+- **Production Deployment**: CORS allows all origins for Docker/cloud compatibility
+- **Local Development**: Can restrict CORS to localhost if needed
+- **Firewall**: Use network-level security for production deployments
+- **API keys**: Store in `.env` file (never commit - ensure .gitignore is configured)
 - **Private wallet**: Use dedicated wallet for trading
+- **Docker Volumes**: Backend volume is writable to allow database operations
 
 ## Quick Start (No Auth)
