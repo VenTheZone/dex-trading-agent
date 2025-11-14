@@ -30,8 +30,8 @@ WORKDIR /app
 # Copy package files
 COPY package.json pnpm-lock.yaml* ./
 
-# Install production dependencies only
-RUN pnpm install --prod --frozen-lockfile
+# Install vite for preview command (required to serve built app)
+RUN pnpm add -D vite
 
 # Copy built application from builder
 COPY --from=builder /app/dist ./dist
