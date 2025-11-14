@@ -200,6 +200,6 @@ This will automatically:
 
 ## 📚 Documentation
 
-📖 **Full guide:** See [DEPLOYMENT.md](./DEPLOYMENT.md)
+📖 **Full deployment guide:** See [DEPLOYMENT.md](./DEPLOYMENT.md) for detailed setup instructions.
 
-**Note:** Free tier services sleep after 15min inactivity (~30s wake time).
+**Local Deployment:** This project is designed for local deployment only. Choose between Docker (recommended) or manual setup based on your preference.
