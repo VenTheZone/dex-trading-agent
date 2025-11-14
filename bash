@@ -1,12 +1,11 @@
-# 1. Clean up Docker build cache (safe)
-docker builder prune -a
+# Check if Docker daemon is running
+sudo systemctl status docker
 
-# 2. Remove dangling images (safe)
-docker image prune -a
+# Test DNS resolution
+ping docker.io
 
-# 3. Restart Docker daemon (safe)
-sudo systemctl restart docker
+# Check Docker info
+docker info
 
-# 4. Try building again with --no-cache
-docker-compose build --no-cache
-docker-compose up
+# Try pulling an image manually to see detailed error
+docker pull python:3.11-slim
