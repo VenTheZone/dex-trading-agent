@@ -5,11 +5,14 @@ All Convex dependencies have been successfully removed from the DeX Trading Agen
 
 ## What Was Removed
 - ❌ `src/convex/` directory (all backend functions)
+- ❌ `convex.json` configuration file
+- ❌ `set-convex-jwt-env.sh` script
 - ❌ `@convex-dev/auth` package
 - ❌ `convex` package
 - ❌ `crud` (convex-helpers) package
 - ❌ `.env.local` with Convex deployment URLs
 - ❌ All Convex references in documentation
+- ❌ Convex build commands in `vercel.json`
 
 ## Current Architecture
 ✅ **Backend**: Python FastAPI (migration_python/main.py)

@@ -1,8 +1,8 @@
 "use node";
 
 // This file is kept for reference but not actively used.
-// Market data is fetched directly via Binance API in src/convex/marketData.ts
-// to avoid CCXT dependency issues in the Convex environment.
+// Market data is fetched directly via Binance API in the Python backend
+// to avoid CCXT dependency issues.
 
 export interface MarketData {
   symbol: string;
@@ -17,4 +17,4 @@ export interface MarketData {
 }
 
 // Note: Direct API calls are used instead of CCXT in production
-// See src/convex/marketData.ts for the actual implementation
+// See migration_python/services/market_data_service.py for the actual implementation
