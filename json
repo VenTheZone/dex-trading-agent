@@ -1,3 +1,17 @@
-{
-  "dns": ["8.8.8.8", "8.8.4.4"]
-}
+   {
+     "action": {
+       "type": "order",
+       "orders": [{
+         "a": Number,  // asset index
+         "b": Boolean, // isBuy
+         "p": String,  // price
+         "s": String,  // size
+         "r": Boolean, // reduceOnly
+         "t": {"limit": {"tif": "Gtc"}}
+       }],
+       "grouping": "na"
+     },
+     "nonce": Number,
+     "signature": {...}
+   }
+   
