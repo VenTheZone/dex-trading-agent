@@ -1,1 +1,1 @@
-docker ps | grep dex
+docker compose down -v
