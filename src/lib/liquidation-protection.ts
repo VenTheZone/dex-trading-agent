@@ -204,6 +204,23 @@ export function canOpenPosition(
   // Check if account balance covers maintenance margin with buffer
   const marginUsagePercent = (maintenanceMargin / accountBalance) * 100;
   
+  // ADDITIONAL CHECK: Prevent excessive leverage
+  // Total notional should not exceed 10x account balance (conservative limit)
+  const effectiveLeverage = totalNotional / accountBalance;
+  if (effectiveLeverage > 10) {
+    // Calculate max safe position size based on 10x leverage limit
+    const maxSafeNotional = accountBalance * 10;
+    const existingNotional = totalNotional - (newPositionSize * newPositionPrice);
+    const maxNewNotional = maxSafeNotional - existingNotional;
+    const maxSafeSize = maxNewNotional / newPositionPrice;
+    
+    return {
+      canOpen: false,
+      reason: `Excessive leverage: ${effectiveLeverage.toFixed(1)}x exceeds safe limit of 10x`,
+      maxSafeSize: Math.max(0, maxSafeSize),
+    };
+  }
+  
   if (marginUsagePercent > 90) {
     return {
       canOpen: false,
