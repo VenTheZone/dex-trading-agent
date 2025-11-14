@@ -542,6 +542,99 @@ export function useTrading() {
         return;
       }
 
+      // RISK MANAGEMENT: Validate leverage against asset-specific limits
+      const { validateLeverage } = await import('@/lib/liquidation-protection');
+      const leverageValidation = validateLeverage(symbol, settings.leverage);
+      
+      if (!leverageValidation.valid) {
+        toast.error(
+          `⚠️ Leverage too high for ${symbol}`,
+          {
+            description: `Max leverage: ${leverageValidation.maxLeverage}x. Your setting: ${settings.leverage}x`,
+            duration: 7000,
+          }
+        );
+        
+        await pythonApi.createTradingLog({
+          action: "trade_rejected",
+          symbol,
+          reason: `Leverage validation failed: ${settings.leverage}x exceeds max ${leverageValidation.maxLeverage}x`,
+          details: reasoning,
+        });
+        
+        return;
+      }
+
+      // RISK MANAGEMENT: Check if position can be safely opened
+      if (action !== "close_position" && side) {
+        const { canOpenPosition } = await import('@/lib/liquidation-protection');
+        const existingPositions = position ? [{
+          size: position.size,
+          entryPrice: position.entryPrice,
+          leverage: position.leverage || settings.leverage,
+        }] : [];
+        
+        const positionCheck = canOpenPosition(
+          balance,
+          existingPositions,
+          size,
+          price
+        );
+        
+        if (!positionCheck.canOpen) {
+          toast.error(
+            `⚠️ Position Rejected: ${positionCheck.reason}`,
+            {
+              description: positionCheck.maxSafeSize 
+                ? `Max safe size: ${positionCheck.maxSafeSize.toFixed(4)} ${symbol}`
+                : 'Reduce position size or close existing positions',
+              duration: 10000,
+            }
+          );
+          
+          await pythonApi.createTradingLog({
+            action: "trade_rejected",
+            symbol,
+            reason: `Position safety check failed: ${positionCheck.reason}`,
+            details: `Requested size: ${size}, Max safe: ${positionCheck.maxSafeSize?.toFixed(4) || 'N/A'}`,
+          });
+          
+          return;
+        }
+        
+        // Calculate and log liquidation risk
+        const { assessLiquidationRisk } = await import('@/lib/liquidation-protection');
+        const riskData = assessLiquidationRisk(
+          {
+            symbol,
+            side,
+            size,
+            entryPrice: price,
+            leverage: settings.leverage,
+          },
+          price,
+          balance
+        );
+        
+        // Warning for high-risk positions
+        if (riskData.riskLevel === 'danger' || riskData.riskLevel === 'critical') {
+          toast.warning(
+            `⚠️ HIGH RISK POSITION: ${riskData.riskLevel.toUpperCase()}`,
+            {
+              description: `Liquidation at ${riskData.liquidationPrice.toFixed(2)} (${riskData.distanceToLiquidation.toFixed(1)}% away)`,
+              duration: 10000,
+            }
+          );
+        }
+        
+        await pythonApi.createTradingLog({
+          action: "risk_assessment",
+          symbol,
+          reason: `Risk Level: ${riskData.riskLevel.toUpperCase()}`,
+          details: `Liq Price: ${riskData.liquidationPrice.toFixed(2)}, Distance: ${riskData.distanceToLiquidation.toFixed(1)}%, Margin: ${riskData.maintenanceMarginRate * 100}%`,
+        });
+      }
+
       // Return trade details for confirmation modal if not skipping
       if (!skipConfirmation) {
         return {
