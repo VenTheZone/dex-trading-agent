@@ -10,6 +10,7 @@ import { TRADING_TOKENS, TokenData } from "@/lib/tokenData";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { handleError, ERROR_MESSAGES } from "@/lib/error-handler";
+import { UpdateNotification } from "@/components/UpdateNotification";
 
 export default function Landing() {
   const navigate = useNavigate();
@@ -53,6 +54,7 @@ export default function Landing() {
   return (
     <div className="min-h-screen bg-black text-cyan-100">
       <TradingBackground />
+      <UpdateNotification />
       
       <div className="relative z-10">
         {/* Hero Section */}
