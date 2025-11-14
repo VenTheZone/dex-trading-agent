@@ -10,6 +10,8 @@ This document provides detailed pseudo code and algorithmic descriptions for all
 4. [Position Management](#position-management)
 5. [Risk Management](#risk-management)
 6. [Balance Tracking](#balance-tracking)
+7. [Paper Trading Engine](#paper-trading-engine)
+8. [Liquidation Protection](#liquidation-protection)
 
 ---
 
@@ -17,4 +19,8 @@ This document provides detailed pseudo code and algorithmic descriptions for all
 
 ### Main Auto-Trading Cycle
 
+**Purpose:** Continuously monitors markets and executes trades based on AI recommendations.
 
+**Frequency:** Every 60 seconds (1 minute)
+
+**Pseudo Code:**
