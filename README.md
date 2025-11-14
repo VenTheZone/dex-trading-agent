@@ -75,31 +75,24 @@ DeX Trading Agent is an advanced AI-driven trading system for **Hyperliquid perp
 
 ## 🚀 Quick Start
 
-### Option 1: Free Cloud Deployment (Render.com)
+### Option 1: Docker Deployment (Recommended)
 
-Deploy to Render's free tier in minutes:
+Run the full stack with Docker:
 
-1. **Fork this repository** to your GitHub account
-2. **Sign up** at [render.com](https://render.com)
-3. **Create Blueprint** from your forked repo
-4. **Set environment variables** (OpenRouter API key required)
-5. **Deploy** - Render handles everything automatically
+```bash
+# Clone the repository
+git clone https://github.com/your-username/de-x-trading-agent.git
+cd de-x-trading-agent
 
-📖 **Full guide:** See [DEPLOYMENT.md](./DEPLOYMENT.md)
+# Start the application
+docker-compose up --build
+```
 
-**Note:** Free tier services sleep after 15min inactivity (~30s wake time).
-
----
-
-### Option 2: Local Development with Docker
-
-See [README.Docker.md](./README.Docker.md) for full Docker setup instructions.
-
----
-
-### Option 3: Local Development without Docker
-
-See [README.LOCAL.md](./README.LOCAL.md) for local development setup instructions.
+This will automatically:
+- Build and run the React frontend
+- Start the Python FastAPI backend
+- Initialize the database
+- Set up background services
 
 ---
 
