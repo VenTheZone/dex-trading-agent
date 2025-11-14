@@ -13,13 +13,15 @@ import { handleError, ERROR_MESSAGES } from "@/lib/error-handler";
 import { UpdateNotification } from "@/components/UpdateNotification";
 import { useLiveMarketData } from "@/hooks/use-live-market-data";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { RefreshCw } from "lucide-react";
 
 export default function Landing() {
   const navigate = useNavigate();
   const [showPreview, setShowPreview] = useState(false);
   const [selectedToken, setSelectedToken] = useState<TokenData | null>(null);
   const [showTokenModal, setShowTokenModal] = useState(false);
-  const { marketData, isInitialLoad } = useLiveMarketData();
+  const { marketData, isInitialLoad, globalError, retrySymbol } = useLiveMarketData();
 
   const handleTokenClick = (token: TokenData) => {
     try {
@@ -189,17 +191,37 @@ export default function Landing() {
               <h2 className="text-3xl font-bold text-cyan-400 font-mono text-center">
                 🎯 Available Trading Pairs
               </h2>
-              {!isInitialLoad && (
+              {!isInitialLoad && !globalError && (
                 <Badge variant="outline" className="bg-green-500/20 text-green-400 border-green-500 font-mono animate-pulse">
                   🟢 LIVE
                 </Badge>
               )}
             </div>
+
+            {/* Global Error Alert */}
+            {globalError && (
+              <Alert variant="destructive" className="mb-6 bg-red-900/20 border-red-500/50">
+                <AlertDescription className="flex items-center justify-between">
+                  <span>{globalError}</span>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => window.location.reload()}
+                    className="ml-4"
+                  >
+                    <RefreshCw className="h-4 w-4 mr-2" />
+                    Refresh Page
+                  </Button>
+                </AlertDescription>
+              </Alert>
+            )}
+
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               {TRADING_TOKENS.map((token, i) => {
                 const symbolKey = `${token.symbol}USD`;
                 const liveData = marketData[symbolKey];
                 const isLoading = isInitialLoad || liveData?.isLoading;
+                const hasError = liveData?.error && liveData?.retryCount === 3;
                 
                 return (
                   <motion.div
@@ -224,16 +246,45 @@ export default function Landing() {
                         <TrendingUp className="h-8 w-8 text-cyan-400" />
                       </div>
                       
-                      {/* Live Price Display */}
+                      {/* Live Price Display with Error Handling */}
                       <div className="mt-4 pt-4 border-t border-cyan-500/30">
                         {isLoading ? (
                           <div className="space-y-2">
                             <Skeleton className="h-4 w-24 bg-cyan-500/20" />
                             <Skeleton className="h-6 w-32 bg-cyan-500/20" />
                           </div>
-                        ) : liveData?.error ? (
-                          <div className="text-xs text-red-400 font-mono">
-                            Price unavailable
+                        ) : hasError ? (
+                          <div className="space-y-2">
+                            <div className="text-xs text-red-400 font-mono mb-1">
+                              {liveData.error}
+                            </div>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                retrySymbol(symbolKey);
+                              }}
+                              className="text-xs border-cyan-500/50 text-cyan-400 hover:bg-cyan-500/20"
+                            >
+                              <RefreshCw className="h-3 w-3 mr-1" />
+                              Retry
+                            </Button>
+                          </div>
+                        ) : liveData?.retryCount && liveData.retryCount > 0 ? (
+                          <div className="space-y-2">
+                            <div className="text-xs text-yellow-400 font-mono mb-1 flex items-center gap-2">
+                              <RefreshCw className="h-3 w-3 animate-spin" />
+                              {liveData.error}
+                            </div>
+                            {liveData.price > 0 && (
+                              <div className="text-sm text-gray-500 font-mono">
+                                Last: ${liveData.price.toLocaleString(undefined, {
+                                  minimumFractionDigits: 2,
+                                  maximumFractionDigits: 2,
+                                })}
+                              </div>
+                            )}
                           </div>
                         ) : liveData?.price ? (
                           <div>
