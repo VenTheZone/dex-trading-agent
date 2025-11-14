@@ -1,1008 +1,837 @@
-# Docker Setup - Containerized Deployment Guide
+# Technology Stack
 
 ## Overview
 
-The DeX Trading Agent uses **Docker and Docker Compose** for containerized deployment, providing isolated, reproducible environments across different machines. This guide covers the complete Docker setup, including multi-stage builds, service orchestration, volume management, networking, and production deployment.
+The DeX Trading Agent is built with a modern, full-stack architecture combining React 19 for the frontend and Python FastAPI for the backend. This document provides a detailed breakdown of all technologies, libraries, and tools used in the system.
 
-**Deployment Model:** Local-only containerized deployment  
-**Architecture:** Multi-container setup with frontend, backend, and Redis  
-**Orchestration:** Docker Compose for service management
-
-**Last Updated:** November 15, 2025  
-**Maintained By:** VenTheZone
+**Last Updated:** November 14, 2025
 
 ---
 
-## Table of Contents
+## Frontend Stack
 
-1. [Architecture Overview](#architecture-overview)
-2. [Prerequisites](#prerequisites)
-3. [Docker Services](#docker-services)
-4. [Dockerfile Configuration](#dockerfile-configuration)
-5. [Docker Compose Setup](#docker-compose-setup)
-6. [Environment Variables](#environment-variables)
-7. [Volume Management](#volume-management)
-8. [Networking](#networking)
-9. [Quick Start Guide](#quick-start-guide)
-10. [Development vs Production](#development-vs-production)
-11. [Health Checks](#health-checks)
-12. [Troubleshooting](#troubleshooting)
-13. [Performance Optimization](#performance-optimization)
-14. [Security Considerations](#security-considerations)
-15. [Maintenance & Updates](#maintenance--updates)
+### Core Framework
 
----
+#### React 19.1.0
+- **Purpose:** UI library for building interactive user interfaces
+- **Key Features:**
+  - Component-based architecture
+  - Virtual DOM for efficient rendering
+  - Hooks for state management (useState, useEffect, useCallback)
+  - Concurrent rendering for improved performance
+- **Usage:** All UI components, pages, and interactive elements
 
-## 1. Architecture Overview
+#### TypeScript 5.7.2
+- **Purpose:** Type-safe JavaScript superset
+- **Key Features:**
+  - Static type checking
+  - Enhanced IDE support with IntelliSense
+  - Interface definitions for API contracts
+  - Compile-time error detection
+- **Usage:** All frontend code (.tsx, .ts files)
 
-### Container Stack
-
-```
-┌─────────────────────────────────────────────────────────────┐
-│                     Docker Host (Local Machine)              │
-│                                                              │
-│  ┌────────────────────────────────────────────────────┐    │
-│  │              dex-network (Bridge)                   │    │
-│  │                                                     │    │
-│  │  ┌──────────────┐  ┌──────────────┐  ┌─────────┐ │    │
-│  │  │   Frontend   │  │   Backend    │  │  Redis  │ │    │
-│  │  │  (React)     │  │  (FastAPI)   │  │ (Cache) │ │    │
-│  │  │              │  │              │  │         │ │    │
-│  │  │  Port: 5173  │  │  Port: 8000  │  │ Port:   │ │    │
-│  │  │              │  │              │  │  6379   │ │    │
-│  │  └──────┬───────┘  └──────┬───────┘  └────┬────┘ │    │
-│  │         │                 │                │      │    │
-│  │         └─────────────────┴────────────────┘      │    │
-│  │                    Internal Network                │    │
-│  └────────────────────────────────────────────────────┘    │
-│                                                              │
-│  Volumes:                                                    │
-│  • backend-data (SQLite database persistence)                │
-│  • redis-data (Redis persistence)                            │
-└─────────────────────────────────────────────────────────────┘
-```
-
-### Service Dependencies
-
-```
-redis (starts first)
-  ↓
-backend (depends on redis)
-  ↓
-frontend (depends on backend)
-```
+#### Vite 6.0.11
+- **Purpose:** Build tool and development server
+- **Key Features:**
+  - Lightning-fast hot module replacement (HMR)
+  - Optimized production builds
+  - Native ES modules support
+  - Plugin ecosystem
+- **Usage:** Development server (port 5173), production builds
 
 ---
 
-## 2. Prerequisites
+### Routing & Navigation
 
-### Required Software
-
-- **Docker Desktop** 20.10+ (includes Docker Engine and Docker Compose)
-  - Download: https://www.docker.com/products/docker-desktop
-  - Verify: `docker --version` and `docker-compose --version`
-
-- **Git** (for cloning repository)
-  - Verify: `git --version`
-
-### System Requirements
-
-- **CPU:** 2+ cores recommended
-- **RAM:** 4GB minimum, 8GB recommended
-- **Disk Space:** 5GB for images and volumes
-- **OS:** Linux, macOS, or Windows 10/11 with WSL2
-
-### Port Availability
-
-Ensure these ports are free:
-- `5173` - Frontend (React/Vite)
-- `8000` - Backend (FastAPI)
-- `6379` - Redis (internal, can be blocked externally)
+#### React Router 7.6.1
+- **Purpose:** Client-side routing for single-page application
+- **Key Features:**
+  - Declarative routing with `<Route>` components
+  - Programmatic navigation with `useNavigate`
+  - URL parameter handling
+  - Browser history management
+- **Routes:**
+  - `/` - Landing page
+  - `/dashboard` - Trading interface
+  - `/docs` - Documentation
+  - `*` - 404 error page
 
 ---
 
-## 3. Docker Services
+### State Management
 
-### Service: Frontend (React/Vite)
+#### Zustand 5.0.8
+- **Purpose:** Lightweight state management library
+- **Key Features:**
+  - Simple API with minimal boilerplate
+  - React hooks integration
+  - Middleware support (persist)
+  - TypeScript-first design
+- **Usage:**
+  - `tradingStore.ts` - Global trading state (balance, position, settings, AI model)
+  - Persisted to localStorage for session continuity
 
-**Container Name:** `dex-frontend`  
-**Base Image:** `node:20-alpine`  
-**Build Context:** `.` (project root)  
-**Dockerfile:** `./Dockerfile`
-
-**Purpose:**
-- Serves the React frontend application
-- Built with Vite for optimized production bundles
-- Connects to backend API at `http://localhost:8000`
-
-**Exposed Ports:**
-- `5173:5173` (host:container)
-
-**Dependencies:**
-- Depends on `backend` service
-
----
-
-### Service: Backend (FastAPI)
-
-**Container Name:** `dex-backend`  
-**Base Image:** `python:3.11-slim`  
-**Build Context:** `./migration_python`  
-**Dockerfile:** `./migration_python/Dockerfile`
-
-**Purpose:**
-- Runs FastAPI server for REST API and WebSocket
-- Handles trading logic, AI analysis, and database operations
-- Connects to Redis for background tasks
-
-**Exposed Ports:**
-- `8000:8000` (host:container)
-
-**Dependencies:**
-- Depends on `redis` service
-
-**Volumes:**
-- `backend-data:/app/data` (database persistence)
-- `./migration_python:/app` (development hot-reload)
+#### Browser Storage
+- **localStorage:**
+  - API keys (Hyperliquid, OpenRouter, Binance)
+  - Trading settings (leverage, TP/SL, allowed coins)
+  - User preferences (chart type, interval)
+- **sessionStorage:**
+  - Temporary UI state (modal visibility, notifications)
 
 ---
 
-### Service: Redis
+### Styling & UI Components
 
-**Container Name:** `dex-redis`  
-**Base Image:** `redis:7-alpine`  
-**Purpose:** Message broker for Celery background tasks
+#### Tailwind CSS 4.1.8
+- **Purpose:** Utility-first CSS framework
+- **Key Features:**
+  - Rapid UI development with utility classes
+  - Responsive design with breakpoint modifiers
+  - Custom theme configuration (cyberpunk theme)
+  - JIT (Just-In-Time) compilation
+- **Theme:** Cyberpunk aesthetic with cyan/blue accents, dark backgrounds
+- **Configuration:** `src/index.css` with OKLCH color space
 
-**Exposed Ports:**
-- `6379:6379` (host:container)
+#### Shadcn UI
+- **Purpose:** Accessible, customizable component library
+- **Components Used:**
+  - `Button`, `Card`, `Dialog`, `Sheet`, `Tabs`
+  - `Select`, `Input`, `Label`, `Switch`, `Slider`
+  - `Alert`, `Badge`, `Tooltip`, `Separator`
+  - `Accordion`, `Collapsible`, `Popover`
+- **Customization:** Styled to match cyberpunk theme
+- **Location:** `src/components/ui/`
 
-**Volumes:**
-- `redis-data:/data` (persistence)
-
-**Health Check:**
-- Command: `redis-cli ping`
-- Interval: 10 seconds
-- Timeout: 5 seconds
-- Retries: 5
-
----
-
-## 4. Dockerfile Configuration
-
-### Frontend Dockerfile
-
-**Location:** `./Dockerfile`
-
-**Multi-Stage Build:**
-
-```dockerfile
-# Stage 1: Builder
-FROM node:20-alpine AS builder
-
-# Install pnpm
-RUN npm install -g pnpm
-
-WORKDIR /app
-
-# Copy package files
-COPY package.json pnpm-lock.yaml* ./
-
-# Install dependencies
-RUN pnpm install --frozen-lockfile
-
-# Copy source code
-COPY . .
-
-# Build the application
-RUN pnpm build
-
-# Stage 2: Production
-FROM node:20-alpine
-
-RUN npm install -g pnpm
-
-WORKDIR /app
-
-# Copy package files
-COPY package.json pnpm-lock.yaml* ./
-
-# Install vite for preview command
-RUN pnpm add -D vite
-
-# Copy built application from builder
-COPY --from=builder /app/dist ./dist
-
-EXPOSE 5173
-
-# Start the application
-CMD ["pnpm", "preview", "--host", "0.0.0.0"]
-```
-
-**Optimization Features:**
-- Multi-stage build reduces final image size
-- Frozen lockfile ensures reproducible builds
-- Alpine Linux base for minimal footprint
-- Layer caching for faster rebuilds
+#### Framer Motion 12.15.0
+- **Purpose:** Animation library for React
+- **Key Features:**
+  - Declarative animations with `motion` components
+  - Gesture recognition (drag, hover, tap)
+  - Layout animations
+  - Spring physics
+- **Usage:**
+  - Page transitions
+  - Modal animations
+  - Button hover effects
+  - Chart loading states
 
 ---
 
-### Backend Dockerfile
+### Data Visualization
 
-**Location:** `./migration_python/Dockerfile`
+#### Recharts 2.15.4
+- **Purpose:** Composable charting library for React
+- **Key Features:**
+  - Responsive charts
+  - Line, area, bar, pie charts
+  - Customizable tooltips and legends
+  - Animation support
+- **Usage:**
+  - Balance history chart (`BalanceChart.tsx`)
+  - P&L visualization
+  - Performance metrics
 
-```dockerfile
-FROM python:3.11-slim
-
-WORKDIR /app
-
-# Install system dependencies
-RUN apt-get update && apt-get install -y \
-    gcc \
-    postgresql-client \
-    && rm -rf /var/lib/apt/lists/*
-
-# Copy requirements first for better caching
-COPY requirements.txt .
-
-# Install Python dependencies
-RUN pip install --no-cache-dir -r requirements.txt
-
-# Copy application code
-COPY . .
-
-EXPOSE 8000
-
-# Health check
-HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD python -c "import requests; requests.get('http://localhost:8000/health')"
-
-# Run the application
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
-```
-
-**Key Features:**
-- Python 3.11 for performance and type hints
-- System dependencies for PostgreSQL (future support)
-- Health check for container monitoring
-- Uvicorn ASGI server for async support
+#### TradingView Widget (react-tradingview-widget 1.3.2)
+- **Purpose:** Professional trading charts
+- **Key Features:**
+  - Real-time price data
+  - Technical indicators (RSI, MACD, MA, Bollinger Bands)
+  - Drawing tools
+  - Multiple timeframes (5M, 15M, 1H, 4H)
+- **Usage:**
+  - `TradingChart.tsx` - Main chart component
+  - `TokenTradingModal.tsx` - Token-specific charts
 
 ---
 
-## 5. Docker Compose Setup
+### HTTP & WebSocket Communication
 
-### Production Configuration
+#### Axios 1.13.2
+- **Purpose:** Promise-based HTTP client
+- **Key Features:**
+  - Request/response interceptors
+  - Automatic JSON transformation
+  - Error handling
+  - Timeout configuration
+- **Usage:**
+  - Python backend API calls (`python-api-client.ts`)
+  - Binance API integration
+  - CryptoPanic news fetching
 
-**File:** `docker-compose.yml`
-
-```yaml
-services:
-  # Python Backend (FastAPI)
-  backend:
-    build:
-      context: ./migration_python
-      dockerfile: Dockerfile
-    container_name: dex-backend
-    ports:
-      - "8000:8000"
-    environment:
-      - ENVIRONMENT=production
-      - HOST=0.0.0.0
-      - PORT=8000
-      - DATABASE_URL=sqlite:///./data/dex_trading.db
-      - OPENROUTER_API_KEY=${OPENROUTER_API_KEY:-}
-      - CRYPTOPANIC_AUTH_TOKEN=${CRYPTOPANIC_AUTH_TOKEN:-}
-      - REDIS_URL=redis://redis:6379/0
-    volumes:
-      - backend-data:/app/data
-      - ./migration_python:/app
-    depends_on:
-      - redis
-    restart: unless-stopped
-    networks:
-      - dex-network
-    healthcheck:
-      test: ["CMD", "python", "-c", "import requests; requests.get('http://localhost:8000/health')"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 40s
-
-  # Redis for background tasks
-  redis:
-    image: redis:7-alpine
-    container_name: dex-redis
-    ports:
-      - "6379:6379"
-    volumes:
-      - redis-data:/data
-    restart: unless-stopped
-    networks:
-      - dex-network
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
-  # Frontend (React/Vite)
-  frontend:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    container_name: dex-frontend
-    ports:
-      - "5173:5173"
-    environment:
-      - VITE_PYTHON_API_URL=http://localhost:8000
-      - VITE_DOCKER_DEPLOYMENT=true
-    depends_on:
-      - backend
-    restart: unless-stopped
-    networks:
-      - dex-network
-
-volumes:
-  backend-data:
-    driver: local
-  redis-data:
-    driver: local
-
-networks:
-  dex-network:
-    driver: bridge
-```
+#### Native WebSocket API
+- **Purpose:** Real-time bidirectional communication
+- **Key Features:**
+  - Low-latency updates
+  - Event-driven architecture
+  - Automatic reconnection logic
+- **Usage:**
+  - Real-time price updates
+  - Position monitoring
+  - AI analysis streaming
 
 ---
 
-## 6. Environment Variables
+### Blockchain & Trading Integrations
 
-### Backend Environment Variables
+#### @nktkas/hyperliquid 0.25.9
+- **Purpose:** Hyperliquid SDK for perpetual futures trading
+- **Key Features:**
+  - Order placement (market, limit)
+  - Position management
+  - Account balance queries
+  - Wallet signing (eth-account)
+- **Usage:**
+  - Live trading execution
+  - Position monitoring
+  - Liquidation price calculations
 
-**Required:**
-- `OPENROUTER_API_KEY` - OpenRouter API key for AI analysis
-- `DATABASE_URL` - SQLite database path (default: `sqlite:///./data/dex_trading.db`)
+#### CCXT 4.5.18
+- **Purpose:** Multi-exchange cryptocurrency trading library
+- **Key Features:**
+  - Unified API for 100+ exchanges
+  - OHLCV data fetching
+  - Order book access
+  - Ticker information
+- **Usage:**
+  - Binance price feeds (fallback)
+  - Market data aggregation
+  - Historical data retrieval
 
-**Optional:**
-- `CRYPTOPANIC_AUTH_TOKEN` - CryptoPanic news API token
-- `REDIS_URL` - Redis connection URL (default: `redis://redis:6379/0`)
-- `ENVIRONMENT` - Deployment environment (`production` or `development`)
-- `HOST` - Server host (default: `0.0.0.0`)
-- `PORT` - Server port (default: `8000`)
-
-### Frontend Environment Variables
-
-**Required:**
-- `VITE_PYTHON_API_URL` - Backend API URL (default: `http://localhost:8000`)
-
-**Optional:**
-- `VITE_DOCKER_DEPLOYMENT` - Flag for Docker deployment (default: `true`)
-
-### Setting Environment Variables
-
-**Method 1: .env File (Recommended)**
-
-Create `.env` in project root:
-
-```bash
-# Backend API Keys
-OPENROUTER_API_KEY=sk-or-v1-your-key-here
-CRYPTOPANIC_AUTH_TOKEN=your-token-here
-
-# Database
-DATABASE_URL=sqlite:///./data/dex_trading.db
-
-# Redis
-REDIS_URL=redis://redis:6379/0
-
-# Frontend
-VITE_PYTHON_API_URL=http://localhost:8000
-```
-
-**Method 2: Export in Shell**
-
-```bash
-export OPENROUTER_API_KEY="sk-or-v1-your-key-here"
-export CRYPTOPANIC_AUTH_TOKEN="your-token-here"
-```
-
-**Method 3: Docker Compose Override**
-
-Create `docker-compose.override.yml`:
-
-```yaml
-services:
-  backend:
-    environment:
-      - OPENROUTER_API_KEY=sk-or-v1-your-key-here
-      - CRYPTOPANIC_AUTH_TOKEN=your-token-here
-```
+#### Viem 2.38.6
+- **Purpose:** TypeScript interface for Ethereum
+- **Key Features:**
+  - Wallet connection
+  - Transaction signing
+  - Smart contract interaction
+- **Usage:**
+  - Hyperliquid wallet authentication
+  - Private key management
 
 ---
 
-## 7. Volume Management
+### AI Integration
 
-### Backend Data Volume
-
-**Name:** `backend-data`  
-**Mount Point:** `/app/data` (inside container)  
-**Purpose:** Persist SQLite database across container restarts
-
-**Contents:**
-- `dex_trading.db` - Main SQLite database
-- Trading logs, balance history, position snapshots
-
-**Backup:**
-```bash
-# Create backup
-docker run --rm -v dex-trading-agent_backend-data:/data -v $(pwd):/backup alpine tar czf /backup/backend-data-backup.tar.gz -C /data .
-
-# Restore backup
-docker run --rm -v dex-trading-agent_backend-data:/data -v $(pwd):/backup alpine tar xzf /backup/backend-data-backup.tar.gz -C /data
-```
+#### OpenAI SDK 6.8.1
+- **Purpose:** OpenRouter API client (OpenAI-compatible)
+- **Key Features:**
+  - Chat completions API
+  - Streaming responses
+  - Model selection (DeepSeek, Qwen3 Max)
+  - Token usage tracking
+- **Usage:**
+  - AI market analysis (`deepseek.ts`)
+  - Multi-chart decision making
+  - Trading recommendations
 
 ---
 
-### Redis Data Volume
+### Form Handling & Validation
 
-**Name:** `redis-data`  
-**Mount Point:** `/data` (inside container)  
-**Purpose:** Persist Redis data (Celery task queue)
+#### React Hook Form 7.57.0
+- **Purpose:** Performant form library
+- **Key Features:**
+  - Uncontrolled components for performance
+  - Built-in validation
+  - Error handling
+  - TypeScript support
+- **Usage:**
+  - API key setup forms
+  - Trading control inputs
+  - Settings configuration
 
-**Contents:**
-- Redis RDB snapshots
-- Background task queue state
+#### Zod 3.25.46
+- **Purpose:** TypeScript-first schema validation
+- **Key Features:**
+  - Runtime type checking
+  - Schema composition
+  - Error messages
+  - Integration with React Hook Form
+- **Usage:**
+  - API request validation
+  - Form input validation
+  - Type-safe data parsing
 
-**Clear Redis Cache:**
-```bash
-docker exec dex-redis redis-cli FLUSHALL
-```
-
----
-
-### Volume Commands
-
-```bash
-# List volumes
-docker volume ls
-
-# Inspect volume
-docker volume inspect dex-trading-agent_backend-data
-
-# Remove volume (WARNING: deletes data)
-docker volume rm dex-trading-agent_backend-data
-
-# Remove all unused volumes
-docker volume prune
-```
-
----
-
-## 8. Networking
-
-### Bridge Network
-
-**Name:** `dex-network`  
-**Driver:** `bridge`  
-**Purpose:** Internal communication between containers
-
-**Service DNS:**
-- `frontend` → Accessible at `http://frontend:5173` (internal)
-- `backend` → Accessible at `http://backend:8000` (internal)
-- `redis` → Accessible at `redis://redis:6379` (internal)
-
-**External Access:**
-- Frontend: `http://localhost:5173` (host)
-- Backend: `http://localhost:8000` (host)
-- Redis: `redis://localhost:6379` (host)
-
-### Network Isolation
-
-- Containers communicate via internal DNS
-- Only exposed ports are accessible from host
-- No external internet access required (except for API calls)
+#### @hookform/resolvers 5.0.1
+- **Purpose:** Validation resolver for React Hook Form
+- **Key Features:**
+  - Zod integration
+  - Yup support
+  - Custom validators
+- **Usage:** Connecting Zod schemas to React Hook Form
 
 ---
 
-## 9. Quick Start Guide
+### Utilities & Helpers
 
-### Step 1: Clone Repository
+#### date-fns 4.1.0
+- **Purpose:** Modern JavaScript date utility library
+- **Key Features:**
+  - Immutable date operations
+  - Timezone support
+  - Formatting and parsing
+  - Lightweight (tree-shakeable)
+- **Usage:**
+  - Trading log timestamps
+  - Balance history dates
+  - Funding rate schedules
 
-```bash
-git clone https://github.com/VenTheZone/dex-trading-agent.git
-cd dex-trading-agent
-```
+#### clsx 2.1.1 & tailwind-merge 3.3.0
+- **Purpose:** Conditional CSS class management
+- **Key Features:**
+  - Dynamic class names
+  - Tailwind class merging
+  - Conflict resolution
+- **Usage:** `cn()` utility in `lib/utils.ts`
 
-### Step 2: Configure Environment
-
-Create `.env` file:
-
-```bash
-cat > .env << EOF
-OPENROUTER_API_KEY=sk-or-v1-your-key-here
-CRYPTOPANIC_AUTH_TOKEN=your-token-here
-DATABASE_URL=sqlite:///./data/dex_trading.db
-REDIS_URL=redis://redis:6379/0
-VITE_PYTHON_API_URL=http://localhost:8000
-EOF
-```
-
-### Step 3: Build and Start
-
-```bash
-# Build images and start services
-docker-compose up --build
-
-# Or run in detached mode
-docker-compose up -d --build
-```
-
-### Step 4: Verify Services
-
-```bash
-# Check running containers
-docker-compose ps
-
-# Check logs
-docker-compose logs -f
-
-# Test backend health
-curl http://localhost:8000/health
-
-# Test frontend
-open http://localhost:5173
-```
-
-### Step 5: Stop Services
-
-```bash
-# Stop containers (preserves volumes)
-docker-compose down
-
-# Stop and remove volumes (WARNING: deletes data)
-docker-compose down -v
-```
+#### Lucide React 0.511.0
+- **Purpose:** Icon library
+- **Key Features:**
+  - 1000+ icons
+  - Customizable size and color
+  - Tree-shakeable
+- **Usage:** UI icons throughout the application
 
 ---
 
-## 10. Development vs Production
+### Testing
 
-### Development Mode
+#### Vitest 2.1.8
+- **Purpose:** Vite-native unit testing framework
+- **Key Features:**
+  - Fast test execution
+  - Jest-compatible API
+  - TypeScript support
+  - Coverage reporting
+- **Usage:**
+  - Unit tests for liquidation protection
+  - TP/SL validation tests
+  - Fee calculation tests
+  - **Test Files:**
+    - `liquidation-protection.test.ts` (41 tests)
+    - `testnet-trade-inputs.test.ts` (55 tests)
+    - `trading-fees.test.ts` (21 tests)
+    - `mainnet-tpsl.test.ts` (18 tests)
+  - **Total:** 135 passing tests
 
-**File:** `docker-compose.dev.yml`
-
-**Features:**
-- Hot module replacement (HMR) for frontend
-- Auto-reload for backend (Uvicorn `--reload`)
-- Source code mounted as volumes
-- Debug logging enabled
-
-**Start Development:**
-```bash
-docker-compose -f docker-compose.dev.yml up --build
-```
-
-**Development Dockerfile:**
-- `Dockerfile.dev` (frontend)
-- `migration_python/Dockerfile.dev` (backend)
-
----
-
-### Production Mode
-
-**File:** `docker-compose.yml`
-
-**Features:**
-- Optimized builds (multi-stage)
-- Minified frontend assets
-- Production-grade logging
-- Health checks enabled
-- Restart policies (`unless-stopped`)
-
-**Start Production:**
-```bash
-docker-compose up -d --build
-```
+#### @vitest/coverage-v8 2.1.8
+- **Purpose:** Code coverage reporting
+- **Key Features:**
+  - V8 coverage engine
+  - HTML reports
+  - Threshold enforcement
+- **Usage:** `pnpm test:coverage`
 
 ---
 
-## 11. Health Checks
+### Development Tools
 
-### Backend Health Check
+#### ESLint
+- **Purpose:** JavaScript/TypeScript linter
+- **Key Features:**
+  - Code quality enforcement
+  - Style consistency
+  - Error detection
+- **Usage:** `pnpm lint`
 
-**Endpoint:** `GET /health`  
-**Interval:** 30 seconds  
-**Timeout:** 10 seconds  
-**Retries:** 3  
-**Start Period:** 40 seconds
-
-**Command:**
-```bash
-python -c "import requests; requests.get('http://localhost:8000/health')"
-```
-
-**Response:**
-```json
-{
-  "status": "healthy",
-  "timestamp": "2025-11-15T10:30:00Z"
-}
-```
+#### Prettier
+- **Purpose:** Code formatter
+- **Key Features:**
+  - Automatic formatting
+  - Consistent style
+  - Editor integration
+- **Usage:** `pnpm format`
 
 ---
 
-### Redis Health Check
+## Backend Stack
 
-**Command:** `redis-cli ping`  
-**Interval:** 10 seconds  
-**Timeout:** 5 seconds  
-**Retries:** 5
+### Core Framework
 
-**Expected Response:** `PONG`
+#### Python 3.11+
+- **Purpose:** Backend programming language
+- **Key Features:**
+  - Async/await support
+  - Type hints
+  - Rich standard library
+  - Performance optimizations
 
----
+#### FastAPI 0.104.1
+- **Purpose:** Modern web framework for building APIs
+- **Key Features:**
+  - Automatic OpenAPI documentation
+  - Pydantic data validation
+  - Async request handling
+  - WebSocket support
+- **Usage:**
+  - REST API endpoints (`/api/*`)
+  - WebSocket connections (`/ws`)
+  - Background task scheduling
 
-### Manual Health Checks
-
-```bash
-# Check all container health
-docker-compose ps
-
-# Check backend health
-docker exec dex-backend curl http://localhost:8000/health
-
-# Check Redis health
-docker exec dex-redis redis-cli ping
-
-# View health check logs
-docker inspect --format='{{json .State.Health}}' dex-backend | jq
-```
-
----
-
-## 12. Troubleshooting
-
-### Common Issues
-
-#### Issue: Port Already in Use
-
-**Error:**
-```
-Error starting userland proxy: listen tcp4 0.0.0.0:5173: bind: address already in use
-```
-
-**Solution:**
-```bash
-# Find process using port
-lsof -i :5173
-
-# Kill process
-kill -9 <PID>
-
-# Or change port in docker-compose.yml
-ports:
-  - "5174:5173"  # Use different host port
-```
+#### Uvicorn 0.24.0
+- **Purpose:** ASGI server
+- **Key Features:**
+  - High performance
+  - WebSocket support
+  - Graceful shutdown
+  - Hot reload (development)
+- **Usage:** Backend server (port 8000)
 
 ---
 
-#### Issue: Container Fails to Start
+### Database & ORM
 
-**Error:**
-```
-dex-backend exited with code 1
-```
+#### SQLAlchemy 2.0.23
+- **Purpose:** SQL toolkit and ORM
+- **Key Features:**
+  - Declarative models
+  - Query builder
+  - Connection pooling
+  - Migration support
+- **Usage:**
+  - Database models (users, trades, positions, logs)
+  - Query execution
+  - Transaction management
 
-**Solution:**
-```bash
-# Check logs
-docker-compose logs backend
+#### Alembic 1.12.1
+- **Purpose:** Database migration tool
+- **Key Features:**
+  - Version control for database schema
+  - Auto-generation of migrations
+  - Rollback support
+- **Usage:** Schema migrations
 
-# Check environment variables
-docker exec dex-backend env
-
-# Rebuild without cache
-docker-compose build --no-cache backend
-docker-compose up backend
-```
-
----
-
-#### Issue: Database Connection Error
-
-**Error:**
-```
-sqlalchemy.exc.OperationalError: unable to open database file
-```
-
-**Solution:**
-```bash
-# Ensure volume exists
-docker volume ls | grep backend-data
-
-# Check volume permissions
-docker exec dex-backend ls -la /app/data
-
-# Recreate volume
-docker-compose down -v
-docker-compose up -d
-```
+#### SQLite (Development) / PostgreSQL (Production)
+- **SQLite:**
+  - File-based database
+  - Zero configuration
+  - Local development
+- **PostgreSQL (psycopg2-binary 2.9.9):**
+  - Production-grade RDBMS
+  - ACID compliance
+  - Advanced features (JSON, full-text search)
 
 ---
 
-#### Issue: Redis Connection Refused
+### Background Tasks
 
-**Error:**
-```
-redis.exceptions.ConnectionError: Error connecting to Redis
-```
+#### Celery 5.3.4
+- **Purpose:** Distributed task queue
+- **Key Features:**
+  - Async task execution
+  - Scheduled tasks (cron)
+  - Task retries
+  - Result backend
+- **Usage:**
+  - Auto-trading loop (60-second cycle)
+  - Balance updates
+  - Position monitoring
+  - Funding rate tracking
 
-**Solution:**
-```bash
-# Check Redis container
-docker-compose ps redis
-
-# Test Redis connection
-docker exec dex-redis redis-cli ping
-
-# Restart Redis
-docker-compose restart redis
-```
-
----
-
-### Debugging Commands
-
-```bash
-# View all logs
-docker-compose logs -f
-
-# View specific service logs
-docker-compose logs -f backend
-
-# Execute command in container
-docker exec -it dex-backend bash
-
-# Inspect container
-docker inspect dex-backend
-
-# Check resource usage
-docker stats
-
-# View network details
-docker network inspect dex-trading-agent_dex-network
-```
+#### Redis 5.0.1
+- **Purpose:** In-memory data store (message broker)
+- **Key Features:**
+  - Fast message passing
+  - Pub/sub support
+  - Data persistence
+  - Caching
+- **Usage:**
+  - Celery message broker
+  - Market data caching
+  - Session storage
 
 ---
 
-## 13. Performance Optimization
+### HTTP & WebSocket
 
-### Build Optimization
+#### HTTPX 0.25.1
+- **Purpose:** Async HTTP client
+- **Key Features:**
+  - HTTP/2 support
+  - Connection pooling
+  - Timeout handling
+  - Retry logic
+- **Usage:**
+  - OpenRouter API calls
+  - Binance API requests
+  - CryptoPanic news fetching
 
-**Use BuildKit:**
-```bash
-# Enable BuildKit for faster builds
-export DOCKER_BUILDKIT=1
-docker-compose build
-```
+#### aiohttp 3.10.11
+- **Purpose:** Async HTTP client/server
+- **Key Features:**
+  - WebSocket support
+  - Streaming responses
+  - Session management
+- **Usage:**
+  - Hyperliquid API integration
+  - Real-time data streaming
 
-**Layer Caching:**
-- Copy `package.json` and `requirements.txt` first
-- Install dependencies before copying source code
-- Use `.dockerignore` to exclude unnecessary files
+#### Requests 2.31.0
+- **Purpose:** Simple HTTP library
+- **Key Features:**
+  - Synchronous requests
+  - Easy API
+  - Session support
+- **Usage:**
+  - Health checks
+  - Simple HTTP requests
 
----
-
-### Runtime Optimization
-
-**Resource Limits:**
-
-Add to `docker-compose.yml`:
-
-```yaml
-services:
-  backend:
-    deploy:
-      resources:
-        limits:
-          cpus: '2'
-          memory: 2G
-        reservations:
-          cpus: '1'
-          memory: 1G
-```
-
-**Restart Policies:**
-- `unless-stopped` - Restart unless manually stopped
-- `always` - Always restart
-- `on-failure` - Restart only on failure
-
----
-
-### Image Size Reduction
-
-**Current Sizes:**
-- Frontend: ~150MB (Alpine + Node)
-- Backend: ~300MB (Python 3.11-slim)
-- Redis: ~30MB (Alpine)
-
-**Optimization Tips:**
-- Use Alpine Linux base images
-- Multi-stage builds
-- Remove build dependencies after installation
-- Use `.dockerignore` to exclude dev files
+#### WebSockets 12.0
+- **Purpose:** WebSocket protocol implementation
+- **Key Features:**
+  - Low-latency communication
+  - Bidirectional messaging
+  - Connection management
+- **Usage:**
+  - Real-time price updates to frontend
+  - Position monitoring streams
 
 ---
 
-## 14. Security Considerations
+### Trading & Blockchain
 
-### Container Security
+#### CCXT 4.5.18
+- **Purpose:** Multi-exchange trading library
+- **Key Features:**
+  - Unified API for exchanges
+  - Order execution
+  - Market data fetching
+- **Usage:**
+  - Binance integration
+  - Price feeds
+  - Order book data
 
-✅ **Non-root User:** Run containers as non-root (future enhancement)  
-✅ **Read-only Filesystem:** Mount volumes as read-only where possible  
-✅ **Network Isolation:** Use bridge network for internal communication  
-✅ **Secret Management:** Use `.env` file (never commit to Git)  
-✅ **Image Scanning:** Scan images for vulnerabilities
-
-**Scan Images:**
-```bash
-# Install Trivy
-brew install trivy
-
-# Scan backend image
-trivy image dex-trading-agent_backend
-
-# Scan frontend image
-trivy image dex-trading-agent_frontend
-```
-
----
-
-### Environment Security
-
-**Best Practices:**
-- Never commit `.env` file to Git
-- Use Docker secrets for sensitive data (Swarm mode)
-- Rotate API keys regularly
-- Limit container capabilities
-
-**Example: Docker Secrets (Swarm)**
-
-```yaml
-services:
-  backend:
-    secrets:
-      - openrouter_api_key
-    environment:
-      - OPENROUTER_API_KEY_FILE=/run/secrets/openrouter_api_key
-
-secrets:
-  openrouter_api_key:
-    file: ./secrets/openrouter_api_key.txt
-```
+#### eth-account 0.9.0
+- **Purpose:** Ethereum account management
+- **Key Features:**
+  - Private key handling
+  - Transaction signing
+  - Address derivation
+- **Usage:**
+  - Hyperliquid wallet signing
+  - Order authentication
 
 ---
 
-## 15. Maintenance & Updates
+### AI Integration
 
-### Update Images
-
-```bash
-# Pull latest base images
-docker-compose pull
-
-# Rebuild with latest dependencies
-docker-compose build --no-cache
-
-# Restart services
-docker-compose up -d
-```
-
----
-
-### Database Migrations
-
-```bash
-# Run Alembic migrations
-docker exec dex-backend alembic upgrade head
-
-# Create new migration
-docker exec dex-backend alembic revision --autogenerate -m "description"
-```
+#### OpenAI 1.3.0
+- **Purpose:** OpenRouter API client
+- **Key Features:**
+  - Chat completions
+  - Streaming responses
+  - Model selection
+- **Models:**
+  - **DeepSeek V3.1** (`deepseek/deepseek-chat-v3-0324:free`) - Free tier
+  - **Qwen3 Max** (`qwen/qwen3-max`) - Paid tier
+- **Usage:**
+  - Market analysis
+  - Trading recommendations
+  - Multi-chart decision making
 
 ---
 
-### Cleanup
+### Data Validation
 
-```bash
-# Remove stopped containers
-docker-compose rm
+#### Pydantic 2.5.0
+- **Purpose:** Data validation using Python type hints
+- **Key Features:**
+  - Automatic validation
+  - JSON schema generation
+  - Settings management
+  - Error messages
+- **Usage:**
+  - API request/response models
+  - Configuration validation
+  - Type safety
 
-# Remove unused images
-docker image prune -a
-
-# Remove unused volumes
-docker volume prune
-
-# Remove unused networks
-docker network prune
-
-# Full cleanup (WARNING: removes everything)
-docker system prune -a --volumes
-```
-
----
-
-### Backup Strategy
-
-**Automated Backup Script:**
-
-```bash
-#!/bin/bash
-# backup.sh
-
-BACKUP_DIR="./backups"
-TIMESTAMP=$(date +%Y%m%d_%H%M%S)
-
-# Create backup directory
-mkdir -p $BACKUP_DIR
-
-# Backup backend data
-docker run --rm \
-  -v dex-trading-agent_backend-data:/data \
-  -v $(pwd)/$BACKUP_DIR:/backup \
-  alpine tar czf /backup/backend-data-$TIMESTAMP.tar.gz -C /data .
-
-# Backup Redis data
-docker run --rm \
-  -v dex-trading-agent_redis-data:/data \
-  -v $(pwd)/$BACKUP_DIR:/backup \
-  alpine tar czf /backup/redis-data-$TIMESTAMP.tar.gz -C /data .
-
-echo "Backup completed: $BACKUP_DIR"
-```
-
-**Run Backup:**
-```bash
-chmod +x backup.sh
-./backup.sh
-```
+#### pydantic-settings 2.1.0
+- **Purpose:** Settings management
+- **Key Features:**
+  - Environment variable loading
+  - .env file support
+  - Type validation
+- **Usage:** Backend configuration (API keys, database URL)
 
 ---
 
-## Summary
+### Security & Authentication
 
-The DeX Trading Agent Docker setup provides:
+#### python-jose[cryptography] 3.3.0
+- **Purpose:** JWT token handling
+- **Key Features:**
+  - Token generation
+  - Token verification
+  - Encryption support
+- **Usage:** Future authentication (currently no-auth for local deployment)
 
-✅ **Isolated Environment:** Containers for frontend, backend, and Redis  
-✅ **Persistent Storage:** Volumes for database and cache  
-✅ **Health Monitoring:** Automated health checks for all services  
-✅ **Easy Deployment:** Single command to start entire stack  
-✅ **Development Support:** Hot-reload and debugging capabilities  
-✅ **Production Ready:** Optimized builds and restart policies  
-✅ **Security:** Network isolation and secret management  
-✅ **Maintainability:** Simple updates and backup procedures
+#### passlib[bcrypt] 1.7.4
+- **Purpose:** Password hashing
+- **Key Features:**
+  - Bcrypt algorithm
+  - Salt generation
+  - Hash verification
+- **Usage:** Future user authentication
 
-**Quick Commands:**
-```bash
-# Start
-docker-compose up -d --build
+---
 
-# Stop
-docker-compose down
+### Utilities
 
-# Logs
-docker-compose logs -f
+#### python-dotenv 1.0.0
+- **Purpose:** Environment variable management
+- **Key Features:**
+  - .env file loading
+  - Variable parsing
+  - Development/production separation
+- **Usage:** Loading API keys and configuration
 
-# Restart
-docker-compose restart
+#### python-multipart 0.0.6
+- **Purpose:** Form data parsing
+- **Key Features:**
+  - Multipart form handling
+  - File uploads
+  - Streaming support
+- **Usage:** API endpoint form data
 
-# Backup
-./backup.sh
-```
+---
 
-For additional support, refer to the [System Architecture](../Architecture/SYSTEM_ARCHITECTURE.md) and [Deployment Guide](../../DEPLOYMENT.md).
+### Development & Testing
+
+#### pytest 7.4.3
+- **Purpose:** Testing framework
+- **Key Features:**
+  - Simple test syntax
+  - Fixtures
+  - Parametrized tests
+  - Coverage integration
+- **Usage:** Backend unit tests
+
+#### pytest-asyncio 0.21.1
+- **Purpose:** Async test support
+- **Key Features:**
+  - Async fixture support
+  - Event loop management
+  - Async test execution
+- **Usage:** Testing async functions
+
+#### Black 23.11.0
+- **Purpose:** Code formatter
+- **Key Features:**
+  - Opinionated formatting
+  - Consistent style
+  - Fast execution
+- **Usage:** `black .`
+
+#### Flake8 6.1.0
+- **Purpose:** Linter
+- **Key Features:**
+  - PEP 8 compliance
+  - Error detection
+  - Plugin support
+- **Usage:** Code quality checks
+
+#### mypy 1.7.0
+- **Purpose:** Static type checker
+- **Key Features:**
+  - Type hint validation
+  - Error detection
+  - Gradual typing
+- **Usage:** Type safety enforcement
+
+---
+
+## Infrastructure & Deployment
+
+### Containerization
+
+#### Docker
+- **Purpose:** Application containerization
+- **Key Features:**
+  - Isolated environments
+  - Reproducible builds
+  - Multi-stage builds
+- **Usage:**
+  - Frontend container (Nginx)
+  - Backend container (Uvicorn)
+  - Redis container
+  - Celery worker container
+
+#### Docker Compose
+- **Purpose:** Multi-container orchestration
+- **Key Features:**
+  - Service definition
+  - Network management
+  - Volume mounting
+- **Services:**
+  - `frontend` (port 5173)
+  - `backend` (port 8000)
+  - `redis` (port 6379)
+  - `celery-worker`
+
+---
+
+### Version Control
+
+#### Git
+- **Purpose:** Source code management
+- **Key Features:**
+  - Branching and merging
+  - Commit history
+  - Collaboration
+- **Usage:** Code versioning
+
+#### GitHub
+- **Purpose:** Remote repository hosting
+- **Key Features:**
+  - Pull requests
+  - Issue tracking
+  - CI/CD integration
+- **Usage:** Code collaboration and deployment
+
+---
+
+## External APIs & Services
+
+### Trading Platforms
+
+#### Hyperliquid
+- **Purpose:** Perpetual futures exchange
+- **Networks:**
+  - Mainnet (production)
+  - Testnet (risk-free testing)
+- **Features:**
+  - 50x leverage (BTC, ETH)
+  - Tiered margin system
+  - Funding rates
+  - Liquidation engine
+
+#### Binance
+- **Purpose:** Fallback price data
+- **Features:**
+  - Real-time price feeds
+  - Historical OHLCV data
+  - Market depth
+- **Usage:** Price validation and redundancy
+
+---
+
+### AI Services
+
+#### OpenRouter
+- **Purpose:** Multi-model AI API gateway
+- **Models:**
+  - DeepSeek V3.1 (free tier)
+  - Qwen3 Max (paid tier)
+- **Features:**
+  - Model selection
+  - Token tracking
+  - Cost optimization
+
+---
+
+### News & Data
+
+#### CryptoPanic
+- **Purpose:** Cryptocurrency news aggregator
+- **Features:**
+  - Real-time news feed
+  - Sentiment analysis
+  - Ticker filtering
+- **Usage:** Market sentiment tracking
+
+---
+
+## Development Workflow
+
+### Package Managers
+
+#### pnpm (Frontend)
+- **Purpose:** Fast, disk-efficient package manager
+- **Key Features:**
+  - Symlinked node_modules
+  - Monorepo support
+  - Strict dependency resolution
+- **Commands:**
+  - `pnpm dev` - Start dev server
+  - `pnpm build` - Production build
+  - `pnpm test` - Run tests
+
+#### pip (Backend)
+- **Purpose:** Python package installer
+- **Key Features:**
+  - Virtual environment support
+  - Requirements.txt
+  - Dependency resolution
+- **Commands:**
+  - `pip install -r requirements.txt`
+  - `pip freeze > requirements.txt`
+
+---
+
+### Build & Bundling
+
+#### Vite Build
+- **Output:** Optimized static files
+- **Features:**
+  - Code splitting
+  - Tree shaking
+  - Minification
+  - Asset optimization
+
+#### TypeScript Compiler (tsc)
+- **Purpose:** Type checking and compilation
+- **Features:**
+  - Type validation
+  - ES module output
+  - Source maps
+- **Command:** `tsc -b --noEmit`
+
+---
+
+## Performance Metrics
+
+### Frontend
+- **Initial Load:** < 2 seconds
+- **HMR Update:** < 100ms
+- **Chart Render:** < 500ms
+- **API Response:** < 200ms (local backend)
+
+### Backend
+- **API Latency:** < 50ms (local)
+- **WebSocket Latency:** < 10ms
+- **AI Analysis:** 2-5 seconds (DeepSeek), 3-7 seconds (Qwen3 Max)
+- **Database Query:** < 10ms (SQLite), < 20ms (PostgreSQL)
+
+---
+
+## Security Considerations
+
+### Frontend
+- ✅ API keys stored in localStorage (never sent to backend)
+- ✅ HTTPS enforcement (production)
+- ✅ Content Security Policy (CSP)
+- ✅ XSS protection via React
+
+### Backend
+- ✅ CORS restrictions (localhost:5173)
+- ✅ Environment variable secrets
+- ✅ SQL injection prevention (SQLAlchemy ORM)
+- ✅ Rate limiting (future)
+
+---
+
+## Future Technology Additions
+
+### Planned Integrations
+- [ ] PostgreSQL for production database
+- [ ] Nginx reverse proxy
+- [ ] Prometheus + Grafana monitoring
+- [ ] Sentry error tracking
+- [ ] GitHub Actions CI/CD
+- [ ] Multi-user authentication (JWT)
 
 ---
 
 **Last Updated:** November 15, 2025  
-**Maintained By:** VenTheZone
+**Version:** 1.0.0  
+**Maintainer:** VenTheZone
