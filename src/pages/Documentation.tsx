@@ -288,6 +288,9 @@ export default function Documentation() {
             <TabsTrigger value="workflow" className="data-[state=active]:bg-cyan-500/20 data-[state=active]:text-cyan-400">
               🔄 Workflow
             </TabsTrigger>
+            <TabsTrigger value="architecture" className="data-[state=active]:bg-cyan-500/20 data-[state=active]:text-cyan-400">
+              🏗️ Architecture
+            </TabsTrigger>
             <TabsTrigger value="features" className="data-[state=active]:bg-cyan-500/20 data-[state=active]:text-cyan-400">
               ✨ Features
             </TabsTrigger>
@@ -437,6 +440,186 @@ export default function Documentation() {
                     </Card>
                   </motion.div>
                 )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Architecture Tab */}
+          <TabsContent value="architecture" className="space-y-6">
+            <Card className="bg-black/90 border-cyan-500/50">
+              <CardHeader>
+                <CardTitle className="text-2xl text-cyan-400 font-mono flex items-center gap-2">
+                  <Database className="h-6 w-6" />
+                  System Architecture
+                </CardTitle>
+                <CardDescription className="text-gray-400">
+                  High-level system design and component interactions
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="space-y-4">
+                  <div className="bg-gradient-to-br from-cyan-900/20 to-black/80 border border-cyan-500/30 rounded-lg p-6">
+                    <h3 className="text-xl font-bold text-cyan-400 font-mono mb-4">Frontend Layer</h3>
+                    <ul className="space-y-2 text-gray-300 text-sm">
+                      <li className="flex items-start gap-2">
+                        <CheckCircle className="h-4 w-4 text-cyan-400 mt-0.5 flex-shrink-0" />
+                        <span><strong className="text-cyan-300">React 19 + TypeScript:</strong> Modern UI with type safety</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <CheckCircle className="h-4 w-4 text-cyan-400 mt-0.5 flex-shrink-0" />
+                        <span><strong className="text-cyan-300">Zustand State Management:</strong> Lightweight global state for trading data</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <CheckCircle className="h-4 w-4 text-cyan-400 mt-0.5 flex-shrink-0" />
+                        <span><strong className="text-cyan-300">TradingView Charts:</strong> Professional-grade charting with technical indicators</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <CheckCircle className="h-4 w-4 text-cyan-400 mt-0.5 flex-shrink-0" />
+                        <span><strong className="text-cyan-300">Browser Storage:</strong> API keys stored locally (never sent to backend)</span>
+                      </li>
+                    </ul>
+                  </div>
+
+                  <div className="bg-gradient-to-br from-purple-900/20 to-black/80 border border-purple-500/30 rounded-lg p-6">
+                    <h3 className="text-xl font-bold text-purple-400 font-mono mb-4">Backend Layer</h3>
+                    <ul className="space-y-2 text-gray-300 text-sm">
+                      <li className="flex items-start gap-2">
+                        <CheckCircle className="h-4 w-4 text-purple-400 mt-0.5 flex-shrink-0" />
+                        <span><strong className="text-purple-300">Python FastAPI:</strong> High-performance REST API + WebSocket support</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <CheckCircle className="h-4 w-4 text-purple-400 mt-0.5 flex-shrink-0" />
+                        <span><strong className="text-purple-300">SQLAlchemy ORM:</strong> Database abstraction for trades, positions, and logs</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <CheckCircle className="h-4 w-4 text-purple-400 mt-0.5 flex-shrink-0" />
+                        <span><strong className="text-purple-300">Celery + Redis:</strong> Background task processing for AI analysis</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <CheckCircle className="h-4 w-4 text-purple-400 mt-0.5 flex-shrink-0" />
+                        <span><strong className="text-purple-300">SQLite/PostgreSQL:</strong> Local development / Production database</span>
+                      </li>
+                    </ul>
+                  </div>
+
+                  <div className="bg-gradient-to-br from-green-900/20 to-black/80 border border-green-500/30 rounded-lg p-6">
+                    <h3 className="text-xl font-bold text-green-400 font-mono mb-4">Integration Layer</h3>
+                    <ul className="space-y-2 text-gray-300 text-sm">
+                      <li className="flex items-start gap-2">
+                        <CheckCircle className="h-4 w-4 text-green-400 mt-0.5 flex-shrink-0" />
+                        <span><strong className="text-green-300">Hyperliquid SDK:</strong> Direct integration with perpetual futures exchange</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <CheckCircle className="h-4 w-4 text-green-400 mt-0.5 flex-shrink-0" />
+                        <span><strong className="text-green-300">OpenRouter API:</strong> Access to DeepSeek V3.1 and Qwen3 Max AI models</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <CheckCircle className="h-4 w-4 text-green-400 mt-0.5 flex-shrink-0" />
+                        <span><strong className="text-green-300">Binance API:</strong> Fallback price data and market information</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <CheckCircle className="h-4 w-4 text-green-400 mt-0.5 flex-shrink-0" />
+                        <span><strong className="text-green-300">CryptoPanic API:</strong> Real-time crypto news aggregation (optional)</span>
+                      </li>
+                    </ul>
+                  </div>
+                </div>
+
+                {/* Data Flow Diagram */}
+                <div className="mt-8">
+                  <h3 className="text-xl font-bold text-cyan-400 font-mono mb-4">Data Flow</h3>
+                  <div className="bg-black/50 border border-cyan-500/30 rounded-lg p-6">
+                    <div className="space-y-4">
+                      <div className="flex items-center gap-4">
+                        <div className="w-32 bg-cyan-500/20 border border-cyan-500 rounded px-3 py-2 text-cyan-400 font-mono text-sm text-center">
+                          User Action
+                        </div>
+                        <div className="text-cyan-400">→</div>
+                        <div className="w-32 bg-purple-500/20 border border-purple-500 rounded px-3 py-2 text-purple-400 font-mono text-sm text-center">
+                          Frontend
+                        </div>
+                        <div className="text-cyan-400">→</div>
+                        <div className="w-32 bg-blue-500/20 border border-blue-500 rounded px-3 py-2 text-blue-400 font-mono text-sm text-center">
+                          Backend API
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-4 ml-16">
+                        <div className="text-cyan-400">↓</div>
+                      </div>
+                      <div className="flex items-center gap-4">
+                        <div className="w-32 bg-green-500/20 border border-green-500 rounded px-3 py-2 text-green-400 font-mono text-sm text-center">
+                          AI Analysis
+                        </div>
+                        <div className="text-cyan-400">←</div>
+                        <div className="w-32 bg-orange-500/20 border border-orange-500 rounded px-3 py-2 text-orange-400 font-mono text-sm text-center">
+                          Market Data
+                        </div>
+                        <div className="text-cyan-400">←</div>
+                        <div className="w-32 bg-yellow-500/20 border border-yellow-500 rounded px-3 py-2 text-yellow-400 font-mono text-sm text-center">
+                          Hyperliquid
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-4 ml-16">
+                        <div className="text-cyan-400">↓</div>
+                      </div>
+                      <div className="flex items-center gap-4">
+                        <div className="w-32 bg-red-500/20 border border-red-500 rounded px-3 py-2 text-red-400 font-mono text-sm text-center">
+                          Risk Check
+                        </div>
+                        <div className="text-cyan-400">→</div>
+                        <div className="w-32 bg-pink-500/20 border border-pink-500 rounded px-3 py-2 text-pink-400 font-mono text-sm text-center">
+                          Execute Trade
+                        </div>
+                        <div className="text-cyan-400">→</div>
+                        <div className="w-32 bg-cyan-500/20 border border-cyan-500 rounded px-3 py-2 text-cyan-400 font-mono text-sm text-center">
+                          Update UI
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* No Auth Architecture */}
+                <div className="mt-8">
+                  <h3 className="text-xl font-bold text-orange-400 font-mono mb-4 flex items-center gap-2">
+                    <Shield className="h-5 w-5" />
+                    No Authentication Architecture
+                  </h3>
+                  <div className="bg-gradient-to-br from-orange-900/20 to-black/80 border border-orange-500/30 rounded-lg p-6 space-y-4">
+                    <p className="text-gray-300 text-sm">
+                      This project is designed for <strong className="text-orange-400">local and private use only</strong>. No authentication system is required.
+                    </p>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <h4 className="text-orange-400 font-mono font-bold mb-2">✅ What Stays:</h4>
+                        <ul className="space-y-1 text-sm text-gray-300">
+                          <li>• Direct API access (localhost only)</li>
+                          <li>• All trading functionality</li>
+                          <li>• Database for trades/logs/positions</li>
+                          <li>• WebSocket for real-time updates</li>
+                          <li>• Background workers (Celery)</li>
+                        </ul>
+                      </div>
+                      <div>
+                        <h4 className="text-red-400 font-mono font-bold mb-2">❌ What's Removed:</h4>
+                        <ul className="space-y-1 text-sm text-gray-300">
+                          <li>• No authentication system</li>
+                          <li>• No JWT tokens</li>
+                          <li>• No user sessions</li>
+                          <li>• No login/signup flows</li>
+                          <li>• No auth middleware</li>
+                        </ul>
+                      </div>
+                    </div>
+
+                    <div className="mt-4 p-4 bg-orange-500/10 border border-orange-500/30 rounded">
+                      <p className="text-xs text-orange-300 font-mono">
+                        🔒 <strong>Security:</strong> API keys are stored in browser localStorage or backend .env file. Use network-level security (firewall) for production deployments. CORS allows localhost:5173 for development.
+                      </p>
+                    </div>
+                  </div>
+                </div>
               </CardContent>
             </Card>
           </TabsContent>
