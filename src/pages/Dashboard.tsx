@@ -11,7 +11,7 @@ import { TradingControls } from '@/components/TradingControls';
 import { LogoDropdown } from '@/components/LogoDropdown';
 import { storage } from '@/lib/storage';
 import { useTradingStore } from '@/store/tradingStore';
-import { Activity, DollarSign, TrendingUp, Settings, LineChart, Network, X, Loader2 } from 'lucide-react';
+import { Activity, DollarSign, TrendingUp, Settings, LineChart, Network, X, Loader2, AlertTriangle } from 'lucide-react';
 import { toast } from 'sonner';
 import { TradingLogs } from '@/components/TradingLogs';
 import { NewsFeed } from '@/components/NewsFeed';
@@ -24,6 +24,7 @@ import { CloseAllPositionsDialog } from '@/components/CloseAllPositionsDialog';
 import { UpdateNotification } from '@/components/UpdateNotification';
 import { pythonApi } from '@/lib/python-api-client';
 import { AiThoughtsPanel } from '@/components/AiThoughtsPanel';
+import { assessLiquidationRisk } from '@/lib/liquidation-protection';
 
 export default function Dashboard() {
   const navigate = useNavigate();
@@ -71,9 +72,24 @@ export default function Dashboard() {
     }
   }, [network, hasApiKeys, setBalance, mode]);
   
-  // Calculate P&L
+  // Calculate P&L and Liquidation Risk
   const pnl = position?.pnl || 0;
   const pnlPercent = position ? ((pnl / (position.entryPrice * position.size)) * 100).toFixed(2) : '0.00';
+  
+  // Assess liquidation risk if position exists
+  const liquidationRisk = position 
+    ? assessLiquidationRisk(
+        {
+          symbol: position.symbol,
+          side: position.side,
+          size: position.size,
+          entryPrice: position.entryPrice,
+          leverage: position.leverage || settings.leverage,
+        },
+        position.currentPrice || position.entryPrice,
+        balance
+      )
+    : null;
   
   const handleModeToggle = () => {
     const newMode = mode === 'paper' ? 'live' : 'paper';
@@ -270,7 +286,41 @@ export default function Dashboard() {
         
         {/* Main Content */}
         <div className="container mx-auto px-4 py-6 space-y-6">
-          {/* Stats Row - Compact */}
+          {/* Liquidation Risk Warning */}
+          {liquidationRisk && liquidationRisk.riskLevel !== 'safe' && (
+            <motion.div
+              initial={{ opacity: 0, y: -20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className={`p-4 rounded-lg border-2 ${
+                liquidationRisk.riskLevel === 'critical'
+                  ? 'bg-red-500/20 border-red-500'
+                  : liquidationRisk.riskLevel === 'danger'
+                  ? 'bg-orange-500/20 border-orange-500'
+                  : 'bg-yellow-500/20 border-yellow-500'
+              }`}
+            >
+              <div className="flex items-center gap-3">
+                <AlertTriangle className={`h-6 w-6 ${
+                  liquidationRisk.riskLevel === 'critical' ? 'text-red-400 animate-pulse' : 
+                  liquidationRisk.riskLevel === 'danger' ? 'text-orange-400' : 'text-yellow-400'
+                }`} />
+                <div className="flex-1">
+                  <h3 className="font-bold font-mono text-lg">
+                    {liquidationRisk.riskLevel === 'critical' ? '🚨 CRITICAL LIQUIDATION RISK' :
+                     liquidationRisk.riskLevel === 'danger' ? '⚠️ HIGH LIQUIDATION RISK' :
+                     '⚠️ LIQUIDATION WARNING'}
+                  </h3>
+                  <p className="text-sm font-mono mt-1">
+                    Liquidation Price: ${liquidationRisk.liquidationPrice.toFixed(2)} | 
+                    Distance: {liquidationRisk.distanceToLiquidation.toFixed(2)}% | 
+                    Maintenance Margin: ${liquidationRisk.maintenanceMargin.toFixed(2)}
+                  </p>
+                </div>
+              </div>
+            </motion.div>
+          )}
+
+          {/* Stats Row - Modified P&L Card */}
           <motion.div
             initial={{ y: 20, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
@@ -307,11 +357,26 @@ export default function Dashboard() {
             <Card className="bg-black/80 border-cyan-500/50 shadow-[0_0_20px_rgba(0,255,255,0.2)]">
               <CardContent className="p-4">
                 <div className="flex items-center justify-between">
-                  <div>
+                  <div className="flex-1">
                     <p className="text-xs font-mono text-cyan-400 mb-1">P&L</p>
                     <div className={`text-xl font-bold font-mono ${pnl >= 0 ? 'text-green-400' : 'text-red-400'}`}>
                       {pnl >= 0 ? '+' : ''}${pnl.toFixed(2)} ({pnl >= 0 ? '+' : ''}{pnlPercent}%)
                     </div>
+                    {liquidationRisk && (
+                      <div className="mt-1">
+                        <p className="text-xs font-mono text-gray-400">
+                          Liq: ${liquidationRisk.liquidationPrice.toFixed(2)}
+                        </p>
+                        <div className={`text-xs font-mono font-bold ${
+                          liquidationRisk.riskLevel === 'safe' ? 'text-green-400' :
+                          liquidationRisk.riskLevel === 'warning' ? 'text-yellow-400' :
+                          liquidationRisk.riskLevel === 'danger' ? 'text-orange-400' :
+                          'text-red-400'
+                        }`}>
+                          {liquidationRisk.distanceToLiquidation.toFixed(1)}% away
+                        </div>
+                      </div>
+                    )}
                   </div>
                   <TrendingUp className={`h-5 w-5 ${pnl >= 0 ? 'text-green-400' : 'text-red-400'}`} />
                 </div>

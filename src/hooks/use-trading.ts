@@ -135,6 +135,7 @@ export function useTrading() {
               currentPrice: entryPrice + (unrealizedPnl / size),
               pnl: unrealizedPnl,
               side: size > 0 ? 'long' : 'short' as 'long' | 'short',
+              leverage: settings.leverage ?? 1,
               stopLoss: undefined,
               takeProfit: undefined,
             };
@@ -178,7 +179,7 @@ export function useTrading() {
               entry_price: currentPosition.entryPrice,
               current_price: currentPosition.currentPrice,
               unrealized_pnl: currentPosition.pnl,
-              leverage: settings.leverage,
+              leverage: settings.leverage || 1,
               mode,
             }).catch((error: any) => {
               console.error("Failed to record position snapshot:", error);
@@ -221,8 +222,8 @@ export function useTrading() {
           symbol: positionToClose.symbol,
           side: positionToClose.side === 'long' ? 'sell' : 'buy',
           size: positionToClose.size,
-          price: positionToClose.currentPrice,
-          leverage: settings.leverage,
+          price: positionToClose.currentPrice ?? positionToClose.entryPrice,
+          leverage: positionToClose.leverage ?? settings.leverage ?? 1,
           isTestnet: network === 'testnet',
         });
 
@@ -1006,7 +1007,7 @@ export function useTrading() {
             position.symbol,
             "close_position",
             position.side,
-            position.currentPrice,
+            position.currentPrice ?? position.entryPrice,
             position.size,
             undefined,
             undefined,

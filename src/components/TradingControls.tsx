@@ -18,6 +18,7 @@ import { DEFAULT_PROMPT } from '@/store/tradingStore';
 import { sanitizeNumberWithBounds, sanitizeMultilineText } from '@/lib/utils';
 import { TRADING_TOKENS } from '@/lib/tokenData';
 import { pythonApi } from '@/lib/python-api-client';
+import { validateLeverage } from '@/lib/liquidation-protection';
 
 export function TradingControls() {
   const { settings, updateSettings, chartInterval, setChartInterval, chartType, setChartType, isAutoTrading, setAutoTrading, position, aiModel, setAiModel, customPrompt, setCustomPrompt, mode, network } = useTradingStore();
@@ -137,6 +138,18 @@ export function TradingControls() {
         });
         return;
       }
+      
+      // Validate leverage for this asset
+      const baseSymbol = coin.replace('USD', '');
+      const leverageValidation = validateLeverage(baseSymbol, localSettings.leverage);
+      
+      if (!leverageValidation.valid && leverageValidation.adjustedLeverage) {
+        toast.warning(`⚠️ ${baseSymbol} max leverage is ${leverageValidation.maxLeverage}x`, {
+          description: `Your current leverage (${localSettings.leverage}x) exceeds the limit. It will be adjusted when trading this asset.`,
+          duration: 5000,
+        });
+      }
+      
       setLocalSettings({
         ...localSettings,
         allowedCoins: [...currentCoins, coin],

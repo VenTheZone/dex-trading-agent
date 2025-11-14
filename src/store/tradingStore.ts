@@ -2,20 +2,16 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { TradingSettings } from '@/lib/storage';
 
-interface Position {
+export interface Position {
   symbol: string;
+  side: 'long' | 'short';
   size: number;
   entryPrice: number;
-  currentPrice: number;
+  currentPrice?: number;
   pnl: number;
-  side: 'long' | 'short';
+  leverage?: number;
   stopLoss?: number;
   takeProfit?: number;
-  // Perpetual futures specific fields
-  liquidationPrice?: number;
-  markPrice?: number;
-  fundingRate?: number;
-  estimatedFundingCost?: number;
 }
 
 interface TradingState {

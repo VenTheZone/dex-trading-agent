@@ -29,6 +29,16 @@ export const TRADING_CONSTANTS = {
   MAX_DEMO_BALANCE: 1000000,
 } as const;
 
+// Liquidation Risk Thresholds
+export const LIQUIDATION_RISK = {
+  SAFE_DISTANCE_PERCENT: 20, // 20% distance to liquidation is safe
+  WARNING_DISTANCE_PERCENT: 10, // 10% triggers warning
+  DANGER_DISTANCE_PERCENT: 5, // 5% is dangerous
+  CRITICAL_DISTANCE_PERCENT: 2, // 2% is critical
+  MAX_MARGIN_USAGE_PERCENT: 80, // Don't allow new positions above 80% margin usage
+  EMERGENCY_CLOSE_PERCENT: 90, // Auto-close positions at 90% margin usage
+} as const;
+
 // API Configuration
 export const API_CONFIG = {
   OPENROUTER: {
