@@ -11,6 +11,11 @@ interface Position {
   side: 'long' | 'short';
   stopLoss?: number;
   takeProfit?: number;
+  // Perpetual futures specific fields
+  liquidationPrice?: number;
+  markPrice?: number;
+  fundingRate?: number;
+  estimatedFundingCost?: number;
 }
 
 interface TradingState {

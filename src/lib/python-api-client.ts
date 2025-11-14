@@ -54,6 +54,13 @@ export interface AIAnalysisRequest {
     chartType: 'time' | 'range';
     chartInterval: string;
     technicalContext?: string;
+    // Perpetual futures specific data
+    markPrice?: number;
+    indexPrice?: number;
+    fundingRate?: number;
+    nextFundingTime?: number;
+    openInterest?: number;
+    longShortRatio?: number;
   }>;
   userBalance: number;
   settings: {
@@ -78,6 +85,10 @@ export interface AIAnalysisResponse {
   takeProfit: number;
   positionSize: number;
   marketContext?: string;
+  // Perpetual futures specific recommendations
+  liquidationPrice?: number;
+  estimatedFundingCost?: number;
+  riskRewardRatio?: number;
 }
 
 export interface HyperliquidConnectionTestResponse {

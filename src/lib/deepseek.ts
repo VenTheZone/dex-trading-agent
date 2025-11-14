@@ -22,11 +22,19 @@ export interface MarketData {
   low24h?: number;
   chartType?: "time" | "range";
   chartInterval?: string;
+  // Perpetual futures specific data
+  markPrice?: number;
+  indexPrice?: number;
+  fundingRate?: number;
+  nextFundingTime?: number;
+  openInterest?: number;
+  longShortRatio?: number;
   currentPosition?: {
     side: "long" | "short";
     size: number;
     entryPrice: number;
     unrealizedPnl: number;
+    liquidationPrice?: number;
   };
 }
 
@@ -74,6 +82,50 @@ When analyzing Range charts, focus on:
 - Always account for liquidation risk when recommending leverage`
       : `LEVERAGE DISABLED: User has set leverage to ${riskSettings.leverage}x. Do not recommend changing leverage.`;
 
+    // Calculate liquidation price for context
+    const calculateLiquidationPrice = (entryPrice: number, leverage: number, side: 'long' | 'short'): number => {
+      const liquidationPercent = (100 / leverage) * 0.9; // 90% of max to account for maintenance margin
+      if (side === 'long') {
+        return entryPrice * (1 - liquidationPercent / 100);
+      } else {
+        return entryPrice * (1 + liquidationPercent / 100);
+      }
+    };
+
+    // Funding rate context
+    const fundingContext = marketData.fundingRate !== undefined
+      ? `
+=== FUNDING RATE DATA ===
+Current Funding Rate: ${(marketData.fundingRate * 100).toFixed(4)}% (${marketData.fundingRate > 0 ? 'Longs pay shorts' : 'Shorts pay longs'})
+Next Funding: ${marketData.nextFundingTime ? new Date(marketData.nextFundingTime).toLocaleString() : 'N/A'}
+Funding Impact: ${Math.abs(marketData.fundingRate) > 0.01 ? '⚠️ HIGH - Consider funding costs' : '✅ Normal'}
+${marketData.fundingRate > 0.05 ? '🔴 EXTREME POSITIVE FUNDING - Bearish signal (many longs)' : ''}
+${marketData.fundingRate < -0.05 ? '🔴 EXTREME NEGATIVE FUNDING - Bullish signal (many shorts)' : ''}
+`
+      : '';
+
+    // Open interest context
+    const openInterestContext = marketData.openInterest !== undefined
+      ? `
+=== OPEN INTEREST & MARKET STRUCTURE ===
+Open Interest: ${marketData.openInterest.toLocaleString()} contracts
+Long/Short Ratio: ${marketData.longShortRatio?.toFixed(2) || 'N/A'}
+Market Sentiment: ${marketData.longShortRatio && marketData.longShortRatio > 1.2 ? '⚠️ Crowded longs' : marketData.longShortRatio && marketData.longShortRatio < 0.8 ? '⚠️ Crowded shorts' : '✅ Balanced'}
+`
+      : '';
+
+    // Price discrepancy context
+    const priceContext = marketData.markPrice && marketData.indexPrice
+      ? `
+=== PRICE ANALYSIS ===
+Last Price: $${marketData.currentPrice}
+Mark Price: $${marketData.markPrice} (used for liquidations)
+Index Price: $${marketData.indexPrice} (spot reference)
+Price Discrepancy: ${((marketData.markPrice - marketData.indexPrice) / marketData.indexPrice * 100).toFixed(3)}%
+${Math.abs((marketData.markPrice - marketData.indexPrice) / marketData.indexPrice) > 0.005 ? '⚠️ Significant price discrepancy detected' : ''}
+`
+      : '';
+
     const systemPrompt = `You are an expert cryptocurrency PERPETUAL FUTURES trading analyst specializing in derivatives trading and technical analysis.
 
 TRADING CONTEXT: PERPETUAL FUTURES (NOT SPOT)
@@ -99,6 +151,7 @@ PERPETUAL FUTURES RISK FACTORS:
    - Positive funding: Longs pay shorts (bearish signal if high)
    - Negative funding: Shorts pay longs (bullish signal if high)
    - High funding rates can erode profits over time
+   - Extreme funding rates (>0.05% or <-0.05%) indicate crowded positions
 
 3. **Position Sizing for Derivatives**:
    - Never risk more than 2-5% of account balance per trade
@@ -109,6 +162,7 @@ PERPETUAL FUTURES RISK FACTORS:
    - Check for liquidation cascades (rapid price moves)
    - Monitor open interest changes (increasing = new positions, decreasing = closing)
    - Be aware of funding rate arbitrage opportunities
+   - Long/Short ratio imbalances can signal potential reversals
 
 Your analysis must consider:
 1. Current market conditions and price action
@@ -118,7 +172,8 @@ Your analysis must consider:
 5. Position sizing based on account balance and leverage multiplier
 6. Stop loss placement to avoid liquidation
 7. Take profit levels considering funding rate costs
-8. Market sentiment from derivatives data
+8. Market sentiment from derivatives data (funding, OI, long/short ratio)
+9. Mark price vs Index price discrepancies
 
 Respond ONLY with valid JSON matching this exact structure:
 {
@@ -129,7 +184,10 @@ Respond ONLY with valid JSON matching this exact structure:
   "stopLoss": number (if opening position),
   "takeProfit": number (if opening position),
   "positionSize": number (if opening position, in USD),
-  "riskLevel": "low" | "medium" | "high"
+  "riskLevel": "low" | "medium" | "high",
+  "liquidationPrice": number (if opening position),
+  "estimatedFundingCost": number (estimated 24h funding cost in USD),
+  "riskRewardRatio": number
 }`;
 
     const liquidationDistance = riskSettings.leverage ? (100 / riskSettings.leverage).toFixed(2) : "N/A";
@@ -147,6 +205,12 @@ Current Price: ${marketData.currentPrice}
 24h High: ${marketData.high24h}
 24h Low: ${marketData.low24h}
 24h Volume: ${marketData.volume24h?.toLocaleString()}
+
+${priceContext}
+
+${fundingContext}
+
+${openInterestContext}
 
 === ACCOUNT & RISK PARAMETERS ===
 Account Balance: ${balance}
@@ -173,6 +237,7 @@ ${marketData.currentPosition ? `
 - Entry Price: ${marketData.currentPosition.entryPrice}
 - Current Price: ${marketData.currentPrice}
 - Unrealized PnL: ${marketData.currentPosition.unrealizedPnl}
+- Liquidation Price: ${marketData.currentPosition.liquidationPrice || 'N/A'}
 - Position Status: ${marketData.currentPosition.unrealizedPnl > 0 ? 'IN PROFIT ✅' : 'IN LOSS ⚠️'}
 ` : "No current position - Fresh analysis for new trade"}
 
@@ -182,10 +247,13 @@ ${marketData.chartType === "range" ? "⚠️ RANGE CHART ANALYSIS: Focus on pric
 Provide a comprehensive perpetual futures trading recommendation considering:
 1. Technical analysis of price action and chart patterns
 2. Liquidation risk at current leverage (${riskSettings.leverage}x)
-3. Proper position sizing (max 2-5% account risk)
-4. Stop loss placement with safety buffer from liquidation
-5. Take profit targets based on risk/reward ratio
-6. Market volatility and recent price action
+3. Funding rate impact on position profitability
+4. Market sentiment from derivatives data (OI, long/short ratio)
+5. Proper position sizing (max 2-5% account risk)
+6. Stop loss placement with safety buffer from liquidation
+7. Take profit targets based on risk/reward ratio (minimum 1:2)
+8. Mark price vs Index price discrepancies
+9. Market volatility and recent price action
 
 Remember: This is LEVERAGED DERIVATIVES trading - losses are amplified ${riskSettings.leverage || 1}x. Prioritize capital preservation.`;
 
@@ -198,7 +266,7 @@ Remember: This is LEVERAGED DERIVATIVES trading - losses are amplified ${riskSet
         ],
         response_format: { type: "json_object" },
         temperature: 0.7,
-        max_tokens: 1000,
+        max_tokens: 1500,
       });
 
       const content = response.choices[0]?.message?.content;
