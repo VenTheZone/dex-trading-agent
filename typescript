@@ -1,11 +1,12 @@
-  interface Position {
-    symbol: string;
-    size: number;
-    entryPrice: number;
-    currentPrice: number;
-    pnl: number;
-    side: 'long' | 'short';
-    stopLoss?: number;
-    takeProfit?: number;
-  }
-  
+// From use-trading.ts - executeTrade()
+await pythonApi.executeLiveTrade({
+  apiSecret: keys.hyperliquid.apiSecret,
+  symbol,
+  side: side === 'long' ? 'buy' : 'sell',
+  size,  // ← AI-calculated position size
+  price,
+  stopLoss,
+  takeProfit,
+  leverage: settings.leverage,  // ← User-configured leverage
+  isTestnet: network === 'testnet',  // ← Network selection
+});
