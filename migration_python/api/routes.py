@@ -10,6 +10,7 @@ from datetime import datetime
 
 from database import get_db
 from database.schema import TradingLog, BalanceHistory, PositionSnapshot
+from services.hyperliquid_service import HyperliquidService
 
 # ============================================================================
 # PYDANTIC MODELS (Request/Response schemas)
@@ -41,6 +42,17 @@ class PositionSnapshotCreate(BaseModel):
 class PriceRequest(BaseModel):
     symbol: str
     is_testnet: Optional[bool] = False
+
+class ExecuteTradeRequest(BaseModel):
+    apiSecret: str
+    symbol: str
+    side: str  # "buy" or "sell"
+    size: float
+    price: Optional[float] = None
+    stopLoss: Optional[float] = None
+    takeProfit: Optional[float] = None
+    leverage: int
+    isTestnet: bool
 
 # ============================================================================
 # ROUTER SETUP
@@ -210,6 +222,64 @@ async def get_position_history(
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+# ============================================================================
+# HYPERLIQUID TRADE EXECUTION
+# ============================================================================
+
+@router.post("/hyperliquid/execute-trade")
+async def execute_hyperliquid_trade(trade: ExecuteTradeRequest):
+    """Execute a live trade on Hyperliquid"""
+    try:
+        # Initialize Hyperliquid service
+        hl_service = HyperliquidService(is_testnet=trade.isTestnet)
+        
+        # Place main order
+        order_result = await hl_service.place_order(
+            api_secret=trade.apiSecret,
+            symbol=trade.symbol,
+            side=trade.side,
+            size=trade.size,
+            price=trade.price,
+            order_type="market" if not trade.price else "limit",
+            leverage=trade.leverage
+        )
+        
+        if not order_result["success"]:
+            raise HTTPException(status_code=400, detail=order_result.get("error", "Order placement failed"))
+        
+        # Place stop loss if provided
+        if trade.stopLoss:
+            sl_side = "sell" if trade.side == "buy" else "buy"
+            await hl_service.place_stop_loss(
+                api_secret=trade.apiSecret,
+                symbol=trade.symbol,
+                side=sl_side,
+                size=trade.size,
+                trigger_price=trade.stopLoss
+            )
+        
+        # Place take profit if provided
+        if trade.takeProfit:
+            tp_side = "sell" if trade.side == "buy" else "buy"
+            await hl_service.place_take_profit(
+                api_secret=trade.apiSecret,
+                symbol=trade.symbol,
+                side=tp_side,
+                size=trade.size,
+                trigger_price=trade.takeProfit
+            )
+        
+        return {
+            "success": True,
+            "data": order_result,
+            "message": f"Trade executed successfully on {'Testnet' if trade.isTestnet else 'Mainnet'}"
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Trade execution failed: {str(e)}")
 
 # ============================================================================
 # HEALTH CHECK
