@@ -160,9 +160,13 @@ export function WalletConnect({ onConnect }: WalletConnectProps) {
                 <li>• Track P&L in real-time</li>
               </ul>
               <p className="mt-3 text-xs text-yellow-300 font-bold">
-                ⚠️ Note: Hyperliquid is an independent Layer 1 blockchain (Chain ID 998)
+                ⚠️ Note: Hyperliquid uses a dual-chain architecture
               </p>
-              <p className="mt-1 text-xs text-cyan-300">
+              <p className="mt-1 text-xs text-gray-300">
+                • Trading: Hyperliquid L1 (Chain ID 998)<br/>
+                • Deposits: Arbitrum One (USDC bridge)
+              </p>
+              <p className="mt-2 text-xs text-cyan-300">
                 💡 For automated AI trading, use the "API Keys" tab
               </p>
             </AlertDescription>

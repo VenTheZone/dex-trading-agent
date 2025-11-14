@@ -211,8 +211,11 @@ You have two ways to configure your API keys:
 - Git
 
 **Network Information:**
-- Hyperliquid Mainnet: Independent L1 blockchain
-- Hyperliquid Testnet: Chain ID 998, RPC: https://rpc.hyperliquid-testnet.xyz/evm
+- **Hyperliquid Trading**: Independent L1 blockchain (where perpetual futures trading occurs)
+- **Hyperliquid Testnet**: Chain ID 998, RPC: https://rpc.hyperliquid-testnet.xyz/evm
+- **Deposits/Withdrawals**: Arbitrum One (deposit USDC via Arbitrum to fund your Hyperliquid account)
+  - Arbitrum One RPC: https://arb1.arbitrum.io/rpc
+  - Bridge USDC from Arbitrum → Hyperliquid at [app.hyperliquid.xyz](https://app.hyperliquid.xyz)
 
 ---
 
