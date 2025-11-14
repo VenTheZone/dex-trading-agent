@@ -1,2 +1,0 @@
-"use node";
-export {};
