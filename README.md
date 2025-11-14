@@ -25,12 +25,86 @@ DeX Trading Agent is an advanced AI-driven trading system for **Hyperliquid perp
   - Position sizing based on leverage multiplier
 
 ### 🛡️ Advanced Risk Management for Derivatives
-- **Liquidation Risk Monitoring:** Real-time calculation based on leverage (5x = ~20% buffer, 10x = ~10% buffer, etc.)
-- **Funding Rate Tracking:** Monitor funding costs and crowded positions
-- **Margin Usage Alerts:** Auto-pause at 80% margin usage
-- **Smart Stop Loss:** Placement with safety buffer from liquidation price
-- **Take Profit Optimization:** Considers funding rate costs over time
-- **Trailing Stops:** Dynamic adjustment as position moves in profit
+
+The Trading Agent implements multi-layered risk management specifically designed for perpetual futures trading:
+
+#### **1. Liquidation Risk Protection**
+- **Real-time Liquidation Monitoring:** Calculates liquidation price based on leverage and position size
+  - 5x leverage: ~20% price move buffer before liquidation
+  - 10x leverage: ~10% price move buffer before liquidation
+  - 20x leverage: ~5% price move buffer before liquidation
+  - 40x leverage: ~2.5% price move buffer before liquidation
+- **Safety Buffer Enforcement:** Stop losses are automatically placed with 15-20% buffer from liquidation price
+- **Margin Usage Alerts:** System auto-pauses trading when margin usage exceeds 80%
+- **Mark Price Monitoring:** Tracks mark price vs index price discrepancies to prevent unexpected liquidations
+
+#### **2. Position Sizing & Leverage Control**
+- **Maximum Risk Per Trade:** Limits risk to 2-5% of account balance per position
+- **Leverage Amplification Awareness:** AI accounts for leverage multiplier when calculating position size
+- **Dynamic Position Sizing:** Adjusts position size based on:
+  - Account balance
+  - Current volatility
+  - Market conditions
+  - Confidence level of AI analysis
+- **AI Leverage Recommendations:** When enabled, AI can suggest optimal leverage (1x-40x) based on market conditions
+
+#### **3. Funding Rate Management**
+- **Funding Cost Tracking:** Monitors 8-hour funding rates and calculates impact on profitability
+- **Crowded Position Detection:** Identifies when funding rates indicate overcrowded longs or shorts
+  - Positive funding >0.05%: Many longs (bearish signal)
+  - Negative funding <-0.05%: Many shorts (bullish signal)
+- **Hold Duration Optimization:** Considers funding costs when determining position hold time
+- **Funding Rate Alerts:** Warns when funding rates become extreme
+
+#### **4. Stop Loss & Take Profit Strategy**
+- **Smart Stop Loss Placement:**
+  - Positioned at key technical levels (support/resistance)
+  - Always tighter than liquidation distance
+  - Accounts for market volatility and spread
+  - Minimum 15-20% buffer from liquidation price
+- **Take Profit Optimization:**
+  - Minimum 1:2 risk/reward ratio enforced
+  - Considers funding rate costs over expected hold time
+  - Adjusts for market volatility
+- **Trailing Stop Loss:** Dynamically adjusts stop loss as position moves into profit
+  - Locks in gains while allowing position to run
+  - Configurable trailing distance
+
+#### **5. Market Structure Analysis**
+- **Open Interest Monitoring:** Tracks total open interest to identify potential liquidation cascades
+- **Long/Short Ratio Analysis:** Monitors market sentiment and crowded positions
+- **Price Discrepancy Alerts:** Warns when mark price deviates significantly from index price
+- **Liquidity Assessment:** Evaluates order book depth before executing trades
+
+#### **6. AI-Driven Risk Assessment**
+The AI model (DeepSeek V3.1 / Qwen3 Max) performs comprehensive risk analysis:
+- **Multi-Factor Risk Scoring:** Combines technical, fundamental, and derivatives-specific factors
+- **Confidence-Based Execution:** Only executes trades when confidence threshold is met
+- **Market Condition Adaptation:** Reduces position size or avoids trading in high volatility
+- **Confluence Requirement:** Requires multiple indicators to align before opening positions
+- **"When in Doubt, HOLD" Philosophy:** Prioritizes capital preservation over aggressive gains
+
+#### **7. Emergency Controls**
+- **Auto-Pause Mechanism:** Automatically stops trading when:
+  - Margin usage exceeds 80%
+  - Consecutive losses exceed threshold
+  - Extreme market volatility detected
+  - API connection issues occur
+- **Manual Override:** Users can instantly close all positions via emergency button
+- **Position Limits:** Configurable maximum number of concurrent positions
+- **Daily Loss Limits:** Optional daily loss cap to prevent catastrophic drawdowns
+
+#### **8. Real-Time Monitoring & Alerts**
+- **Live Position Tracking:** Real-time P&L, liquidation distance, and margin usage
+- **Risk Metric Dashboard:** Visual display of all risk parameters
+- **Alert System:** Notifications for:
+  - Approaching liquidation levels
+  - High funding rates
+  - Significant price discrepancies
+  - Margin usage warnings
+  - Stop loss/take profit triggers
+
+**Risk Management Philosophy:** The Trading Agent prioritizes capital preservation over aggressive gains. It's designed to survive market volatility and avoid catastrophic losses through disciplined risk management, proper position sizing, and AI-driven decision making that accounts for the unique risks of leveraged perpetual futures trading.
 
 ### 📊 Trading Modes
 - **Live Trading:** Real funds on Hyperliquid Mainnet/Testnet with full derivatives features
