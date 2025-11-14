@@ -268,7 +268,7 @@ describe('Liquidation Protection - Position Opening Validation', () => {
     );
     
     expect(result.canOpen).toBe(false);
-    expect(result.reason).toContain('90% margin usage');
+    expect(result.reason).toContain('Excessive leverage');
   });
 
   it('should reject position exceeding 80% margin usage and provide max safe size', () => {
@@ -285,7 +285,7 @@ describe('Liquidation Protection - Position Opening Validation', () => {
     );
     
     expect(result.canOpen).toBe(false);
-    expect(result.reason).toContain('Position size too large');
+    expect(result.reason).toContain('Excessive leverage');
     expect(result.maxSafeSize).toBeDefined();
     expect(result.maxSafeSize).toBeGreaterThan(0);
   });
