@@ -166,7 +166,7 @@ git clone https://github.com/VenTheZone/dex-trading-agent.git
 cd dex-trading-agent
 
 # Start the application
-docker-compose up --build
+docker build -t dex-trading-agent .
 ```
 
 This will automatically:
