@@ -17,3 +17,4 @@ This document provides detailed pseudo code and algorithmic descriptions for all
 
 ### Main Auto-Trading Cycle
 
+
