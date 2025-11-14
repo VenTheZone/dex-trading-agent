@@ -1,6 +1,8 @@
 # Deployment Guide - DeX Trading Agent
 
-## 🏠 Local Deployment Options
+## 🏠 Local Deployment Only
+
+**Important:** This project is designed exclusively for local deployment. All cloud deployment configurations have been removed to ensure security and privacy.
 
 This guide covers running the DeX Trading Agent on your local machine. Choose between Docker (recommended) or manual setup.
 
@@ -18,4 +20,5 @@ Docker provides an isolated, consistent environment across different machines.
 ### Quick Start
 
 1. **Clone the repository**
+
 

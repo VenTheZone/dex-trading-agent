@@ -59,5 +59,17 @@ When adding new documentation:
 - ✅ Trading logic with pseudo code complete
 - ✅ Deployment guides complete
 - ✅ User guides complete
+- ✅ Environment configuration documented
+- ✅ Security model documented
+- ✅ Local-only deployment enforced
 
-Last Updated: 2024-11-13
+Last Updated: 2024-01-XX
+
+## 🔧 Recent Changes
+
+- Removed all cloud deployment configurations (render.yaml)
+- Clarified environment file priority (.env vs .env.local)
+- Updated CORS configuration for local development
+- Fixed Docker volume mounts for database persistence
+- Removed all vly.ai references from codebase
+- Added comprehensive API key configuration documentation
