@@ -68,7 +68,6 @@
     "zustand": "^5.0.2"
   },
   "devDependencies": {
-    "@tailwindcss/vite": "^4.0.0-beta.7",
     "@eslint/js": "^9.17.0",
     "@types/node": "^22.10.5",
     "@types/react": "^18.3.18",
