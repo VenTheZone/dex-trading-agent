@@ -161,8 +161,8 @@ Run the full stack with Docker:
 
 ```bash
 # Clone the repository
-git clone https://github.com/your-username/de-x-trading-agent.git
-cd de-x-trading-agent
+git clone https://github.com/VenTheZone/dex-trading-agent.git
+cd dex-trading-agent
 
 # Start the application
 docker-compose up --build
