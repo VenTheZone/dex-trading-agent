@@ -25,6 +25,7 @@ import { UpdateNotification } from '@/components/UpdateNotification';
 import { pythonApi } from '@/lib/python-api-client';
 import { AiThoughtsPanel } from '@/components/AiThoughtsPanel';
 import { assessLiquidationRisk } from '@/lib/liquidation-protection';
+import { FloatingLogViewer } from '@/components/FloatingLogViewer';
 
 export default function Dashboard() {
   const navigate = useNavigate();
@@ -537,6 +538,9 @@ export default function Dashboard() {
           positionCount={position ? 1 : 0}
           mode={mode}
         />
+        
+        {/* Floating Log Viewer */}
+        <FloatingLogViewer />
       </div>
     </div>
   );

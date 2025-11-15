@@ -1,8 +1,8 @@
 "use node";
 
-// This file is kept for reference but not actively used.
-// Market data is fetched directly via Binance API in the Python backend
-// to avoid CCXT dependency issues.
+// DEPRECATED: This file is no longer used.
+// All market data is fetched exclusively from Hyperliquid via the Python backend.
+// See migration_python/services/market_data_service.py for the actual implementation.
 
 export interface MarketData {
   symbol: string;
@@ -16,5 +16,6 @@ export interface MarketData {
   timestamp: number;
 }
 
-// Note: Direct API calls are used instead of CCXT in production
-// See migration_python/services/market_data_service.py for the actual implementation
+// Note: Hyperliquid is the ONLY price source since it's our trading platform
+// Frontend: src/lib/price-service.ts -> pythonApi.fetchPrice()
+// Backend: migration_python/services/market_data_service.py -> fetch_from_hyperliquid()

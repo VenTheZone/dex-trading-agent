@@ -308,7 +308,7 @@ pnpm dev
 ```
 
 **Step 2:** Open the application in your browser
-- URL: `http://localhost:5173` (or your configured port)
+- URL: `http://localhost:3000` (or your configured port)
 
 **Step 3:** You'll see the API Key Setup screen with 3 tabs:
 - 🔗 **Wallet** - For wallet connection (future feature)
@@ -435,7 +435,7 @@ REDIS_URL=redis://localhost:6379/0
 # Server Configuration
 PORT=8000
 DEBUG=false  # Set to true for development
-CORS_ORIGINS=http://localhost:5173,http://localhost:3000
+CORS_ORIGINS=http://localhost:3000
 ```
 
 **Step 8:** Save and close the file

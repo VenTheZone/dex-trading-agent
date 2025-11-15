@@ -268,7 +268,7 @@ export default function Documentation() {
                       </li>
                       <li className="flex items-center gap-2">
                         <CheckCircle className="h-4 w-4 text-orange-400" />
-                        Frontend: Port 5173
+                        Frontend: Port 3000
                       </li>
                       <li className="flex items-center gap-2">
                         <CheckCircle className="h-4 w-4 text-orange-400" />
@@ -615,7 +615,7 @@ export default function Documentation() {
 
                     <div className="mt-4 p-4 bg-orange-500/10 border border-orange-500/30 rounded">
                       <p className="text-xs text-orange-300 font-mono">
-                        🔒 <strong>Security:</strong> API keys are stored in browser localStorage or backend .env file. Use network-level security (firewall) for production deployments. CORS allows localhost:5173 for development.
+                        🔒 <strong>Security:</strong> API keys are stored in browser localStorage or backend .env file. Use network-level security (firewall) for production deployments. CORS allows localhost:3000 for development.
                       </p>
                     </div>
                   </div>

@@ -46,45 +46,12 @@ export const API_CONFIG = {
     KEY_PREFIX: 'sk-or-v1-',
     TIMEOUT: 30000,
   },
-  BINANCE: {
-    BASE_URLS: [
-      'https://api.binance.com/api/v3',
-      'https://api1.binance.com/api/v3',
-      'https://api2.binance.com/api/v3',
-      'https://api3.binance.com/api/v3',
-    ],
-    US_URL: 'https://api.binance.us/api/v3',
-    TIMEOUT: 10000,
-  },
-  COINBASE: {
-    BASE_URL: 'https://api.coinbase.com/v2/prices',
-    TIMEOUT: 10000,
-  },
-  KRAKEN: {
-    BASE_URL: 'https://api.kraken.com/0/public/Ticker',
-    TIMEOUT: 10000,
-  },
-  KUCOIN: {
-    BASE_URL: 'https://api.kucoin.com/api/v1/market/orderbook/level1',
-    TIMEOUT: 10000,
-  },
-  OKX: {
-    BASE_URL: 'https://www.okx.com/api/v5/market/ticker',
-    TIMEOUT: 10000,
-  },
-  GATEIO: {
-    BASE_URL: 'https://api.gateio.ws/api/v4/spot/tickers',
-    TIMEOUT: 10000,
-  },
-  MEXC: {
-    BASE_URL: 'https://api.mexc.com/api/v3/ticker/price',
-    TIMEOUT: 10000,
-  },
   HYPERLIQUID: {
     MAINNET_URL: 'https://api.hyperliquid.xyz',
     TESTNET_URL: 'https://api.hyperliquid-testnet.xyz',
     MAINNET_APP_URL: 'https://app.hyperliquid.xyz',
     TESTNET_APP_URL: 'https://app.hyperliquid-testnet.xyz',
+    TIMEOUT: 10000,
   },
 } as const;
 
@@ -97,5 +64,5 @@ export const ERROR_MESSAGES = {
   POSITION_NOT_FOUND: 'Position not found.',
   MARGIN_TOO_HIGH: 'Margin usage too high. Cannot open new positions.',
   AI_ANALYSIS_FAILED: 'AI analysis failed. Please try again.',
-  PRICE_FETCH_FAILED: 'Failed to fetch market prices from all sources. Please try again.',
+  PRICE_FETCH_FAILED: 'Failed to fetch market prices from Hyperliquid. Please try again.',
 } as const;

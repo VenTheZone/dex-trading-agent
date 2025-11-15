@@ -48,7 +48,7 @@ The DeX Trading Agent uses **Docker and Docker Compose** for containerized deplo
 │  │  │   Frontend   │  │   Backend    │  │  Redis  │ │    │
 │  │  │  (React)     │  │  (FastAPI)   │  │ (Cache) │ │    │
 │  │  │              │  │              │  │         │ │    │
-│  │  │  Port: 5173  │  │  Port: 8000  │  │ Port:   │ │    │
+│  │  │  Port: 3000  │  │  Port: 8000  │  │ Port:   │ │    │
 │  │  │              │  │              │  │  6379   │ │    │
 │  │  └──────┬───────┘  └──────┬───────┘  └────┬────┘ │    │
 │  │         │                 │                │      │    │
@@ -95,7 +95,7 @@ frontend (depends on backend)
 ### Port Availability
 
 Ensure these ports are free:
-- `5173` - Frontend (React/Vite)
+- `3000` - Frontend (React/Vite)
 - `8000` - Backend (FastAPI)
 - `6379` - Redis (internal, can be blocked externally)
 
@@ -116,7 +116,7 @@ Ensure these ports are free:
 - Connects to backend API at `http://localhost:8000`
 
 **Exposed Ports:**
-- `5173:5173` (host:container)
+- `3000:3000` (host:container)
 
 **Dependencies:**
 - Depends on `backend` service
@@ -212,7 +212,7 @@ RUN pnpm add -D vite
 # Copy built application from builder
 COPY --from=builder /app/dist ./dist
 
-EXPOSE 5173
+EXPOSE 3000
 
 # Start the application
 CMD ["pnpm", "preview", "--host", "0.0.0.0"]
@@ -331,7 +331,7 @@ services:
       dockerfile: Dockerfile
     container_name: dex-frontend
     ports:
-      - "5173:5173"
+      - "3000:3000"
     environment:
       - VITE_PYTHON_API_URL=http://localhost:8000
       - VITE_DOCKER_DEPLOYMENT=true
@@ -486,12 +486,12 @@ docker volume prune
 **Purpose:** Internal communication between containers
 
 **Service DNS:**
-- `frontend` → Accessible at `http://frontend:5173` (internal)
+- `frontend` → Accessible at `http://frontend:3000` (internal)
 - `backend` → Accessible at `http://backend:8000` (internal)
 - `redis` → Accessible at `redis://redis:6379` (internal)
 
 **External Access:**
-- Frontend: `http://localhost:5173` (host)
+- Frontend: `http://localhost:3000` (host)
 - Backend: `http://localhost:8000` (host)
 - Redis: `redis://localhost:6379` (host)
 
@@ -549,7 +549,7 @@ docker-compose logs -f
 curl http://localhost:8000/health
 
 # Test frontend
-open http://localhost:5173
+open http://localhost:3000
 ```
 
 ### Step 5: Stop Services
@@ -667,20 +667,20 @@ docker inspect --format='{{json .State.Health}}' dex-backend | jq
 
 **Error:**
 ```
-Error starting userland proxy: listen tcp4 0.0.0.0:5173: bind: address already in use
+Error starting userland proxy: listen tcp4 0.0.0.0:3000: bind: address already in use
 ```
 
 **Solution:**
 ```bash
 # Find process using port
-lsof -i :5173
+lsof -i :3000
 
 # Kill process
 kill -9 <PID>
 
 # Or change port in docker-compose.yml
 ports:
-  - "5174:5173"  # Use different host port
+  - "3001:3000"  # Use different host port
 ```
 
 ---

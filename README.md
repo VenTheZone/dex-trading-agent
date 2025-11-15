@@ -16,20 +16,21 @@ DeX Trading Agent is an advanced AI-driven trading system for **Hyperliquid perp
 
 The DeX Trading Agent follows a comprehensive system workflow designed to maximize profitability while minimizing risk in perpetual futures trading:
 
-
 ---
 
 ## ✨ Key Features
 
 ### 🤖 AI-Powered Perpetual Futures Analysis
 - **DeepSeek V3.1** (Free) / **Qwen3 Max** (Paid) via OpenRouter
-- Multi-chart correlation analysis (4 TradingView charts)
+- **Dual chart analysis per coin:** 5-minute timeframe + 1000-range chart
+- Multi-chart correlation analysis (up to 8 chart snapshots: 2 per coin × 4 coins)
 - **Derivatives-specific analysis:**
   - Funding rate impact on profitability
   - Liquidation price calculations with safety buffers
   - Mark price vs Index price monitoring
   - Open interest and long/short ratio analysis
   - Position sizing based on leverage multiplier
+- **No buffering delay:** Both chart types sent simultaneously to LLM
 
 ### 🛡️ Advanced Risk Management for Derivatives
 
@@ -175,52 +176,9 @@ This will automatically:
 - Initialize the database
 - Set up background services
 
----
+**Default Ports:**
+- Frontend: `http://127.0.0.1:3000`
+- Backend API: `http://127.0.0.1:8000`
+- Redis: `127.0.0.1:6379`
 
-## 📋 Prerequisites
-
-**Required for Live Trading:**
-- **OpenRouter API Key** (for AI analysis) - [Get it here](https://openrouter.ai)
-- **Hyperliquid Wallet** (for live trading):
-  - Your **Hyperliquid wallet address** (where funds are stored)
-  - **Agent wallet private key** (generate at [app.hyperliquid.xyz/API](https://app.hyperliquid.xyz/API))
-  - **Note:** Hyperliquid uses wallet-based authentication - no separate "API key" exists
-
-**Optional:**
-- **CryptoPanic API Key** (for news feed) - [Get it here](https://cryptopanic.com/developers/api/)
-
-**API Key Configuration Options:**
-
-You have two ways to configure your API keys:
-
-1. **Backend Configuration (`.env` file):**
-   - Set API keys in the Python backend's `.env` file before deployment
-   - Keys are loaded on server startup
-   - Best for permanent installations and Docker deployments
-
-2. **Browser Configuration (via UI):**
-   - API keys can be set directly in the DeX Trading Agent web interface
-   - Best for temporary testing and local development
-   - Keys are stored in browser local storage
-
-**For Local Development:**
-- Node.js (v18+)
-- pnpm (v8+)
-- Python (v3.11+)
-- Redis (for background tasks)
-- Git
-
-**Network Information:**
-- **Hyperliquid Trading**: Independent L1 blockchain (where perpetual futures trading occurs)
-- **Hyperliquid Testnet**: Chain ID 998, RPC: https://rpc.hyperliquid-testnet.xyz/evm
-- **Deposits/Withdrawals**: Arbitrum One (deposit USDC via Arbitrum to fund your Hyperliquid account)
-  - Arbitrum One RPC: https://arb1.arbitrum.io/rpc
-  - Bridge USDC from Arbitrum → Hyperliquid at [app.hyperliquid.xyz](https://app.hyperliquid.xyz)
-
----
-
-## 📚 Documentation
-
-📖 **Full deployment guide:** See [DEPLOYMENT.md](./DEPLOYMENT.md) for detailed setup instructions.
-
-**⚠️ Local Deployment Only:** This project is designed exclusively for local deployment. Cloud deployment configurations have been removed. Choose between Docker (recommended) or manual setup.
+To start the application:

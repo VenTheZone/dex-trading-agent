@@ -89,7 +89,7 @@ docker-compose up --build
 - Build the frontend and backend
 - Set up the database
 - Start all services
-- Open at `http://localhost:5173`
+- Open at `http://localhost:3000`
 
 **First-time build takes 3-5 minutes. Subsequent starts take ~30 seconds.**
 
@@ -196,7 +196,7 @@ source venv/bin/activate
 celery -A workers worker --loglevel=info
 ```
 
-**Access the application at:** `http://localhost:5173`
+**Access the application at:** `http://localhost:3000`
 
 ---
 

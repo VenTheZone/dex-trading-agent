@@ -113,6 +113,8 @@ class PythonApiClient {
     options: RequestInit = {}
   ): Promise<ApiResponse<T>> {
     try {
+      console.info(`[API] ${options.method || 'GET'} ${endpoint}`);
+      
       const response = await fetch(`${this.baseUrl}${endpoint}`, {
         ...options,
         headers: {
@@ -123,13 +125,16 @@ class PythonApiClient {
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.detail || `HTTP ${response.status}: ${response.statusText}`);
+        const errorMsg = errorData.detail || `HTTP ${response.status}: ${response.statusText}`;
+        console.error(`[API Error] ${endpoint}:`, errorMsg);
+        throw new Error(errorMsg);
       }
 
       const data = await response.json();
+      console.info(`[API Success] ${endpoint}`);
       return { success: true, data };
     } catch (error: any) {
-      console.error(`API request failed [${endpoint}]:`, error);
+      console.error(`[API Failed] ${endpoint}:`, error.message);
       return { success: false, error: error.message };
     }
   }
@@ -171,7 +176,7 @@ class PythonApiClient {
     const params = new URLSearchParams();
     if (symbol) params.append('symbol', symbol);
     params.append('limit', limit.toString());
-    return this.request<PositionSnapshot[]>(`/api/position-snapshots?${params}`);
+    return this.request<PositionSnapshot[]>(`/api/v1/positions/history?${params}`);
   }
 
   async recordPositionSnapshot(snapshot: {
@@ -186,7 +191,7 @@ class PythonApiClient {
   }): Promise<ApiResponse<PositionSnapshot>> {
     // Convert demo to paper for backend compatibility
     const backendMode = snapshot.mode === 'demo' ? 'paper' : snapshot.mode;
-    return this.request<PositionSnapshot>('/api/position-snapshots', {
+    return this.request<PositionSnapshot>('/api/v1/positions/snapshot', {
       method: 'POST',
       body: JSON.stringify({ ...snapshot, mode: backendMode }),
     });

@@ -40,7 +40,7 @@ This document provides comprehensive best practices for deploying the DeX Tradin
 │                                                               │
 │  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐      │
 │  │   Frontend   │  │   Backend    │  │    Redis     │      │
-│  │  (Port 5173) │  │  (Port 8000) │  │  (Port 6379) │      │
+│  │  (Port 3000) │  │  (Port 8000) │  │  (Port 6379) │      │
 │  │   React UI   │  │   FastAPI    │  │   Message    │      │
 │  │              │  │              │  │    Broker    │      │
 │  └──────┬───────┘  └──────┬───────┘  └──────┬───────┘      │
@@ -56,7 +56,7 @@ This document provides comprehensive best practices for deploying the DeX Tradin
 │                                                               │
 │  ┌──────────────────────────────────────────────────────┐   │
 │  │              Firewall (UFW/Windows Firewall)         │   │
-│  │  - Block all external access to ports 5173, 8000     │   │
+│  │  - Block all external access to ports 3000, 8000     │   │
 │  │  - Allow only localhost (127.0.0.1) connections      │   │
 │  └──────────────────────────────────────────────────────┘   │
 └───────────────────────────────────────────────────────────────┘
@@ -168,7 +168,7 @@ sudo ufw allow 22/tcp
 # Verify no external access to app ports
 sudo ufw status verbose
 
-# Expected output: No rules for 5173, 8000, 6379, 5432
+# Expected output: No rules for 3000, 8000, 6379, 5432
 ```
 
 #### macOS (pf)
@@ -178,7 +178,7 @@ sudo ufw status verbose
 sudo nano /etc/pf.conf
 
 # Add rules to block external access
-block in proto tcp from any to any port 5173
+block in proto tcp from any to any port 3000
 block in proto tcp from any to any port 8000
 block in proto tcp from any to any port 6379
 block in proto tcp from any to any port 5432
@@ -192,7 +192,7 @@ sudo pfctl -e
 
 ```powershell
 # Block inbound connections to app ports
-New-NetFirewallRule -DisplayName "Block Frontend" -Direction Inbound -LocalPort 5173 -Protocol TCP -Action Block
+New-NetFirewallRule -DisplayName "Block Frontend" -Direction Inbound -LocalPort 3000 -Protocol TCP -Action Block
 New-NetFirewallRule -DisplayName "Block Backend" -Direction Inbound -LocalPort 8000 -Protocol TCP -Action Block
 New-NetFirewallRule -DisplayName "Block Redis" -Direction Inbound -LocalPort 6379 -Protocol TCP -Action Block
 New-NetFirewallRule -DisplayName "Block PostgreSQL" -Direction Inbound -LocalPort 5432 -Protocol TCP -Action Block
@@ -209,7 +209,7 @@ REDIS_URL=redis://localhost:6379/0
 OPENROUTER_API_KEY=sk-or-v1-YOUR_KEY_HERE
 CRYPTOPANIC_AUTH_TOKEN=YOUR_TOKEN_HERE
 HYPERLIQUID_API_URL=https://api.hyperliquid.xyz
-CORS_ORIGINS=http://localhost:5173
+CORS_ORIGINS=http://localhost:3000
 LOG_LEVEL=INFO
 ENVIRONMENT=production
 
@@ -779,10 +779,10 @@ echo "Config backup completed: config_$DATE.tar.gz.gpg"
 
 ```bash
 # Check listening ports
-sudo netstat -tulpn | grep -E '5173|8000|6379|5432'
+sudo netstat -tulpn | grep -E '3000|8000|6379|5432'
 
 # Expected output (all should show 127.0.0.1):
-# tcp  0  0  127.0.0.1:5173  0.0.0.0:*  LISTEN  12345/node
+# tcp  0  0  127.0.0.1:3000  0.0.0.0:*  LISTEN  12345/node
 # tcp  0  0  127.0.0.1:8000  0.0.0.0:*  LISTEN  12346/python
 # tcp  0  0  127.0.0.1:6379  0.0.0.0:*  LISTEN  12347/redis
 # tcp  0  0  127.0.0.1:5432  0.0.0.0:*  LISTEN  12348/postgres
@@ -924,7 +924,7 @@ sudo systemctl status dex-trading-agent
    curl "http://localhost:8000/api/hyperliquid/test-connection?isTestnet=false"
    
    # Verify frontend
-   curl http://localhost:5173
+   curl http://localhost:3000
    ```
 
 ### 10.2 Shutdown Procedure

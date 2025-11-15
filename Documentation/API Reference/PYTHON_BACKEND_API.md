@@ -1022,7 +1022,7 @@ DATABASE_URL=sqlite:///./trading.db
 OPENROUTER_API_KEY=sk-or-v1-...
 CRYPTOPANIC_AUTH_TOKEN=...
 HYPERLIQUID_API_URL=https://api.hyperliquid.xyz
-CORS_ORIGINS=http://localhost:5173
+CORS_ORIGINS=http://localhost:3000
 
 # Frontend (.env)
 VITE_PYTHON_API_URL=http://localhost:8000

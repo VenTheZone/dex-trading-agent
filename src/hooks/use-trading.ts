@@ -451,21 +451,32 @@ export function useTrading() {
       
       const modelName = aiModel === 'qwen/qwen3-max' ? 'Qwen' : 'DeepSeek';
       
-      setAiThoughts(`✅ API keys validated\n\n🤖 Using ${modelName} AI model\n📊 Analyzing ${filteredCharts.length} trading pairs...\n\nMarket data:\n${filteredCharts.map(c => `  • ${c.symbol}: ${c.currentPrice.toLocaleString()}`).join('\n')}`);
+      setAiThoughts(`✅ API keys validated\\n\\n🤖 Using ${modelName} AI model\\n📊 Analyzing ${filteredCharts.length} trading pairs (dual chart snapshots)...\\n\\nMarket data:\\n${filteredCharts.map(c => `  • ${c.symbol}: ${c.currentPrice.toLocaleString()} [5min + 1000R]`).join('\\n')}`);
       
       if (isDemoMode) {
-        toast.info(`[DEMO] 🤖 AI analyzing multiple charts with your OpenRouter key (${modelName})...`);
+        toast.info(`[DEMO] 🤖 AI analyzing ${filteredCharts.length} coins (dual charts: 5min + 1000R) with ${modelName}...`);
       } else {
-        toast.info(`🤖 AI analyzing multiple charts with ${modelName}...`);
+        toast.info(`🤖 AI analyzing ${filteredCharts.length} coins (dual charts: 5min + 1000R) with ${modelName}...`);
       }
 
-      const multiChartData = filteredCharts.map(chart => ({
-        symbol: chart.symbol,
-        currentPrice: chart.currentPrice,
-        chartType: chartType,
-        chartInterval: chartInterval,
-        technicalContext: `Price: ${chart.currentPrice.toLocaleString()}, Timeframe: ${chartInterval}, Chart: ${chartType}`,
-      }));
+      // Create dual chart snapshots for each coin: 5-minute timeframe + 1000-range chart
+      // This provides both time-based momentum analysis and price-action support/resistance levels
+      const multiChartData = filteredCharts.flatMap(chart => [
+        {
+          symbol: chart.symbol,
+          currentPrice: chart.currentPrice,
+          chartType: 'time' as const,
+          chartInterval: '5',
+          technicalContext: `${chart.symbol} @ ${chart.currentPrice.toLocaleString()} | 5min timeframe | Time-based momentum & trend analysis`,
+        },
+        {
+          symbol: chart.symbol,
+          currentPrice: chart.currentPrice,
+          chartType: 'range' as const,
+          chartInterval: '1000',
+          technicalContext: `${chart.symbol} @ ${chart.currentPrice.toLocaleString()} | 1000-tick range | Price action & support/resistance levels`,
+        }
+      ]);
 
       // Final validation before calling backend
       if (!openRouterKey || openRouterKey === 'DEMO_MODE' || !openRouterKey.startsWith('sk-or-v1-')) {

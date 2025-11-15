@@ -79,7 +79,7 @@ export const storage = {
 
 **Development (Vite):**
 ```typescript
-// Frontend runs on http://localhost:5173
+// Frontend runs on http://localhost:3000
 // Backend allows this origin only
 ```
 
@@ -87,7 +87,7 @@ export const storage = {
 ```yaml
 # docker-compose.yml
 environment:
-  - CORS_ORIGINS=http://localhost:5173,http://localhost:3000
+  - CORS_ORIGINS=http://localhost:3000
 ```
 
 ### 2.2 Backend Security Model
@@ -157,7 +157,7 @@ DATABASE_URL=sqlite:///./data/trading.db
 REDIS_URL=redis://localhost:6379
 
 # CORS (production)
-CORS_ORIGINS=http://localhost:5173
+CORS_ORIGINS=http://localhost:3000
 ```
 
 **Security Notes:**
@@ -338,7 +338,7 @@ account = Account.from_key(private_key)
    # Restrict to known origins
    app.add_middleware(
        CORSMiddleware,
-       allow_origins=["http://localhost:5173"],
+       allow_origins=["http://localhost:3000"],
        allow_credentials=True,
    )
    ```
@@ -370,7 +370,7 @@ account = Account.from_key(private_key)
 # Frontend (Vite dev server)
 cd /path/to/project
 pnpm dev
-# Runs on http://localhost:5173
+# Runs on http://localhost:3000
 
 # Backend (FastAPI)
 cd migration_python
@@ -381,7 +381,7 @@ uvicorn main:app --reload --host 127.0.0.1 --port 8000
 **Security:**
 - ✅ Both services on localhost
 - ✅ No external access possible
-- ✅ CORS allows localhost:5173 only
+- ✅ CORS allows localhost:3000 only
 
 ### 5.2 Docker Deployment (Local)
 
@@ -393,7 +393,7 @@ services:
   frontend:
     build: .
     ports:
-      - "5173:5173"
+      - "3000:3000"
     networks:
       - internal
     # Only accessible on localhost
@@ -405,7 +405,7 @@ services:
     networks:
       - internal
     environment:
-      - CORS_ORIGINS=http://localhost:5173
+      - CORS_ORIGINS=http://localhost:3000
     volumes:
       - ./data:/app/data  # Persistent database
 
@@ -440,10 +440,10 @@ User → VPN → Private Network → Trading Agent
 **Option 2: SSH Tunnel**
 ```bash
 # On remote server
-ssh -L 5173:localhost:5173 -L 8000:localhost:8000 user@remote-server
+ssh -L 3000:localhost:3000 -L 8000:localhost:8000 user@remote-server
 
 # Access via localhost on your machine
-http://localhost:5173
+http://localhost:3000
 ```
 - ✅ Encrypted tunnel
 - ✅ No firewall changes needed
@@ -461,7 +461,7 @@ server {
     auth_basic_user_file /etc/nginx/.htpasswd;
     
     location / {
-        proxy_pass http://localhost:5173;
+        proxy_pass http://localhost:3000;
     }
     
     location /api {

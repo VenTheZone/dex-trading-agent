@@ -396,7 +396,7 @@ USAGE FLOW:
 
 ## 7. AI Analysis Data Flow
 
-### Multi-Chart AI Decision Making
+### Multi-Chart AI Decision Making with Dual Snapshots
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐

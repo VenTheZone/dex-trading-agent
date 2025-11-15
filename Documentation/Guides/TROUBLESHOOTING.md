@@ -38,6 +38,25 @@ This guide provides solutions to common issues encountered when using the DeX Tr
 
 ## 1. Quick Diagnostics
 
+### Floating Log Viewer
+
+The application includes a built-in floating log viewer accessible from the dashboard:
+
+**Features:**
+- **System Logs:** Real-time console logs, errors, and warnings
+- **Trading Logs:** All trading activity and AI decisions
+- **Error Badges:** Visual indicators for errors and warnings
+- **Download Logs:** Export logs as JSON for debugging
+- **Auto-scroll:** Automatically scrolls to latest logs
+
+**Access:**
+1. Click the floating terminal icon in the bottom-left corner of the dashboard
+2. Toggle between "System Logs" and "Trading Logs" tabs
+3. Download logs for sharing with support
+4. Clear logs when needed
+
+This eliminates the need to keep the terminal open when running Docker in the background.
+
 ### Health Check Commands
 
 Run these commands to quickly diagnose system health:
@@ -189,7 +208,7 @@ pip install -r migration_python/requirements.txt
 ### Issue: Port Already in Use
 
 **Symptoms:**
-- `Error: Port 5173 is already in use`
+- `Error: Port 3000 is already in use`
 - `Error: Port 8000 is already in use`
 
 **Solutions:**
@@ -198,8 +217,8 @@ pip install -r migration_python/requirements.txt
 
 **Linux/macOS:**
 ```bash
-# Find process on port 5173
-lsof -i :5173
+# Find process on port 3000
+lsof -i :3000
 
 # Kill process
 kill -9 <PID>
@@ -211,8 +230,8 @@ kill -9 <PID>
 
 **Windows:**
 ```bash
-# Find process on port 5173
-netstat -ano | findstr :5173
+# Find process on port 3000
+netstat -ano | findstr :3000
 
 # Kill process
 taskkill /PID <PID> /F
@@ -393,7 +412,7 @@ PORT=8001
 4. **Check CORS settings:**
    ```bash
    # migration_python/.env
-   CORS_ORIGINS=http://localhost:5173,http://localhost:3000
+   CORS_ORIGINS=http://localhost:3000
    ```
 
 5. **Restart services:**
@@ -1011,7 +1030,7 @@ docker-compose run --user $(id -u):$(id -g) backend
    ```bash
    # Linux
    sudo ufw status
-   sudo ufw allow 5173
+   sudo ufw allow 3000
    sudo ufw allow 8000
    
    # Windows

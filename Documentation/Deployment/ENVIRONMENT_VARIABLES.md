@@ -287,7 +287,7 @@ HYPERLIQUID_AGENT_PRIVATE_KEY=0xabcdef1234567890abcdef1234567890abcdef1234567890
 - **Purpose:** Allowed frontend origins for CORS
 - **Type:** String (comma-separated URLs)
 - **Required:** No
-- **Default:** `http://localhost:5173,http://127.0.0.1:5173`
+- **Default:** `http://localhost:3000,http://127.0.0.1:3000`
 - **Usage:** Controls which domains can access the API
 - **Security:** Restrict to trusted origins only
 - **Notes:**
@@ -298,13 +298,13 @@ HYPERLIQUID_AGENT_PRIVATE_KEY=0xabcdef1234567890abcdef1234567890abcdef1234567890
 **Examples:**
 ```bash
 # Development
-CORS_ORIGINS=http://localhost:5173,http://127.0.0.1:5173
+CORS_ORIGINS=http://localhost:3000,http://127.0.0.1:3000
 
 # Production (custom domain)
 CORS_ORIGINS=https://trading.example.com
 
 # Docker
-CORS_ORIGINS=http://localhost:5173,http://frontend:5173
+CORS_ORIGINS=http://localhost:3000,http://frontend:3000
 ```
 
 ---
@@ -461,7 +461,7 @@ services:
       - PORT=8000
       - DATABASE_URL=postgresql://dex_user:secure_password@postgres:5432/dex_trading
       - REDIS_URL=redis://redis:6379/0
-      - CORS_ORIGINS=http://localhost:5173
+      - CORS_ORIGINS=http://localhost:3000
       - LOG_LEVEL=INFO
       - OPENROUTER_API_KEY=${OPENROUTER_API_KEY}
       - CRYPTOPANIC_AUTH_TOKEN=${CRYPTOPANIC_AUTH_TOKEN}
@@ -871,7 +871,7 @@ curl http://localhost:8000/api/trading-logs?limit=1
 | `CRYPTOPANIC_AUTH_TOKEN` | `free` | No |
 | `HYPERLIQUID_MASTER_ADDRESS` | None | No* |
 | `HYPERLIQUID_AGENT_PRIVATE_KEY` | None | No* |
-| `CORS_ORIGINS` | `http://localhost:5173,...` | No |
+| `CORS_ORIGINS` | `http://localhost:3000,...` | No |
 | `LOG_LEVEL` | `INFO` | No |
 | `DEBUG` | `false` | No |
 

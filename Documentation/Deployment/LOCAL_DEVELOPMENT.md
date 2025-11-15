@@ -5,7 +5,7 @@
 This guide provides complete instructions for setting up a local development environment for the DeX Trading Agent. It covers both frontend (React + TypeScript) and backend (Python FastAPI) setup, including all dependencies, configuration, and development workflows.
 
 **Deployment Model:** Local development with hot reload  
-**Architecture:** React frontend (port 5173) + Python backend (port 8000) + Redis (port 6379)  
+**Architecture:** React frontend (port 3000) + Python backend (port 8000) + Redis (port 6379)  
 **Development Tools:** Vite (frontend), Uvicorn (backend), pnpm (package manager)
 
 **Last Updated:** November 15, 2025  
@@ -108,7 +108,7 @@ redis-cli --version
 - **OS:** Latest stable version
 
 ### Network Requirements
-- **Ports:** 5173 (frontend), 8000 (backend), 6379 (Redis) must be available
+- **Ports:** 3000 (frontend), 8000 (backend), 6379 (Redis) must be available
 - **Internet:** Required for API calls (Hyperliquid, OpenRouter, Binance)
 
 ---
@@ -240,7 +240,7 @@ DATABASE_URL=sqlite:///./trading.db
 OPENROUTER_API_KEY=sk-or-v1-your-key-here
 CRYPTOPANIC_AUTH_TOKEN=your-token-here
 HYPERLIQUID_API_URL=https://api.hyperliquid.xyz
-CORS_ORIGINS=http://localhost:5173
+CORS_ORIGINS=http://localhost:3000
 ```
 
 **Security Note:** Never commit `.env` files to version control. They are already in `.gitignore`.
@@ -329,7 +329,7 @@ HYPERLIQUID_API_URL=https://api.hyperliquid.xyz
 HYPERLIQUID_TESTNET_URL=https://api.hyperliquid-testnet.xyz
 
 # CORS Configuration
-CORS_ORIGINS=http://localhost:5173,http://127.0.0.1:5173
+CORS_ORIGINS=http://localhost:3000,http://127.0.0.1:3000
 
 # Redis Configuration
 REDIS_URL=redis://localhost:6379/0
@@ -382,7 +382,7 @@ The project includes automated start scripts for both platforms.
 # 1. Start Redis server
 # 2. Start Python backend (port 8000)
 # 3. Start Celery worker
-# 4. Start React frontend (port 5173)
+# 4. Start React frontend (port 3000)
 ```
 
 #### Windows
@@ -434,7 +434,7 @@ pnpm dev
 
 # Expected output:
 # VITE v6.0.11  ready in 500 ms
-# ➜  Local:   http://localhost:5173/
+# ➜  Local:   http://localhost:3000/
 # ➜  Network: use --host to expose
 ```
 
@@ -442,7 +442,7 @@ pnpm dev
 
 ```bash
 # Check frontend
-curl http://localhost:5173
+curl http://localhost:3000
 # Should return HTML
 
 # Check backend health
@@ -694,14 +694,14 @@ pnpm test:e2e
 
 **Error:**
 ```
-Error: listen EADDRINUSE: address already in use :::5173
+Error: listen EADDRINUSE: address already in use :::3000
 ```
 
 **Solution:**
 ```bash
-# Find process using port 5173
-lsof -i :5173  # macOS/Linux
-netstat -ano | findstr :5173  # Windows
+# Find process using port 3000
+lsof -i :3000  # macOS/Linux
+netstat -ano | findstr :3000  # Windows
 
 # Kill the process
 kill -9 <PID>  # macOS/Linux
@@ -771,7 +771,7 @@ alembic upgrade head
 
 **Error:**
 ```
-Access to fetch at 'http://localhost:8000' from origin 'http://localhost:5173' has been blocked by CORS policy
+Access to fetch at 'http://localhost:8000' from origin 'http://localhost:3000' has been blocked by CORS policy
 ```
 
 **Solution:**
@@ -955,7 +955,7 @@ pnpm build       # Frontend
 
 | Service | Port | URL |
 |---------|------|-----|
-| Frontend (Vite) | 5173 | http://localhost:5173 |
+| Frontend (Vite) | 3000 | http://localhost:3000 |
 | Backend (FastAPI) | 8000 | http://localhost:8000 |
 | Redis | 6379 | redis://localhost:6379 |
 | API Docs (Swagger) | 8000 | http://localhost:8000/docs |

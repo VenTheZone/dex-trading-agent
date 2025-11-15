@@ -37,7 +37,7 @@ The DeX Trading Agent is built with a modern, full-stack architecture combining 
   - Optimized production builds
   - Native ES modules support
   - Plugin ecosystem
-- **Usage:** Development server (port 5173), production builds
+- **Usage:** Development server (port 3000), production builds
 
 ---
 
@@ -663,7 +663,7 @@ The DeX Trading Agent is built with a modern, full-stack architecture combining 
   - Network management
   - Volume mounting
 - **Services:**
-  - `frontend` (port 5173)
+  - `frontend` (port 3000)
   - `backend` (port 8000)
   - `redis` (port 6379)
   - `celery-worker`
@@ -813,7 +813,7 @@ The DeX Trading Agent is built with a modern, full-stack architecture combining 
 - ✅ XSS protection via React
 
 ### Backend
-- ✅ CORS restrictions (localhost:5173)
+- ✅ CORS restrictions (localhost:3000)
 - ✅ Environment variable secrets
 - ✅ SQL injection prevention (SQLAlchemy ORM)
 - ✅ Rate limiting (future)

@@ -14,7 +14,7 @@ The DeX Trading Agent is a full-stack AI-powered trading system with a React fro
 ┌─────────────────────────────────────────────────────────────────┐
 │                                             USER INTERFACE                                                 │
 │                                           (React 19 + TypeScript)                                          │
-│                                           Port: 5173 (Frontend)                                            │
+│                                           Port: 3000 (Frontend)                                            │
 └────────────────────────────┬────────────────────────────────────┘
                                          _______│_______
                                         │ HTTP/WebSocket |
@@ -98,7 +98,7 @@ The DeX Trading Agent is a full-stack AI-powered trading system with a React fro
 #### API Layer (`migration_python/api/`)
 - **REST Endpoints**: Trading operations, balance queries, AI analysis
 - **WebSocket Endpoints**: Real-time price updates, position monitoring
-- **CORS Configuration**: Allows localhost:5173 for development
+- **CORS Configuration**: Allows localhost:3000 for development
 
 #### Service Layer (`migration_python/services/`)
 - **Trading Service**: Order execution, position management
@@ -281,7 +281,7 @@ Frontend (React WebSocket Client)
 - ✅ Direct API access (localhost only)
 - ✅ Browser-based API key storage (frontend)
 - ✅ Environment variable API keys (backend)
-- ✅ CORS restrictions (localhost:5173)
+- ✅ CORS restrictions (localhost:3000)
 - ✅ Network-level security (firewall)
 
 ### API Key Management
@@ -301,7 +301,7 @@ Frontend (React WebSocket Client)
 ### Network Security
 
 **Development:**
-- CORS: `localhost:5173` only
+- CORS: `localhost:3000` only
 - Firewall: Not required (localhost)
 
 **Production (Docker):**
@@ -317,7 +317,7 @@ Frontend (React WebSocket Client)
 services:
   frontend:
     - React app (Vite build)
-    - Port: 5173
+    - Port: 3000
     - Volume: None (stateless)
   
   backend:

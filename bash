@@ -1,3 +1,2 @@
-docker-compose build
-# or
-docker build -t dex-trading-agent .
+docker-compose down
+docker-compose up --build

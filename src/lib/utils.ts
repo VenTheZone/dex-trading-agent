@@ -1,8 +1,26 @@
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
+import DOMPurify from "dompurify";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
+}
+
+/**
+ * Sanitize HTML content using DOMPurify to prevent XSS attacks
+ * Use this for any user-generated HTML content
+ */
+export function sanitizeHtml(html: string, options?: any): string {
+  if (!html) return '';
+  
+  const defaultConfig = {
+    ALLOWED_TAGS: ['b', 'i', 'em', 'strong', 'a', 'p', 'br'],
+    ALLOWED_ATTR: ['href', 'target', 'rel'],
+    ALLOW_DATA_ATTR: false,
+    ...options
+  };
+  
+  return DOMPurify.sanitize(html, defaultConfig) as unknown as string;
 }
 
 /**
@@ -38,8 +56,11 @@ export function sanitizeText(text: string, maxLength: number = 1000): string {
   // Remove script-like patterns
   const withoutScripts = withoutTags.replace(/javascript:/gi, '');
   
+  // Remove event handlers
+  const withoutEvents = withoutScripts.replace(/on\w+\s*=\s*["'][^"']*["']/gi, '');
+  
   // Limit length to prevent DoS
-  return withoutScripts.slice(0, maxLength).trim();
+  return withoutEvents.slice(0, maxLength).trim();
 }
 
 /**
@@ -164,4 +185,22 @@ export function sanitizeMultilineText(text: string, maxLength: number = 10000): 
   
   // Limit length to prevent DoS
   return withoutEvents.slice(0, maxLength).trim();
+}
+
+/**
+ * Escape HTML entities to prevent XSS in text content
+ */
+export function escapeHtml(text: string): string {
+  if (!text) return '';
+  
+  const map: Record<string, string> = {
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#x27;',
+    '/': '&#x2F;',
+  };
+  
+  return text.replace(/[&<>"'/]/g, (char) => map[char] || char);
 }

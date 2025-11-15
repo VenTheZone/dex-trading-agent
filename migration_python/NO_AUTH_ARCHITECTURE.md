@@ -31,7 +31,7 @@ This project is designed for **local and private use only**. No authentication s
 - Remove all `Depends(get_current_user)` from endpoints
 - Remove `from auth.middleware import get_current_user`
 - Hardcode `user_id = 1` for all operations
-- CORS: Allow `localhost:5173` (Vite dev server) only
+- CORS: Allow `localhost:3000` (Vite dev server) only
 
 ### Security Considerations
 - **Production Deployment**: CORS allows all origins for Docker/cloud compatibility
