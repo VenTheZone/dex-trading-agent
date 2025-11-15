@@ -201,6 +201,11 @@ function TimeChart({ symbol, interval, onError }: { symbol: string; interval: st
             container_id: `tradingview_time_${symbol}`,
             backgroundColor: '#000000',
             gridColor: 'rgba(0, 255, 255, 0.1)',
+            studies_overrides: {},
+            overrides: {
+              "mainSeriesProperties.candleStyle.upColor": "#00ff00",
+              "mainSeriesProperties.candleStyle.downColor": "#ff0000",
+            },
           });
           onError(null);
         } else {

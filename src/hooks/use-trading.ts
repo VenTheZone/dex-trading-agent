@@ -324,6 +324,7 @@ export function useTrading() {
         toast.info(`🤖 AI analyzing market with ${modelName}...`);
       }
 
+      // Build comprehensive chart data with all available tools
       const chartData = `
         === MARKET DATA ===
         Symbol: ${symbol}
@@ -338,6 +339,14 @@ export function useTrading() {
         Take Profit Target: ${settings.takeProfitPercent}%
         Stop Loss: ${settings.stopLossPercent}%
         
+        === AVAILABLE TOOLS ===
+        ✓ Real-time price data from Hyperliquid
+        ✓ TradingView chart analysis (time-based and range-based)
+        ✓ Position management (open/close long/short)
+        ✓ Risk management (stop-loss, take-profit, trailing stops)
+        ✓ Multi-chart analysis across ${settings.allowedCoins?.length || 0} coins
+        ✓ Trading logs and balance history tracking
+        
         === ANALYSIS CONTEXT ===
         ${chartType === 'range' ? 
           'Range Chart Analysis: Price movements are measured by fixed price ranges rather than time. This reduces noise and provides clearer trend signals. Look for range breakouts and support/resistance levels.' : 
@@ -345,7 +354,7 @@ export function useTrading() {
         }
         
         INSTRUCTIONS:
-        1. Analyze the current market data step-by-step
+        1. Analyze the current market data step-by-step using all available tools
         2. Evaluate technical indicators and market context
         3. Provide a clear trading recommendation with specific entry/exit levels
         4. Ensure risk management aligns with account balance and leverage

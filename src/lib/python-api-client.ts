@@ -272,7 +272,7 @@ class PythonApiClient {
 
   // Price Fetching
   async fetchPrice(symbol: string, isTestnet: boolean = false): Promise<number> {
-    const response = await this.request<{ price: number }>(`/api/market/price?symbol=${symbol}&isTestnet=${isTestnet}`);
+    const response = await this.request<{ price: number }>(`/api/v1/market/price?symbol=${symbol}&isTestnet=${isTestnet}`);
     if (!response.success || !response.data) {
       throw new Error(response.error || `Failed to fetch price for ${symbol}`);
     }
