@@ -1,21 +1,10 @@
-# Docker Deployment Guide
+# Docker Deployment Guide - One-Time Build Setup
 
-## 🐳 Quick Start
+## 🚀 Quick Start (One-Time Build)
 
-### Production Deployment
+This setup is optimized for **one-time build and immediate use** on every boot.
 
-**Important:** This project uses a Python FastAPI backend + React frontend architecture. You must use `docker-compose` to run all services together.
+### First Time Setup
 
----
-
-## 📋 Prerequisites
-
-- Docker Desktop installed (https://www.docker.com/products/docker-desktop)
-- Docker Compose (included with Docker Desktop)
-- Git
-
----
-
-## 🚀 Running the Application
-
-### Step 1: Clone the Repository
+1. **Build all containers once:**
+   

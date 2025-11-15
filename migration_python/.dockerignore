@@ -1,36 +1,38 @@
 # Python cache
-__pycache__/
+__pycache__
 *.py[cod]
 *$py.class
 *.so
 .Python
 
 # Virtual environments
-venv/
-env/
-ENV/
+venv
+env
+ENV
 
-# Database
-*.db
-*.sqlite3
-
-# Environment files
+# Development files
+.git
+.gitignore
 .env
 .env.local
 
 # IDE
-.vscode/
-.idea/
+.vscode
+.idea
 *.swp
-
-# Testing
-.pytest_cache/
-.coverage
-htmlcov/
-
-# Logs
-*.log
 
 # OS
 .DS_Store
-Thumbs.db
+
+# Testing
+.pytest_cache
+.coverage
+htmlcov
+
+# Database files (will be in volume)
+*.db
+*.sqlite
+*.sqlite3
+
+# Logs
+*.log
