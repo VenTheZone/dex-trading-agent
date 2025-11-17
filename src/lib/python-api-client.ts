@@ -101,6 +101,47 @@ export interface HyperliquidConnectionTestResponse {
   error?: string;
 }
 
+export interface BacktestLog {
+  timestamp: string;
+  event_type: string;
+  message: string;
+  data: any;
+}
+
+export type SnapshotType = 'fast' | 'full';
+
+import type { NetworkType } from './constants';
+
+interface SnapshotCache {
+  data: any;
+  timestamp: number;
+  symbols: string[];
+  type: SnapshotType; // Track snapshot type
+  network: NetworkType; // Track network to prevent cross-network cache pollution
+}
+
+interface SnapshotCacheMetrics {
+  hits: number;
+  misses: number;
+  invalidations: number;
+  lastReset: number;
+  fastSnapshots: number; // Track fast snapshot usage
+  fullSnapshots: number; // Track full snapshot usage
+}
+
+const SNAPSHOT_CACHE_DURATION = 5000; // 5 seconds cache
+let snapshotCache: SnapshotCache | null = null;
+const snapshotMetrics: SnapshotCacheMetrics = {
+  hits: 0,
+  misses: 0,
+  invalidations: 0,
+  lastReset: Date.now(),
+  fastSnapshots: 0,
+  fullSnapshots: 0,
+};
+
+import { validateNetwork, networkToBoolean } from './constants';
+
 class PythonApiClient {
   private baseUrl: string;
 
@@ -112,8 +153,14 @@ class PythonApiClient {
     endpoint: string,
     options: RequestInit = {}
   ): Promise<ApiResponse<T>> {
+    const startTime = Date.now();
+    const method = options.method || 'GET';
+    
     try {
-      console.info(`[API] ${options.method || 'GET'} ${endpoint}`);
+      console.info(`[API Request] ${method} ${endpoint}`, {
+        timestamp: new Date().toISOString(),
+        hasBody: !!options.body,
+      });
       
       const response = await fetch(`${this.baseUrl}${endpoint}`, {
         ...options,
@@ -123,18 +170,46 @@ class PythonApiClient {
         },
       });
 
+      const duration = Date.now() - startTime;
+
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
         const errorMsg = errorData.detail || `HTTP ${response.status}: ${response.statusText}`;
-        console.error(`[API Error] ${endpoint}:`, errorMsg);
+        
+        console.error(`[API Error] ${method} ${endpoint}`, {
+          status: response.status,
+          statusText: response.statusText,
+          error: errorMsg,
+          duration: `${duration}ms`,
+          timestamp: new Date().toISOString(),
+          endpoint,
+          method,
+        });
+        
         throw new Error(errorMsg);
       }
 
       const data = await response.json();
-      console.info(`[API Success] ${endpoint}`);
+      
+      console.info(`[API Success] ${method} ${endpoint}`, {
+        duration: `${duration}ms`,
+        timestamp: new Date().toISOString(),
+      });
+      
       return { success: true, data };
     } catch (error: any) {
-      console.error(`[API Failed] ${endpoint}:`, error.message);
+      const duration = Date.now() - startTime;
+      
+      console.error(`[API Failed] ${method} ${endpoint}`, {
+        error: error.message,
+        errorType: error.name,
+        duration: `${duration}ms`,
+        timestamp: new Date().toISOString(),
+        endpoint,
+        method,
+        stack: error.stack,
+      });
+      
       return { success: false, error: error.message };
     }
   }
@@ -221,27 +296,162 @@ class PythonApiClient {
     return response.data;
   }
 
-  // Hyperliquid Integration
+  // Hyperliquid Integration - Mainnet
   async testHyperliquidConnection(isTestnet: boolean = false): Promise<HyperliquidConnectionTestResponse> {
-    const response = await this.request<HyperliquidConnectionTestResponse>(`/api/hyperliquid/test-connection?isTestnet=${isTestnet}`);
-    return response.data || { success: false, message: response.error || 'Connection test failed' };
+    try {
+      // Validate network parameter
+      const network = validateNetwork(isTestnet);
+      const isTestnetValidated = networkToBoolean(network);
+      
+      console.info(`[Hyperliquid Connection Test] Starting test for ${network}`, {
+        network,
+        isTestnet: isTestnetValidated,
+        timestamp: new Date().toISOString(),
+      });
+      
+      const endpoint = isTestnetValidated 
+        ? '/api/hyperliquid/testnet/test-connection'
+        : '/api/hyperliquid/mainnet/test-connection';
+      const response = await this.request<HyperliquidConnectionTestResponse>(endpoint);
+      
+      if (!response.success) {
+        console.error(`[Hyperliquid Connection Test] Failed for ${network}`, {
+          network,
+          error: response.error,
+          endpoint,
+          timestamp: new Date().toISOString(),
+        });
+        
+        return { 
+          success: false, 
+          message: response.error || 'Connection test failed',
+          error: response.error 
+        };
+      }
+      
+      console.info(`[Hyperliquid Connection Test] Success for ${network}`, {
+        network,
+        assetsCount: response.data?.assetsCount,
+        timestamp: new Date().toISOString(),
+      });
+      
+      return response.data || { success: false, message: 'No data returned from connection test' };
+    } catch (error: any) {
+      console.error('[Hyperliquid Connection Test] Exception', {
+        error: error.message,
+        errorType: error.name,
+        stack: error.stack,
+        timestamp: new Date().toISOString(),
+      });
+      
+      return { 
+        success: false, 
+        message: 'Connection test failed with exception',
+        error: error.message 
+      };
+    }
   }
 
   async getHyperliquidPositions(apiSecret: string, walletAddress: string, isTestnet: boolean = false): Promise<ApiResponse<any>> {
-    return this.request<any>('/api/hyperliquid/positions', {
-      method: 'POST',
-      body: JSON.stringify({ apiSecret, walletAddress, isTestnet }),
-    });
+    try {
+      // Validate inputs
+      if (!apiSecret || typeof apiSecret !== 'string' || apiSecret.trim() === '') {
+        console.error('[Get Positions] Validation failed: Invalid API secret', {
+          hasApiSecret: !!apiSecret,
+          apiSecretType: typeof apiSecret,
+          timestamp: new Date().toISOString(),
+        });
+        return { success: false, error: 'Invalid API secret: must be a non-empty string' };
+      }
+      
+      if (!walletAddress || typeof walletAddress !== 'string' || !walletAddress.startsWith('0x')) {
+        console.error('[Get Positions] Validation failed: Invalid wallet address', {
+          walletAddress,
+          hasWalletAddress: !!walletAddress,
+          walletAddressType: typeof walletAddress,
+          timestamp: new Date().toISOString(),
+        });
+        return { success: false, error: 'Invalid wallet address: must start with 0x' };
+      }
+      
+      // Validate network parameter
+      const network = validateNetwork(isTestnet);
+      const isTestnetValidated = networkToBoolean(network);
+      
+      console.info('[Get Positions] Fetching positions', {
+        network,
+        walletAddress: `${walletAddress.substring(0, 6)}...${walletAddress.substring(walletAddress.length - 4)}`,
+        timestamp: new Date().toISOString(),
+      });
+      
+      const endpoint = isTestnetValidated
+        ? '/api/hyperliquid/testnet/positions'
+        : '/api/hyperliquid/mainnet/positions';
+      
+      const response = await this.request<any>(endpoint, {
+        method: 'POST',
+        body: JSON.stringify({ apiSecret, walletAddress }),
+      });
+      
+      if (!response.success) {
+        console.error(`[Get Positions] Failed for ${network}`, {
+          network,
+          error: response.error,
+          endpoint,
+          timestamp: new Date().toISOString(),
+        });
+      } else {
+        console.info(`[Get Positions] Success for ${network}`, {
+          network,
+          positionsCount: response.data?.assetPositions?.length || 0,
+          timestamp: new Date().toISOString(),
+        });
+      }
+      
+      return response;
+    } catch (error: any) {
+      console.error('[Get Positions] Exception', {
+        error: error.message,
+        errorType: error.name,
+        stack: error.stack,
+        timestamp: new Date().toISOString(),
+      });
+      return { success: false, error: `Failed to fetch positions: ${error.message}` };
+    }
   }
 
   async getOrderBook(coin: string, isTestnet: boolean = false): Promise<ApiResponse<any>> {
-    return this.request<any>(`/api/hyperliquid/orderbook?coin=${coin}&isTestnet=${isTestnet}`);
+    // Validate coin parameter
+    if (!coin || typeof coin !== 'string' || coin.trim() === '') {
+      return { success: false, error: 'Invalid coin: must be a non-empty string' };
+    }
+    
+    // Validate network parameter
+    const network = validateNetwork(isTestnet);
+    const isTestnetValidated = networkToBoolean(network);
+    
+    const endpoint = isTestnetValidated
+      ? `/api/hyperliquid/testnet/orderbook?coin=${encodeURIComponent(coin)}`
+      : `/api/hyperliquid/mainnet/orderbook?coin=${encodeURIComponent(coin)}`;
+    return this.request<any>(endpoint);
   }
 
   async getAccountInfo(params: { walletAddress: string; isTestnet: boolean }): Promise<ApiResponse<any>> {
-    return this.request('/api/hyperliquid/account-info', {
+    // Validate wallet address
+    if (!params.walletAddress || typeof params.walletAddress !== 'string' || !params.walletAddress.startsWith('0x')) {
+      return { success: false, error: 'Invalid wallet address: must start with 0x' };
+    }
+    
+    // Validate network parameter
+    const network = validateNetwork(params.isTestnet);
+    const isTestnetValidated = networkToBoolean(network);
+    
+    const endpoint = isTestnetValidated
+      ? '/api/hyperliquid/testnet/account-info'
+      : '/api/hyperliquid/mainnet/account-info';
+    return this.request(endpoint, {
       method: 'POST',
-      body: JSON.stringify(params),
+      body: JSON.stringify({ walletAddress: params.walletAddress }),
     });
   }
 
@@ -264,19 +474,187 @@ class PythonApiClient {
     leverage: number;
     isTestnet: boolean;
   }): Promise<ApiResponse<any>> {
-    return this.request<any>('/api/hyperliquid/execute-trade', {
-      method: 'POST',
-      body: JSON.stringify(trade),
-    });
+    try {
+      // Validate trade parameters
+      if (!trade.apiSecret || typeof trade.apiSecret !== 'string' || trade.apiSecret.trim() === '') {
+        console.error('[Execute Trade] Validation failed: Invalid API secret', {
+          hasApiSecret: !!trade.apiSecret,
+          timestamp: new Date().toISOString(),
+        });
+        return { success: false, error: 'Invalid API secret: must be a non-empty string' };
+      }
+      
+      if (!trade.symbol || typeof trade.symbol !== 'string' || trade.symbol.trim() === '') {
+        console.error('[Execute Trade] Validation failed: Invalid symbol', {
+          symbol: trade.symbol,
+          timestamp: new Date().toISOString(),
+        });
+        return { success: false, error: 'Invalid symbol: must be a non-empty string' };
+      }
+      
+      if (!['buy', 'sell'].includes(trade.side)) {
+        console.error('[Execute Trade] Validation failed: Invalid side', {
+          side: trade.side,
+          timestamp: new Date().toISOString(),
+        });
+        return { success: false, error: 'Invalid side: must be "buy" or "sell"' };
+      }
+      
+      if (typeof trade.size !== 'number' || trade.size <= 0) {
+        console.error('[Execute Trade] Validation failed: Invalid size', {
+          size: trade.size,
+          sizeType: typeof trade.size,
+          timestamp: new Date().toISOString(),
+        });
+        return { success: false, error: 'Invalid size: must be a positive number' };
+      }
+      
+      if (typeof trade.price !== 'number' || trade.price <= 0) {
+        console.error('[Execute Trade] Validation failed: Invalid price', {
+          price: trade.price,
+          priceType: typeof trade.price,
+          timestamp: new Date().toISOString(),
+        });
+        return { success: false, error: 'Invalid price: must be a positive number' };
+      }
+      
+      if (typeof trade.leverage !== 'number' || trade.leverage < 1 || trade.leverage > 50) {
+        console.error('[Execute Trade] Validation failed: Invalid leverage', {
+          leverage: trade.leverage,
+          leverageType: typeof trade.leverage,
+          timestamp: new Date().toISOString(),
+        });
+        return { success: false, error: 'Invalid leverage: must be between 1 and 50' };
+      }
+      
+      // Validate network parameter
+      const network = validateNetwork(trade.isTestnet);
+      const isTestnetValidated = networkToBoolean(network);
+      
+      console.info(`[Execute Trade] Executing trade`, {
+        side: trade.side.toUpperCase(),
+        size: trade.size,
+        symbol: trade.symbol,
+        price: trade.price,
+        leverage: trade.leverage,
+        network,
+        hasStopLoss: !!trade.stopLoss,
+        hasTakeProfit: !!trade.takeProfit,
+        timestamp: new Date().toISOString(),
+      });
+      
+      const endpoint = isTestnetValidated
+        ? '/api/hyperliquid/testnet/execute-trade'
+        : '/api/hyperliquid/mainnet/execute-trade';
+      
+      // Remove isTestnet from the body since it's now in the endpoint
+      const { isTestnet, ...tradeData } = trade;
+      
+      const response = await this.request<any>(endpoint, {
+        method: 'POST',
+        body: JSON.stringify(tradeData),
+      });
+      
+      if (!response.success) {
+        console.error(`[Execute Trade] Failed on ${network}`, {
+          network,
+          symbol: trade.symbol,
+          side: trade.side,
+          error: response.error,
+          timestamp: new Date().toISOString(),
+        });
+      } else {
+        console.info(`[Execute Trade] Success on ${network}`, {
+          network,
+          symbol: trade.symbol,
+          side: trade.side,
+          timestamp: new Date().toISOString(),
+        });
+      }
+      
+      return response;
+    } catch (error: any) {
+      console.error('[Execute Trade] Exception', {
+        error: error.message,
+        errorType: error.name,
+        symbol: trade.symbol,
+        side: trade.side,
+        stack: error.stack,
+        timestamp: new Date().toISOString(),
+      });
+      return { success: false, error: `Trade execution failed: ${error.message}` };
+    }
   }
 
   // Price Fetching
   async fetchPrice(symbol: string, isTestnet: boolean = false): Promise<number> {
-    const response = await this.request<{ price: number }>(`/api/v1/market/price?symbol=${symbol}&isTestnet=${isTestnet}`);
-    if (!response.success || !response.data) {
-      throw new Error(response.error || `Failed to fetch price for ${symbol}`);
+    try {
+      // Validate symbol parameter
+      if (!symbol || typeof symbol !== 'string' || symbol.trim() === '') {
+        console.error('[Fetch Price] Validation failed: Invalid symbol', {
+          symbol,
+          symbolType: typeof symbol,
+          timestamp: new Date().toISOString(),
+        });
+        throw new Error('Invalid symbol: must be a non-empty string');
+      }
+      
+      // Validate network parameter
+      const network = validateNetwork(isTestnet);
+      const isTestnetValidated = networkToBoolean(network);
+      
+      console.info('[Fetch Price] Fetching price', {
+        symbol,
+        network,
+        timestamp: new Date().toISOString(),
+      });
+      
+      const endpoint = isTestnetValidated
+        ? `/api/v1/market/testnet/price?symbol=${encodeURIComponent(symbol)}`
+        : `/api/v1/market/mainnet/price?symbol=${encodeURIComponent(symbol)}`;
+      
+      const response = await this.request<{ price: number }>(endpoint);
+      
+      if (!response.success || !response.data) {
+        console.error(`[Fetch Price] Failed for ${symbol} on ${network}`, {
+          symbol,
+          network,
+          error: response.error,
+          hasData: !!response.data,
+          timestamp: new Date().toISOString(),
+        });
+        throw new Error(response.error || `Failed to fetch price for ${symbol}`);
+      }
+      
+      if (typeof response.data.price !== 'number' || response.data.price <= 0) {
+        console.error(`[Fetch Price] Invalid price data for ${symbol}`, {
+          symbol,
+          network,
+          price: response.data.price,
+          priceType: typeof response.data.price,
+          timestamp: new Date().toISOString(),
+        });
+        throw new Error(`Invalid price data received for ${symbol}`);
+      }
+      
+      console.info('[Fetch Price] Success', {
+        symbol,
+        network,
+        price: response.data.price,
+        timestamp: new Date().toISOString(),
+      });
+      
+      return response.data.price;
+    } catch (error: any) {
+      console.error(`[Fetch Price] Exception for ${symbol}`, {
+        symbol,
+        error: error.message,
+        errorType: error.name,
+        stack: error.stack,
+        timestamp: new Date().toISOString(),
+      });
+      throw new Error(`Failed to fetch price for ${symbol}: ${error.message}`);
     }
-    return response.data.price;
   }
 
   // Paper Trading
@@ -307,6 +685,123 @@ class PythonApiClient {
     });
   }
 
+  // Chart Snapshots with optimized fast/full strategy
+  async getLatestSnapshots(params: {
+    symbols?: string[];
+    snapshotType?: SnapshotType;
+    limit?: number;
+  }): Promise<ApiResponse<any>> {
+    const queryParams = new URLSearchParams();
+    if (params.symbols) queryParams.append('symbols', params.symbols.join(','));
+    if (params.snapshotType) queryParams.append('snapshot_type', params.snapshotType);
+    if (params.limit) queryParams.append('limit', params.limit.toString());
+    
+    // Track snapshot type usage
+    if (params.snapshotType === 'fast') {
+      snapshotMetrics.fastSnapshots++;
+    } else if (params.snapshotType === 'full') {
+      snapshotMetrics.fullSnapshots++;
+    }
+    
+    return this.request<any>(`/api/v1/snapshots/latest?${queryParams}`);
+  }
+
+  async getSnapshotsForAI(symbols: string[], snapshotType: SnapshotType = 'fast', network: NetworkType = 'mainnet'): Promise<any> {
+    // Check cache first
+    if (snapshotCache) {
+      const age = Date.now() - snapshotCache.timestamp;
+      const symbolsMatch = 
+        snapshotCache.symbols.length === symbols.length &&
+        snapshotCache.symbols.every(s => symbols.includes(s));
+      const typeMatch = snapshotCache.type === snapshotType;
+      const networkMatch = snapshotCache.network === network;
+      
+      if (age < SNAPSHOT_CACHE_DURATION && symbolsMatch && typeMatch && networkMatch) {
+        snapshotMetrics.hits++;
+        console.info(`[Snapshot Cache] HIT (age: ${age}ms, type: ${snapshotType}, symbols: ${symbols.join(',')})`, {
+          cacheAge: age,
+          snapshotType,
+          symbolCount: symbols.length,
+          timestamp: new Date().toISOString(),
+        });
+        return snapshotCache.data;
+      } else {
+        snapshotMetrics.invalidations++;
+        const reason = !symbolsMatch ? 'symbols changed' : !typeMatch ? 'type changed' : !networkMatch ? 'network changed' : 'expired';
+        console.info(`[Snapshot Cache] INVALIDATED (reason: ${reason})`, {
+          reason,
+          age,
+          requestedType: snapshotType,
+          cachedType: snapshotCache.type,
+          requestedNetwork: network,
+          cachedNetwork: snapshotCache.network,
+          timestamp: new Date().toISOString(),
+        });
+      }
+    }
+
+    // Cache miss
+    snapshotMetrics.misses++;
+    console.info(`[Snapshot Cache] MISS (type: ${snapshotType}, network: ${network}, symbols: ${symbols.join(',')})`, {
+      snapshotType,
+      network,
+      symbolCount: symbols.length,
+      symbols,
+      timestamp: new Date().toISOString(),
+    });
+
+    const isTestnet = networkToBoolean(network);
+    const networkPath = isTestnet ? 'testnet' : 'mainnet';
+    const response = await this.request<any>(
+      `/api/v1/snapshots/${networkPath}/ai-analysis?symbols=${symbols.join(',')}&snapshot_type=${snapshotType}`
+    );
+    if (!response.success || !response.data) {
+      throw new Error(response.error || 'Failed to fetch snapshots for AI analysis');
+    }
+    
+    // Cache the result with type and network
+    snapshotCache = {
+      data: response.data,
+      timestamp: Date.now(),
+      symbols: [...symbols],
+      type: snapshotType,
+      network,
+    };
+    
+    // Track snapshot type
+    if (snapshotType === 'fast') {
+      snapshotMetrics.fastSnapshots++;
+    } else {
+      snapshotMetrics.fullSnapshots++;
+    }
+    
+    return response.data;
+  }
+
+  // Backtesting
+  async runBacktest(params: {
+    symbol: string;
+    startDate: string;
+    endDate: string;
+    intervalMinutes: number;
+    initialBalance: number;
+    settings: any;
+    priceData: any[];
+  }): Promise<ApiResponse<any>> {
+    return this.request<any>('/api/backtest/run', {
+      method: 'POST',
+      body: JSON.stringify(params),
+    });
+  }
+
+  async getBacktestSampleData(symbol: string, days: number): Promise<ApiResponse<any>> {
+    return this.request<any>(`/api/backtest/sample-data?symbol=${symbol}&days=${days}`);
+  }
+
+  async getBacktestLogs(): Promise<ApiResponse<BacktestLog[]>> {
+    return this.request<BacktestLog[]>('/api/backtest/logs');
+  }
+
   // WebSocket connection for real-time updates
   connectWebSocket(onMessage: (data: any) => void, onError?: (error: Event) => void): WebSocket {
     const wsUrl = this.baseUrl.replace('http', 'ws') + '/ws';
@@ -335,3 +830,71 @@ class PythonApiClient {
 }
 
 export const pythonApi = new PythonApiClient();
+
+// Export cache control functions
+export function clearSnapshotCache() {
+  snapshotCache = null;
+  console.info('[Snapshot Cache] Cleared');
+}
+
+export function getSnapshotCacheAge(): number | null {
+  return snapshotCache ? Date.now() - snapshotCache.timestamp : null;
+}
+
+/**
+ * Get snapshot cache performance metrics with enhanced tracking
+ */
+export function getSnapshotCacheMetrics(): SnapshotCacheMetrics & { 
+  hitRate: number; 
+  totalRequests: number;
+  fastSnapshotRate: number;
+  fullSnapshotRate: number;
+} {
+  const totalRequests = snapshotMetrics.hits + snapshotMetrics.misses;
+  const hitRate = totalRequests > 0 ? (snapshotMetrics.hits / totalRequests) * 100 : 0;
+  const totalSnapshots = snapshotMetrics.fastSnapshots + snapshotMetrics.fullSnapshots;
+  const fastSnapshotRate = totalSnapshots > 0 ? (snapshotMetrics.fastSnapshots / totalSnapshots) * 100 : 0;
+  const fullSnapshotRate = totalSnapshots > 0 ? (snapshotMetrics.fullSnapshots / totalSnapshots) * 100 : 0;
+  
+  return {
+    ...snapshotMetrics,
+    hitRate: Math.round(hitRate * 100) / 100,
+    totalRequests,
+    fastSnapshotRate: Math.round(fastSnapshotRate * 100) / 100,
+    fullSnapshotRate: Math.round(fullSnapshotRate * 100) / 100,
+  };
+}
+
+/**
+ * Reset snapshot cache metrics
+ */
+export function resetSnapshotCacheMetrics() {
+  snapshotMetrics.hits = 0;
+  snapshotMetrics.misses = 0;
+  snapshotMetrics.invalidations = 0;
+  snapshotMetrics.fastSnapshots = 0;
+  snapshotMetrics.fullSnapshots = 0;
+  snapshotMetrics.lastReset = Date.now();
+  console.info('[Snapshot Cache Metrics] Reset');
+}
+
+/**
+ * Log snapshot cache performance summary with enhanced metrics
+ */
+export function logSnapshotCachePerformance() {
+  const metrics = getSnapshotCacheMetrics();
+  const uptime = Math.round((Date.now() - metrics.lastReset) / 1000);
+  
+  console.info('[Snapshot Cache Performance]', {
+    uptime: `${uptime}s`,
+    hits: metrics.hits,
+    misses: metrics.misses,
+    invalidations: metrics.invalidations,
+    hitRate: `${metrics.hitRate}%`,
+    totalRequests: metrics.totalRequests,
+    fastSnapshots: metrics.fastSnapshots,
+    fullSnapshots: metrics.fullSnapshots,
+    fastSnapshotRate: `${metrics.fastSnapshotRate}%`,
+    fullSnapshotRate: `${metrics.fullSnapshotRate}%`,
+  });
+}

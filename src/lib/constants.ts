@@ -12,6 +12,11 @@ export const TRADING_CONSTANTS = {
   PRICE_POLL_INTERVAL: 5000, // 5 seconds
   PRICE_CACHE_DURATION: 10000, // 10 seconds
   
+  // Snapshot Strategy (optimized based on Hyper Alpha Arena)
+  SNAPSHOT_FAST_INTERVAL: 5000, // 5 seconds - lightweight updates
+  SNAPSHOT_FULL_INTERVAL: 60000, // 60 seconds - complete data with calculations
+  SNAPSHOT_CACHE_DURATION: 5000, // 5 seconds cache
+  
   // Debounce Delays
   BALANCE_RECORD_DEBOUNCE: 5000, // 5 seconds
   
@@ -66,3 +71,44 @@ export const ERROR_MESSAGES = {
   AI_ANALYSIS_FAILED: 'AI analysis failed. Please try again.',
   PRICE_FETCH_FAILED: 'Failed to fetch market prices from Hyperliquid. Please try again.',
 } as const;
+
+// Network validation
+export const NETWORK_TYPES = ['mainnet', 'testnet'] as const;
+export type NetworkType = typeof NETWORK_TYPES[number];
+
+/**
+ * Validate network type
+ */
+export function isValidNetwork(network: string): network is NetworkType {
+  return NETWORK_TYPES.includes(network as NetworkType);
+}
+
+/**
+ * Convert boolean isTestnet to network type
+ */
+export function booleanToNetwork(isTestnet: boolean): NetworkType {
+  return isTestnet ? 'testnet' : 'mainnet';
+}
+
+/**
+ * Convert network type to boolean isTestnet
+ */
+export function networkToBoolean(network: NetworkType): boolean {
+  return network === 'testnet';
+}
+
+/**
+ * Validate and normalize network parameter
+ */
+export function validateNetwork(network: unknown): NetworkType {
+  if (typeof network === 'boolean') {
+    return booleanToNetwork(network);
+  }
+  
+  if (typeof network === 'string' && isValidNetwork(network)) {
+    return network;
+  }
+  
+  console.warn(`Invalid network type: ${network}, defaulting to mainnet`);
+  return 'mainnet';
+}

@@ -3,6 +3,7 @@ import { storage } from "@/lib/storage";
 import { useTradingStore } from "@/store/tradingStore";
 import { toast } from "sonner";
 import { pythonApi } from "@/lib/python-api-client";
+import { liveTradingMonitor } from "@/lib/live-trading-monitor";
 
 export function useTrading() {
   const { balance, settings, mode, network, chartType, chartInterval, setBalance, setPosition, position, isAutoTrading, setAutoTrading, aiModel, customPrompt } = useTradingStore();
@@ -23,6 +24,58 @@ export function useTrading() {
       });
     }
   }, [mode, balance]);
+
+  // Initialize live trading monitor for live/testnet modes
+  useEffect(() => {
+    if (mode === 'live') {
+      // Start monitoring with position close callback
+      liveTradingMonitor.startMonitoring(async (symbol, reason, price) => {
+        try {
+          const keys = storage.getApiKeys();
+          if (!keys?.hyperliquid.apiSecret) {
+            console.error('[Live Monitor] Cannot close position - API keys not configured');
+            return;
+          }
+
+          const currentPosition = position;
+          if (!currentPosition || currentPosition.symbol !== symbol) {
+            console.warn(`[Live Monitor] Position mismatch: ${symbol} not found`);
+            return;
+          }
+
+          // Execute close trade via Hyperliquid API
+          const result = await pythonApi.executeLiveTrade({
+            apiSecret: keys.hyperliquid.apiSecret,
+            symbol,
+            side: currentPosition.side === 'long' ? 'sell' : 'buy',
+            size: currentPosition.size,
+            price,
+            leverage: currentPosition.leverage ?? settings.leverage ?? 1,
+            isTestnet: network === 'testnet',
+          });
+
+          if (result.success) {
+            const pnl = currentPosition.pnl;
+            setBalance(balance + pnl);
+            setPosition(null);
+            
+            toast.success(`✅ Position closed: ${reason}`, {
+              description: `P&L: $${pnl.toFixed(2)}`,
+            });
+          } else {
+            throw new Error(result.error || 'Failed to close position');
+          }
+        } catch (error: any) {
+          console.error(`[Live Monitor] Failed to close ${symbol}:`, error.message);
+          toast.error(`Failed to close ${symbol}: ${error.message}`);
+        }
+      });
+
+      return () => {
+        liveTradingMonitor.stopMonitoring();
+      };
+    }
+  }, [mode, network, position, balance, settings.leverage, setBalance, setPosition]);
 
   // Record balance changes with debouncing to prevent race conditions
   useEffect(() => {
@@ -127,12 +180,13 @@ export function useTrading() {
             const size = parseFloat(pos.position.szi);
             const entryPrice = parseFloat(pos.position.entryPx || "0");
             const unrealizedPnl = parseFloat(pos.position.unrealizedPnl || "0");
+            const currentPrice = entryPrice + (unrealizedPnl / size);
 
             const currentPosition = {
               symbol: pos.position.coin,
               size: Math.abs(size),
               entryPrice,
-              currentPrice: entryPrice + (unrealizedPnl / size),
+              currentPrice,
               pnl: unrealizedPnl,
               side: size > 0 ? 'long' : 'short' as 'long' | 'short',
               leverage: settings.leverage ?? 1,
@@ -142,33 +196,25 @@ export function useTrading() {
 
             setPosition(currentPosition);
 
-            // Implement trailing stop loss logic if enabled
-            if (settings.useTrailingStop && currentPosition.pnl > 0) {
-              const profitPercent = (currentPosition.pnl / (currentPosition.entryPrice * currentPosition.size)) * 100;
-              
-              // If profit exceeds 50% of take profit target, move stop loss to break even
-              if (profitPercent >= (settings.takeProfitPercent * 0.5)) {
-                const newStopLoss = currentPosition.entryPrice;
-                
-                // Only update if the new stop loss is better than the current one
-                if (!currentPosition.stopLoss || 
-                    (currentPosition.side === 'long' && newStopLoss > currentPosition.stopLoss) ||
-                    (currentPosition.side === 'short' && newStopLoss < currentPosition.stopLoss)) {
-                  
-                  console.log(`[TRAILING STOP] Moving stop loss to break even: ${newStopLoss}`);
-                  
-                  toast.info(`🎯 Trailing Stop: Stop loss moved to break even (${newStopLoss.toFixed(2)})`, {
-                    duration: 5000,
-                  });
-                  
-                  await pythonApi.createTradingLog({
-                    action: "trailing_stop_update",
-                    symbol: currentPosition.symbol,
-                    reason: `Trailing stop activated - moved SL to break even`,
-                    details: `Profit: ${profitPercent.toFixed(2)}%, New SL: ${newStopLoss.toFixed(2)}`,
-                  });
-                }
-              }
+            // Update live trading monitor with current position and price
+            liveTradingMonitor.updatePosition({
+              symbol: currentPosition.symbol,
+              side: currentPosition.side,
+              size: currentPosition.size,
+              entryPrice: currentPosition.entryPrice,
+              currentPrice,
+              leverage: currentPosition.leverage,
+              stopLoss: currentPosition.stopLoss,
+              takeProfit: currentPosition.takeProfit,
+            });
+
+            // Set trailing stop if enabled
+            if (settings.useTrailingStop) {
+              liveTradingMonitor.setTrailingStop(
+                currentPosition.symbol,
+                settings.stopLossPercent / 2, // Trail at half of stop loss %
+                settings.takeProfitPercent * 0.5 // Activate at 50% of TP target
+              );
             }
 
             // Record position snapshot
@@ -177,7 +223,7 @@ export function useTrading() {
               side: currentPosition.side,
               size: currentPosition.size,
               entry_price: currentPosition.entryPrice,
-              current_price: currentPosition.currentPrice,
+              current_price: currentPrice,
               unrealized_pnl: currentPosition.pnl,
               leverage: settings.leverage || 1,
               mode,
@@ -199,7 +245,7 @@ export function useTrading() {
     pollPositions(); // Initial fetch
 
     return () => clearInterval(interval);
-  }, [mode, network, setBalance, setPosition, isAutoTrading, setAutoTrading, settings.leverage]);
+  }, [mode, network, setBalance, setPosition, isAutoTrading, setAutoTrading, settings.leverage, settings.useTrailingStop, settings.stopLossPercent, settings.takeProfitPercent]);
 
   const closePosition = useCallback(async (positionToClose: typeof position) => {
     if (!positionToClose) {
@@ -405,7 +451,7 @@ export function useTrading() {
     
     try {
       setAiThinking(true);
-      setAiThoughts('🔍 Initializing AI analysis...\n\nValidating API keys and market data...');
+      setAiThoughts('🔍 Initializing AI analysis...\\n\\nValidating API keys and market data...');
       
       const isDemoMode = storage.isDemoMode();
       const keys = storage.getApiKeys();
@@ -449,6 +495,8 @@ export function useTrading() {
       }
       
       const allowedCoins = settings.allowedCoins || [];
+      
+      // Filter by user-selected coins only
       const filteredCharts = charts.filter(chart => 
         allowedCoins.length === 0 || allowedCoins.includes(chart.symbol)
       );
@@ -468,24 +516,15 @@ export function useTrading() {
         toast.info(`🤖 AI analyzing ${filteredCharts.length} coins (dual charts: 5min + 1000R) with ${modelName}...`);
       }
 
-      // Create dual chart snapshots for each coin: 5-minute timeframe + 1000-range chart
-      // This provides both time-based momentum analysis and price-action support/resistance levels
-      const multiChartData = filteredCharts.flatMap(chart => [
-        {
-          symbol: chart.symbol,
-          currentPrice: chart.currentPrice,
-          chartType: 'time' as const,
-          chartInterval: '5',
-          technicalContext: `${chart.symbol} @ ${chart.currentPrice.toLocaleString()} | 5min timeframe | Time-based momentum & trend analysis`,
-        },
-        {
-          symbol: chart.symbol,
-          currentPrice: chart.currentPrice,
-          chartType: 'range' as const,
-          chartInterval: '1000',
-          technicalContext: `${chart.symbol} @ ${chart.currentPrice.toLocaleString()} | 1000-tick range | Price action & support/resistance levels`,
-        }
-      ]);
+      // Create chart data for AI analysis
+      // Note: Backend provides snapshot data per symbol; frontend adds chart context
+      const multiChartData = filteredCharts.map(chart => ({
+        symbol: chart.symbol,
+        currentPrice: chart.currentPrice,
+        chartType: chartType,
+        chartInterval: chartInterval,
+        technicalContext: `${chart.symbol} @ ${chart.currentPrice.toLocaleString()} | ${chartType === 'range' ? `${chartInterval}-tick range chart` : `${chartInterval}min timeframe`}`,
+      }));
 
       // Final validation before calling backend
       if (!openRouterKey || openRouterKey === 'DEMO_MODE' || !openRouterKey.startsWith('sk-or-v1-')) {
@@ -497,7 +536,7 @@ export function useTrading() {
       }
 
       const currentThoughts = useTradingStore.getState().aiThoughts;
-      setAiThoughts(`${currentThoughts}\n\n⏳ Sending request to ${modelName}...\nWaiting for AI response...`);
+      setAiThoughts(`${currentThoughts}\\n\\n⏳ Sending request to ${modelName}...\\nWaiting for AI response...`);
       
       const analysis = await pythonApi.analyzeMultiChart({
         apiKey: openRouterKey,
@@ -515,7 +554,7 @@ export function useTrading() {
         customPrompt,
       });
       
-      setAiThoughts(`✅ AI Analysis Complete!\n\n📊 Recommendation: ${analysis.action.toUpperCase()}\n🎯 Confidence: ${analysis.confidence}%\n💰 Symbol: ${analysis.recommendedSymbol || 'N/A'}\n\n💭 Reasoning:\n${analysis.reasoning}\n\n🌍 Market Context:\n${analysis.marketContext || 'N/A'}`);
+      setAiThoughts(`✅ AI Analysis Complete!\\n\\n📊 Recommendation: ${analysis.action.toUpperCase()}\\n🎯 Confidence: ${analysis.confidence}%\\n💰 Symbol: ${analysis.recommendedSymbol || 'N/A'}\\n\\n💭 Reasoning:\\n${analysis.reasoning}\\n\\n🌍 Market Context:\\n${analysis.marketContext || 'N/A'}`);
       
       toast.success(`✅ Multi-chart AI analysis complete: ${analysis.action.toUpperCase()}`);
       
@@ -523,12 +562,12 @@ export function useTrading() {
         action: "ai_multi_analysis",
         symbol: analysis.recommendedSymbol || "MULTI",
         reason: `AI Decision: ${analysis.action} on ${analysis.recommendedSymbol} (Confidence: ${analysis.confidence}%)`,
-        details: `${analysis.reasoning}\n\nMarket Context: ${analysis.marketContext || 'N/A'}`,
+        details: `${analysis.reasoning}\\n\\nMarket Context: ${analysis.marketContext || 'N/A'}`,
       });
       
       return analysis;
     } catch (error: any) {
-      setAiThoughts(`❌ AI Analysis Error\n\n${error.message}\n\nPlease check your API keys and try again.`);
+      setAiThoughts(`❌ AI Analysis Error\\n\\n${error.message}\\n\\nPlease check your API keys and try again.`);
       toast.error(`❌ Multi-chart AI Analysis failed: ${error.message}`);
       
       await pythonApi.createTradingLog({
@@ -777,7 +816,7 @@ export function useTrading() {
     }
   };
 
-  // Real-time auto-trading loop with improved error handling
+  // Real-time auto-trading loop with optimized snapshot strategy
   useEffect(() => {
     if (!isAutoTrading) return;
 
@@ -790,13 +829,22 @@ export function useTrading() {
 
     let isActive = true;
     let timeoutId: NodeJS.Timeout | null = null;
-    let isRunning = false; // Prevent concurrent executions
+    let isRunning = false;
+    let cycleCount = 0; // Track cycles for fast/full snapshot strategy
 
     const runAutoTrading = async () => {
       if (!isActive || isRunning) return;
       
       isRunning = true;
+      cycleCount++;
+      
+      // OPTIMIZATION: Use fast snapshots every cycle, full snapshots every 12 cycles (12 minutes)
+      const useFastSnapshot = cycleCount % 12 !== 0;
+      const snapshotType: 'fast' | 'full' = useFastSnapshot ? 'fast' : 'full';
+      
       console.log('[AUTO-TRADING] Cycle starting...', {
+        cycleCount,
+        snapshotType,
         mode,
         isDemoMode: storage.isDemoMode(),
         allowedCoins: settings.allowedCoins,
@@ -854,6 +902,7 @@ export function useTrading() {
             keyLength: openRouterKey?.length,
             keyPrefix: openRouterKey?.substring(0, 10),
             coinsToFetch: allowedCoins,
+            snapshotType,
           });
           
           // If no valid API key in demo mode, skip AI analysis gracefully
@@ -874,65 +923,53 @@ export function useTrading() {
             return;
           }
           
-          toast.info(`[DEMO] 🔄 Auto-trading cycle started (${allowedCoins.length} coins)`, {
-            description: "Using your OpenRouter key",
+          toast.info(`[DEMO] 🔄 Auto-trading cycle #${cycleCount} (${snapshotType} snapshot)`, {
+            description: `Analyzing ${allowedCoins.length} coins`,
           });
 
-          // Fetch real market data using Python API
-          console.log('[AUTO-TRADING] Fetching prices for coins:', allowedCoins);
+          // OPTIMIZATION: Use fast/full snapshot strategy
+          const snapshotResponse = await pythonApi.getSnapshotsForAI(allowedCoins, snapshotType, network);
           
-          const chartDataPromises = allowedCoins.map(async (symbol) => {
-            try {
-              console.log(`[AUTO-TRADING] Fetching price for ${symbol}...`);
-              const price = await pythonApi.fetchPrice(symbol, network === 'testnet');
-              console.log(`[AUTO-TRADING] Price fetched for ${symbol}: ${price}`);
-              return {
-                symbol,
-                currentPrice: price,
-              };
-            } catch (error) {
-              console.error(`[AUTO-TRADING] Failed to fetch price for ${symbol}:`, error);
-              return null;
-            }
+          const chartData = allowedCoins.map((symbol) => {
+            const snapshot = snapshotResponse.snapshots?.[symbol];
+            return {
+              symbol,
+              currentPrice: snapshot?.price || 0,
+            };
           });
 
-          const chartData = await Promise.all(chartDataPromises);
-          const validCharts = chartData.filter((chart): chart is { symbol: string; currentPrice: number } => chart !== null);
-
-          console.log('[AUTO-TRADING] Price fetch results', {
+          console.log('[AUTO-TRADING] Using snapshot-based analysis', {
             totalCoins: allowedCoins.length,
-            successfulFetches: validCharts.length,
-            validCharts,
+            snapshotsReceived: Object.keys(snapshotResponse.snapshots || {}).length,
+            snapshotType,
+          });
+
+          const validCharts = chartData.filter((chart) => chart.currentPrice > 0);
+
+          console.log('[AUTO-TRADING] Valid charts for analysis', {
+            totalCoins: allowedCoins.length,
+            validCharts: validCharts.length,
+            validSymbols: validCharts.map(c => c.symbol),
           });
 
           if (validCharts.length === 0) {
             toast.error("❌ Auto-trading paused: No market data available", {
-              description: `Failed to fetch prices for ${allowedCoins.join(', ')}. Check console for details.`,
+              description: `No snapshots available for ${allowedCoins.join(', ')}`,
               duration: 5000,
             });
             
             await pythonApi.createTradingLog({
               action: "auto_pause",
               symbol: "SYSTEM",
-              reason: "Auto-trading paused: No valid market data",
-              details: `Failed to fetch prices for all selected coins: ${allowedCoins.join(', ')}. Binance API may be unavailable or symbols may be incorrect.`,
+              reason: "Auto-trading paused: No valid market data snapshots",
+              details: `No snapshots available for: ${allowedCoins.join(', ')}`,
             });
             
             return;
           }
 
-          // Log successful data fetch
-          if (validCharts.length < allowedCoins.length) {
-            const failedCoins = allowedCoins.filter(
-              coin => !validCharts.find(chart => chart.symbol === coin)
-            );
-            toast.warning(`⚠️ Some prices unavailable: ${failedCoins.join(', ')}`, {
-              description: `Trading with ${validCharts.length} available coins`,
-            });
-          }
-
-          // Run real AI analysis with DeepSeek V3.1 free tier
-          console.log('[AUTO-TRADING] Running AI analysis with charts:', validCharts);
+          // Run real AI analysis with snapshot data
+          console.log('[AUTO-TRADING] Running AI analysis with snapshots:', validCharts);
           
           const analysis = await runMultiChartAIAnalysis(validCharts);
 
@@ -949,21 +986,21 @@ export function useTrading() {
           if (analysis.action === "open_long" || analysis.action === "open_short") {
             const recommendedSymbol = analysis.recommendedSymbol || validCharts[0].symbol;
             
-            // Double-check that the recommended symbol is in allowed coins
-            if (!allowedCoins.includes(recommendedSymbol)) {
-              toast.warning(`[DEMO] ⚠️ AI recommended ${recommendedSymbol} but it's not in your allowed coins list`, {
-                description: 'Skipping this trade recommendation',
-              });
-              
-              await pythonApi.createTradingLog({
-                action: "trade_skipped",
-                symbol: recommendedSymbol,
-                reason: `[DEMO] AI recommended ${recommendedSymbol} but it's not in allowed coins: ${allowedCoins.join(', ')}`,
-                details: analysis.reasoning,
-              });
-              
-              return;
-            }
+          // Verify that the recommended symbol is in allowed coins
+          if (allowedCoins.length > 0 && !allowedCoins.includes(recommendedSymbol)) {
+            toast.warning(`[DEMO] ⚠️ AI recommended ${recommendedSymbol} but it's not in your allowed coins list`, {
+              description: 'Skipping this trade recommendation',
+            });
+            
+            await pythonApi.createTradingLog({
+              action: "trade_skipped",
+              symbol: recommendedSymbol,
+              reason: `[DEMO] AI recommended ${recommendedSymbol} but it's not in allowed coins: ${allowedCoins.join(', ')}`,
+              details: analysis.reasoning,
+            });
+            
+            return;
+          }
             
             const side = analysis.action === "open_long" ? "long" : "short";
             
@@ -1016,55 +1053,40 @@ export function useTrading() {
           return;
         }
 
-        toast.info(`🔄 Auto-trading cycle started (${allowedCoins.length} coins)`);
-
-        // Fetch current market data using Python API
-        const chartDataPromises = allowedCoins.map(async (symbol) => {
-          try {
-            const price = await pythonApi.fetchPrice(symbol, network === 'testnet');
-            return {
-              symbol,
-              currentPrice: price,
-            };
-          } catch (error) {
-            console.error(`Failed to fetch price for ${symbol}:`, error);
-            return null;
-          }
+        toast.info(`🔄 Auto-trading cycle #${cycleCount} (${snapshotType} snapshot)`, {
+          description: `Analyzing ${allowedCoins.length} coins`,
         });
 
-        const chartData = await Promise.all(chartDataPromises);
-        const validCharts = chartData.filter((chart) => chart !== null) as Array<{
-          symbol: string;
-          currentPrice: number;
-        }>;
+        // OPTIMIZATION: Use fast/full snapshot strategy
+        const snapshotResponse = await pythonApi.getSnapshotsForAI(allowedCoins, snapshotType, network);
+        
+        const chartData = allowedCoins.map((symbol) => {
+          const snapshot = snapshotResponse.snapshots?.[symbol];
+          return {
+            symbol,
+            currentPrice: snapshot?.price || 0,
+          };
+        });
+
+        const validCharts = chartData.filter((chart) => chart.currentPrice > 0);
 
         if (validCharts.length === 0) {
           toast.error("❌ Auto-trading paused: No market data available", {
-            description: `Failed to fetch prices for ${allowedCoins.join(', ')}. Check console for details.`,
+            description: `No snapshots available for ${allowedCoins.join(', ')}`,
             duration: 5000,
           });
           
-            await pythonApi.createTradingLog({
+          await pythonApi.createTradingLog({
             action: "auto_pause",
             symbol: "SYSTEM",
-            reason: "Auto-trading paused: No valid market data",
-            details: `Failed to fetch prices for all selected coins: ${allowedCoins.join(', ')}. Binance API may be unavailable or symbols may be incorrect.`,
+            reason: "Auto-trading paused: No valid market data snapshots",
+            details: `No snapshots available for: ${allowedCoins.join(', ')}`,
           });
           
           return;
         }
 
-        // Log successful data fetch
-        if (validCharts.length < allowedCoins.length) {
-          const failedCoins = allowedCoins.filter(
-            coin => !validCharts.find(chart => chart.symbol === coin)
-          );
-          toast.warning(`⚠️ Some prices unavailable: ${failedCoins.join(', ')}`, {
-            description: `Trading with ${validCharts.length} available coins`,
-          });
-        }
-
-        // Run multi-chart AI analysis
+        // Run multi-chart AI analysis with snapshots
         const analysis = await runMultiChartAIAnalysis(validCharts);
 
         if (!analysis) {
@@ -1078,8 +1100,8 @@ export function useTrading() {
         if (analysis.action === "open_long" || analysis.action === "open_short") {
           const recommendedSymbol = analysis.recommendedSymbol || validCharts[0].symbol;
           
-          // Double-check that the recommended symbol is in allowed coins
-          if (!allowedCoins.includes(recommendedSymbol)) {
+          // Verify that the recommended symbol is in allowed coins
+          if (allowedCoins.length > 0 && !allowedCoins.includes(recommendedSymbol)) {
             toast.warning(`⚠️ AI recommended ${recommendedSymbol} but it's not in your allowed coins list`, {
               description: 'Skipping this trade recommendation',
             });
@@ -1147,7 +1169,7 @@ export function useTrading() {
           duration: 5000,
         });
         
-          await pythonApi.createTradingLog({
+        await pythonApi.createTradingLog({
           action: "auto_error",
           symbol: "SYSTEM",
           reason: `Auto-trading error: ${error.message}`,

@@ -11,7 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { handleError, ERROR_MESSAGES } from "@/lib/error-handler";
 import { UpdateNotification } from "@/components/UpdateNotification";
-import { useLiveMarketData } from "@/hooks/use-live-market-data";
+import { useLiveMarketData, MAX_RETRIES } from "@/hooks/use-live-market-data";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { RefreshCw } from "lucide-react";
@@ -221,7 +221,7 @@ export default function Landing() {
                 const symbolKey = `${token.symbol}USD`;
                 const liveData = marketData[symbolKey];
                 const isLoading = isInitialLoad || liveData?.isLoading;
-                const hasError = liveData?.error && liveData?.retryCount === 3;
+                const hasError = liveData?.error && liveData?.retryCount === MAX_RETRIES;
                 
                 return (
                   <motion.div

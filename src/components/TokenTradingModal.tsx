@@ -27,6 +27,19 @@ export function TokenTradingModal({ token, isOpen, onClose }: TokenTradingModalP
   const [iframeError, setIframeError] = useState(false);
   const [chartError, setChartError] = useState<string | null>(null);
 
+  // Reset error states when modal closes or token changes
+  useEffect(() => {
+    if (!isOpen) {
+      setIframeError(false);
+      setChartError(null);
+    }
+  }, [isOpen]);
+
+  useEffect(() => {
+    setIframeError(false);
+    setChartError(null);
+  }, [token?.symbol]);
+
   if (!token) return null;
 
   const hyperliquidEmbedUrl = `${token.tradingLink}?embed=true`;
@@ -169,22 +182,70 @@ export function TokenTradingModal({ token, isOpen, onClose }: TokenTradingModalP
   );
 }
 
-// Time-based chart component
-function TimeChart({ symbol, interval, onError }: { symbol: string; interval: string; onError: (error: string | null) => void }) {
-  useEffect(() => {
+// Shared TradingView script loader to prevent duplicate loads
+let tradingViewScriptLoaded = false;
+let tradingViewScriptLoading = false;
+const tradingViewLoadCallbacks: Array<() => void> = [];
+
+function loadTradingViewScript(): Promise<void> {
+  return new Promise((resolve, reject) => {
+    if (tradingViewScriptLoaded) {
+      resolve();
+      return;
+    }
+
+    if (tradingViewScriptLoading) {
+      tradingViewLoadCallbacks.push(() => resolve());
+      return;
+    }
+
+    tradingViewScriptLoading = true;
     const script = document.createElement('script');
     script.src = 'https://s3.tradingview.com/tv.js';
     script.async = true;
-    
+    script.id = 'tradingview-widget-script';
+
     script.onload = () => {
+      tradingViewScriptLoaded = true;
+      tradingViewScriptLoading = false;
+      resolve();
+      tradingViewLoadCallbacks.forEach(cb => cb());
+      tradingViewLoadCallbacks.length = 0;
+    };
+
+    script.onerror = () => {
+      tradingViewScriptLoading = false;
+      reject(new Error('Failed to load TradingView script'));
+    };
+
+    document.head.appendChild(script);
+  });
+}
+
+// Shared symbol formats
+const getSymbolFormats = (symbol: string, preferHyperliquid: boolean = true) => {
+  const formats = [
+    `HYPERLIQUID:${symbol}USDC`,
+    `BINANCE:${symbol}USDT`,
+    `COINBASE:${symbol}USD`,
+    `${symbol}USD`
+  ];
+  return preferHyperliquid ? formats : [formats[1], formats[0], formats[2], formats[3]];
+};
+
+// Time-based chart component
+function TimeChart({ symbol, interval, onError }: { symbol: string; interval: string; onError: (error: string | null) => void }) {
+  useEffect(() => {
+    let mounted = true;
+
+    const initChart = async () => {
       try {
+        await loadTradingViewScript();
+        
+        if (!mounted) return;
+
         if (typeof window.TradingView !== 'undefined') {
-          const symbolFormats = [
-            `HYPERLIQUID:${symbol}USDC`,
-            `BINANCE:${symbol}USDT`,
-            `COINBASE:${symbol}USD`,
-            `${symbol}USD`
-          ];
+          const symbolFormats = getSymbolFormats(symbol, true);
           
           new window.TradingView.widget({
             autosize: true,
@@ -207,29 +268,23 @@ function TimeChart({ symbol, interval, onError }: { symbol: string; interval: st
               "mainSeriesProperties.candleStyle.downColor": "#ff0000",
             },
           });
-          onError(null);
+          if (mounted) onError(null);
         } else {
           throw new Error('TradingView library not available');
         }
       } catch (error) {
-        const errorMessage = error instanceof Error ? error.message : 'Unknown error loading chart';
-        onError(`Failed to load time chart: ${errorMessage}`);
-        handleError(error, ERROR_MESSAGES.CHART_LOAD);
+        if (mounted) {
+          const errorMessage = error instanceof Error ? error.message : 'Unknown error loading chart';
+          onError(`Failed to load time chart: ${errorMessage}`);
+          handleError(error, ERROR_MESSAGES.CHART_LOAD);
+        }
       }
     };
-    
-    script.onerror = () => {
-      const error = new Error('Failed to load TradingView script');
-      onError(error.message);
-      handleError(error, ERROR_MESSAGES.CHART_SCRIPT);
-    };
-    
-    document.head.appendChild(script);
+
+    initChart();
     
     return () => {
-      if (document.head.contains(script)) {
-        document.head.removeChild(script);
-      }
+      mounted = false;
     };
   }, [symbol, interval, onError]);
 
@@ -239,12 +294,14 @@ function TimeChart({ symbol, interval, onError }: { symbol: string; interval: st
 // Range-based chart component
 function RangeChart({ symbol, range, onError }: { symbol: string; range: string; onError: (error: string | null) => void }) {
   useEffect(() => {
-    const script = document.createElement('script');
-    script.src = 'https://s3.tradingview.com/tv.js';
-    script.async = true;
-    
-    script.onload = () => {
+    let mounted = true;
+
+    const initChart = async () => {
       try {
+        await loadTradingViewScript();
+        
+        if (!mounted) return;
+
         if (typeof window.TradingView !== 'undefined') {
           const rangeToInterval: Record<string, string> = {
             '10': '1',
@@ -253,13 +310,7 @@ function RangeChart({ symbol, range, onError }: { symbol: string; range: string;
           };
           
           const tvInterval = rangeToInterval[range] || '5';
-          
-          const symbolFormats = [
-            `BINANCE:${symbol}USDT`,
-            `HYPERLIQUID:${symbol}USDC`,
-            `COINBASE:${symbol}USD`,
-            `${symbol}PERP`
-          ];
+          const symbolFormats = getSymbolFormats(symbol, false);
           
           new window.TradingView.widget({
             autosize: true,
@@ -278,29 +329,23 @@ function RangeChart({ symbol, range, onError }: { symbol: string; range: string;
             gridColor: 'rgba(0, 255, 255, 0.1)',
             studies: ['Volume@tv-basicstudies'],
           });
-          onError(null);
+          if (mounted) onError(null);
         } else {
           throw new Error('TradingView library not available');
         }
       } catch (error) {
-        const errorMessage = error instanceof Error ? error.message : 'Unknown error loading chart';
-        onError(`Failed to load range chart: ${errorMessage}`);
-        handleError(error, ERROR_MESSAGES.CHART_LOAD);
+        if (mounted) {
+          const errorMessage = error instanceof Error ? error.message : 'Unknown error loading chart';
+          onError(`Failed to load range chart: ${errorMessage}`);
+          handleError(error, ERROR_MESSAGES.CHART_LOAD);
+        }
       }
     };
-    
-    script.onerror = () => {
-      const error = new Error('Failed to load TradingView script');
-      onError(error.message);
-      handleError(error, ERROR_MESSAGES.CHART_SCRIPT);
-    };
-    
-    document.head.appendChild(script);
+
+    initChart();
     
     return () => {
-      if (document.head.contains(script)) {
-        document.head.removeChild(script);
-      }
+      mounted = false;
     };
   }, [symbol, range, onError]);
 

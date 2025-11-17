@@ -24,8 +24,11 @@ import { CloseAllPositionsDialog } from '@/components/CloseAllPositionsDialog';
 import { UpdateNotification } from '@/components/UpdateNotification';
 import { pythonApi } from '@/lib/python-api-client';
 import { AiThoughtsPanel } from '@/components/AiThoughtsPanel';
+import { BacktestingPanel } from '@/components/BacktestingPanel';
 import { assessLiquidationRisk } from '@/lib/liquidation-protection';
 import { FloatingLogViewer } from '@/components/FloatingLogViewer';
+import { PaperTradingGuide } from '@/components/PaperTradingGuide';
+import { TradesHistoryDashboard } from '@/components/TradesHistoryDashboard';
 
 export default function Dashboard() {
   const navigate = useNavigate();
@@ -287,6 +290,16 @@ export default function Dashboard() {
         
         {/* Main Content */}
         <div className="container mx-auto px-4 py-6 space-y-6">
+          {/* Paper Trading Guide */}
+          {mode === 'paper' && (
+            <motion.div
+              initial={{ opacity: 0, y: -20 }}
+              animate={{ opacity: 1, y: 0 }}
+            >
+              <PaperTradingGuide />
+            </motion.div>
+          )}
+
           {/* Liquidation Risk Warning */}
           {liquidationRisk && liquidationRisk.riskLevel !== 'safe' && (
             <motion.div
@@ -466,15 +479,21 @@ export default function Dashboard() {
               )}
             </div>
             
-            {/* Logs, News, and AI Thoughts - 1/3 width */}
+            {/* Logs, News, AI Thoughts, and Backtesting - 1/3 width */}
             <div className="lg:col-span-1">
               <Tabs defaultValue="logs" className="w-full">
-                <TabsList className="grid w-full grid-cols-3 bg-black/50">
+                <TabsList className="grid w-full grid-cols-5 bg-black/50">
                   <TabsTrigger 
                     value="logs" 
                     className="data-[state=active]:bg-cyan-500 data-[state=active]:text-black font-mono text-xs"
                   >
                     📊 Logs
+                  </TabsTrigger>
+                  <TabsTrigger 
+                    value="trades" 
+                    className="data-[state=active]:bg-cyan-500 data-[state=active]:text-black font-mono text-xs"
+                  >
+                    💼 Trades
                   </TabsTrigger>
                   <TabsTrigger 
                     value="news" 
@@ -488,15 +507,27 @@ export default function Dashboard() {
                   >
                     🧠 AI
                   </TabsTrigger>
+                  <TabsTrigger 
+                    value="backtest" 
+                    className="data-[state=active]:bg-cyan-500 data-[state=active]:text-black font-mono text-xs"
+                  >
+                    📈 Test
+                  </TabsTrigger>
                 </TabsList>
                 <TabsContent value="logs" className="mt-4">
                   <TradingLogs />
+                </TabsContent>
+                <TabsContent value="trades" className="mt-4">
+                  <TradesHistoryDashboard />
                 </TabsContent>
                 <TabsContent value="news" className="mt-4">
                   <NewsFeed />
                 </TabsContent>
                 <TabsContent value="ai" className="mt-4">
                   <AiThoughtsPanel />
+                </TabsContent>
+                <TabsContent value="backtest" className="mt-4">
+                  <BacktestingPanel />
                 </TabsContent>
               </Tabs>
             </div>

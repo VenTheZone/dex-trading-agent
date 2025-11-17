@@ -55,4 +55,86 @@ export const ERROR_MESSAGES = {
     description: "Please check your internet connection and try again.",
     logPrefix: "TradingView script error",
   },
+  PRICE_FETCH: {
+    title: "Price fetch failed",
+    description: "Unable to fetch live market data. Retrying...",
+    logPrefix: "Price service error",
+  },
+  NETWORK_ERROR: {
+    title: "Network connection error",
+    description: "Please check your internet connection and try again.",
+    logPrefix: "Network error",
+  },
+  API_TIMEOUT: {
+    title: "Request timeout",
+    description: "The server took too long to respond. Please try again.",
+    logPrefix: "API timeout error",
+  },
+  API_UNAVAILABLE: {
+    title: "Service unavailable",
+    description: "The backend service is currently unavailable. Please try again later.",
+    logPrefix: "API unavailable",
+  },
 } as const;
+
+// Enhanced error categorization
+export const categorizeError = (error: unknown): {
+  type: 'network' | 'timeout' | 'server' | 'client' | 'unknown';
+  message: string;
+  isRetryable: boolean;
+} => {
+  const errorMessage = error instanceof Error ? error.message : String(error);
+  
+  // Network errors
+  if (errorMessage.includes('fetch') || 
+      errorMessage.includes('network') || 
+      errorMessage.includes('NetworkError') ||
+      errorMessage.includes('Failed to fetch')) {
+    return {
+      type: 'network',
+      message: 'Network connection failed',
+      isRetryable: true,
+    };
+  }
+  
+  // Timeout errors
+  if (errorMessage.includes('timeout') || 
+      errorMessage.includes('timed out') ||
+      errorMessage.includes('ETIMEDOUT')) {
+    return {
+      type: 'timeout',
+      message: 'Request timed out',
+      isRetryable: true,
+    };
+  }
+  
+  // Server errors (5xx)
+  if (errorMessage.includes('500') || 
+      errorMessage.includes('502') || 
+      errorMessage.includes('503') ||
+      errorMessage.includes('504')) {
+    return {
+      type: 'server',
+      message: 'Server error occurred',
+      isRetryable: true,
+    };
+  }
+  
+  // Client errors (4xx)
+  if (errorMessage.includes('400') || 
+      errorMessage.includes('401') || 
+      errorMessage.includes('403') ||
+      errorMessage.includes('404')) {
+    return {
+      type: 'client',
+      message: 'Invalid request',
+      isRetryable: false,
+    };
+  }
+  
+  return {
+    type: 'unknown',
+    message: errorMessage,
+    isRetryable: true,
+  };
+};

@@ -1,11 +1,2 @@
-const STORAGE_PREFIX = 'dex_agent_';
-
-export const storage = {
-  saveApiKeys: (keys: ApiKeys) => {
-    localStorage.setItem(`${STORAGE_PREFIX}api_keys`, JSON.stringify(keys));
-  },
-  getApiKeys: (): ApiKeys | null => {
-    const data = localStorage.getItem(`${STORAGE_PREFIX}api_keys`);
-    return data ? JSON.parse(data) : null;
-  }
-};
+// Line 46 in price-service.ts - HARDCODED to false (mainnet)
+const price = await pythonApi.fetchPrice(symbol, false);
