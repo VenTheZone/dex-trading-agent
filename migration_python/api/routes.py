@@ -1,84 +1,455 @@
-# ... keep existing code (imports)
+"""
+API Routes - FastAPI endpoints
+Replaces Convex backend functions
+"""
+from fastapi import APIRouter, HTTPException, Depends
+from sqlalchemy.orm import Session
+from typing import List, Optional
+import json
+import re
 
-from services.backtesting_service import get_backtest_service, BacktestResult
+from database import get_db
+from database.schema import TradingLog, BalanceHistory, PositionSnapshot, TradingMode, TradingSide
+from services.market_data_service import MarketDataService
+from services.hyperliquid_service import HyperliquidService
 
-# ... keep existing code
+router = APIRouter()
 
-@router.post("/api/backtest/run")
-async def run_backtest(
-    request: dict,
-    db: Session = Depends(get_db)
-):
-    """
-    Run a backtest simulation with detailed logging
-    """
+# ============================================================================
+# TRADING LOGS ENDPOINTS
+# ============================================================================
+
+@router.get("/api/trading-logs")
+async def get_trading_logs(limit: int = 50, db: Session = Depends(get_db)):
+    """Get recent trading logs"""
     try:
-        symbol = request.get("symbol", "BTCUSD")
-        start_date = datetime.fromisoformat(request["startDate"].replace("Z", "+00:00"))
-        end_date = datetime.fromisoformat(request["endDate"].replace("Z", "+00:00"))
-        interval_minutes = request.get("intervalMinutes", 60)
-        initial_balance = request.get("initialBalance", 10000.0)
-        settings = request.get("settings", {})
-        price_data = request.get("priceData", [])
-        
-        if not price_data:
-            return {
-                "success": False,
-                "error": "Historical price data is required for backtesting"
+        logs = db.query(TradingLog).order_by(TradingLog.created_at.desc()).limit(limit).all()
+        return [
+            {
+                "id": log.id,
+                "action": log.action,
+                "symbol": log.symbol,
+                "reason": log.ai_reasoning or "",  # Map ai_reasoning to reason
+                "details": log.error_message or "",  # Map error_message to details
+                "price": log.price,
+                "size": log.size,
+                "leverage": log.leverage,
+                "side": log.side.value if log.side else None,
+                "mode": log.mode.value,
+                "success": bool(log.success),
+                "created_at": log.created_at.isoformat(),
             }
-        
-        # Get backtest service
-        backtest_service = get_backtest_service(initial_balance)
-        
-        # Run backtest
-        result = await backtest_service.run_backtest(
-            symbol=symbol,
-            start_date=start_date,
-            end_date=end_date,
-            interval_minutes=interval_minutes,
-            settings=settings,
-            ai_service=None,
-            price_data=price_data
+            for log in logs
+        ]
+    except AttributeError as e:
+        # Specific error for missing attributes
+        raise HTTPException(
+            status_code=500, 
+            detail=f"Database schema mismatch: {str(e)}. Check TradingLog model fields."
         )
-        
-        # Get trade logs
-        trade_logs = backtest_service.get_trade_logs()
-        
+    except ValueError as e:
+        # Specific error for invalid data formats
+        raise HTTPException(
+            status_code=400,
+            detail=f"Invalid data format: {str(e)}"
+        )
+    except Exception as e:
+        # General error with full details
+        import traceback
+        error_detail = {
+            "error": str(e),
+            "type": type(e).__name__,
+            "traceback": traceback.format_exc()
+        }
+        raise HTTPException(status_code=500, detail=str(error_detail))
+
+@router.post("/api/trading-logs")
+async def create_trading_log(log_data: dict, db: Session = Depends(get_db)):
+    """Create a new trading log entry"""
+    try:
+        log = TradingLog(
+            action=log_data.get("action"),
+            symbol=log_data.get("symbol"),
+            ai_reasoning=log_data.get("reason"),  # Map reason to ai_reasoning
+            error_message=log_data.get("details"),  # Map details to error_message
+            price=log_data.get("price"),
+            size=log_data.get("size"),
+            leverage=log_data.get("leverage"),
+            side=TradingSide(log_data["side"]) if log_data.get("side") else None,
+            mode=TradingMode(log_data.get("mode", "paper")),
+            success=int(log_data.get("success", 1)),
+        )
+        db.add(log)
+        db.commit()
+        db.refresh(log)
         return {
-            "success": True,
-            "result": {
-                "startDate": result.start_date.isoformat(),
-                "endDate": result.end_date.isoformat(),
-                "initialBalance": result.initial_balance,
-                "finalBalance": result.final_balance,
-                "totalTrades": result.total_trades,
-                "winningTrades": result.winning_trades,
-                "losingTrades": result.losing_trades,
-                "totalPnl": result.total_pnl,
-                "totalPnlPercent": result.total_pnl_percent,
-                "maxDrawdown": result.max_drawdown,
-                "maxDrawdownPercent": result.max_drawdown_percent,
-                "sharpeRatio": result.sharpe_ratio,
-                "winRate": result.win_rate,
-                "avgWin": result.avg_win,
-                "avgLoss": result.avg_loss,
-                "trades": result.trades,
-                "equityCurve": result.equity_curve,
-                "logs": trade_logs
-            }
+            "id": log.id,
+            "action": log.action,
+            "symbol": log.symbol,
+            "created_at": log.created_at.isoformat(),
         }
     except Exception as e:
-        logger.error(f"Backtest failed: {e}")
-        return {"success": False, "error": str(e)}
+        db.rollback()
+        raise HTTPException(status_code=500, detail=str(e))
 
-@router.get("/api/backtest/logs")
-async def get_backtest_logs():
-    """Get detailed backtest logs"""
+@router.delete("/api/trading-logs")
+async def clear_trading_logs(db: Session = Depends(get_db)):
+    """Clear all trading logs"""
     try:
-        backtest_service = get_backtest_service()
-        logs = backtest_service.get_trade_logs()
-        return {"success": True, "logs": logs}
+        db.query(TradingLog).delete()
+        db.commit()
+        return {"message": "All trading logs cleared"}
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=str(e))
+
+# ============================================================================
+# BALANCE HISTORY ENDPOINTS
+# ============================================================================
+
+@router.get("/api/balance-history")
+async def get_balance_history(limit: int = 100, db: Session = Depends(get_db)):
+    """Get balance history"""
+    try:
+        history = db.query(BalanceHistory).order_by(BalanceHistory.created_at.desc()).limit(limit).all()
+        return [
+            {
+                "id": h.id,
+                "balance": h.balance,
+                "mode": h.mode.value,
+                "created_at": h.created_at.isoformat(),
+            }
+            for h in history
+        ]
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.post("/api/balance-history")
+async def record_balance(balance_data: dict, db: Session = Depends(get_db)):
+    """Record balance snapshot"""
+    try:
+        history = BalanceHistory(
+            balance=balance_data.get("balance"),
+            mode=TradingMode(balance_data.get("mode", "paper")),
+        )
+        db.add(history)
+        db.commit()
+        db.refresh(history)
+        return {
+            "id": history.id,
+            "balance": history.balance,
+            "mode": history.mode.value,
+            "created_at": history.created_at.isoformat(),
+        }
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=str(e))
+
+# ============================================================================
+# POSITION SNAPSHOTS ENDPOINTS
+# ============================================================================
+
+@router.get("/api/v1/positions/history")
+async def get_position_history(symbol: Optional[str] = None, limit: int = 100, db: Session = Depends(get_db)):
+    """Get position history"""
+    try:
+        query = db.query(PositionSnapshot)
+        if symbol:
+            query = query.filter(PositionSnapshot.symbol == symbol)
+        snapshots = query.order_by(PositionSnapshot.created_at.desc()).limit(limit).all()
+        return [
+            {
+                "id": s.id,
+                "symbol": s.symbol,
+                "side": s.side.value,
+                "size": s.size,
+                "entry_price": s.entry_price,
+                "current_price": s.current_price,
+                "unrealized_pnl": s.unrealized_pnl,
+                "leverage": s.leverage,
+                "mode": s.mode.value,
+                "created_at": s.created_at.isoformat(),
+            }
+            for s in snapshots
+        ]
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.post("/api/v1/positions/snapshot")
+async def record_position_snapshot(snapshot_data: dict, db: Session = Depends(get_db)):
+    """Record position snapshot"""
+    try:
+        snapshot = PositionSnapshot(
+            symbol=snapshot_data.get("symbol"),
+            side=TradingSide(snapshot_data.get("side")),
+            size=snapshot_data.get("size"),
+            entry_price=snapshot_data.get("entry_price"),
+            current_price=snapshot_data.get("current_price"),
+            unrealized_pnl=snapshot_data.get("unrealized_pnl"),
+            leverage=snapshot_data.get("leverage"),
+            mode=TradingMode(snapshot_data.get("mode", "paper")),
+        )
+        db.add(snapshot)
+        db.commit()
+        db.refresh(snapshot)
+        return {
+            "id": snapshot.id,
+            "symbol": snapshot.symbol,
+            "created_at": snapshot.created_at.isoformat(),
+        }
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=str(e))
+
+# ============================================================================
+# MARKET DATA ENDPOINTS
+# ============================================================================
+
+@router.get("/api/v1/market/price")
+async def get_market_price(symbol: str, isTestnet: bool = False):
+    """Fetch current market price from Hyperliquid"""
+    try:
+        market_service = MarketDataService()
+        price = await market_service.fetch_price_with_fallback(symbol, isTestnet)
+        return {"price": price}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+# ============================================================================
+# AI ANALYSIS ENDPOINTS
+# ============================================================================
+
+@router.post("/api/ai/analyze")
+async def analyze_market(request: dict):
+    """AI analysis for single chart - delegates to OpenRouter"""
+    try:
+        api_key = request.get("apiKey")
+        symbol = request.get("symbol")
+        chart_data = request.get("chartData", "")
+        user_balance = request.get("userBalance", 10000)
+        settings = request.get("settings", {})
+        ai_model = request.get("aiModel", "deepseek/deepseek-chat-v3-0324:free")
+        custom_prompt = request.get("customPrompt", "")
+        
+        if not api_key:
+            raise HTTPException(status_code=400, detail="OpenRouter API key required")
+        
+        from openai import OpenAI
+        
+        client = OpenAI(
+            base_url="https://openrouter.ai/api/v1",
+            api_key=api_key,
+        )
+        
+        system_prompt = custom_prompt if custom_prompt else "You are a cryptocurrency trading analyst."
+        user_prompt = f"{chart_data}\n\nProvide trading analysis in JSON format with: action, confidence, reasoning, entryPrice, stopLoss, takeProfit, positionSize"
+        
+        completion = client.chat.completions.create(
+            model=ai_model,
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_prompt}
+            ],
+            temperature=0.7,
+        )
+        
+        response_text = completion.choices[0].message.content
+        
+        json_match = re.search(r'\{.*\}', response_text, re.DOTALL)
+        if json_match:
+            analysis = json.loads(json_match.group())
+        else:
+            analysis = {
+                "action": "hold",
+                "confidence": 50,
+                "reasoning": response_text,
+                "entryPrice": 0,
+                "stopLoss": 0,
+                "takeProfit": 0,
+                "positionSize": 0
+            }
+        
+        return analysis
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"AI analysis failed: {str(e)}")
+
+@router.post("/api/ai/analyze-multi-chart")
+async def analyze_multi_chart(request: dict):
+    """AI analysis for multiple charts - delegates to OpenRouter"""
+    try:
+        api_key = request.get("apiKey")
+        charts = request.get("charts", [])
+        user_balance = request.get("userBalance", 10000)
+        settings = request.get("settings", {})
+        ai_model = request.get("aiModel", "deepseek/deepseek-chat-v3-0324:free")
+        custom_prompt = request.get("customPrompt", "")
+        
+        if not api_key:
+            raise HTTPException(status_code=400, detail="OpenRouter API key required")
+        
+        if not charts:
+            raise HTTPException(status_code=400, detail="No charts provided for analysis")
+        
+        from openai import OpenAI
+        
+        client = OpenAI(
+            base_url="https://openrouter.ai/api/v1",
+            api_key=api_key,
+        )
+        
+        chart_summaries = []
+        for chart in charts:
+            summary = f"Symbol: {chart.get('symbol')}, Price: {chart.get('currentPrice')}, Chart: {chart.get('chartType')} {chart.get('chartInterval')}"
+            if chart.get('technicalContext'):
+                summary += f"\nContext: {chart.get('technicalContext')}"
+            chart_summaries.append(summary)
+        
+        charts_text = "\n\n".join(chart_summaries)
+        
+        system_prompt = custom_prompt if custom_prompt else "You are a cryptocurrency trading analyst analyzing multiple trading pairs."
+        user_prompt = f"""Analyze the following trading pairs and recommend the BEST trading opportunity:
+
+{charts_text}
+
+Account Balance: ${user_balance}
+Risk Management: TP {settings.get('takeProfitPercent', 2)}%, SL {settings.get('stopLossPercent', 1)}%
+
+Provide your analysis in JSON format with:
+- recommendedSymbol: which coin to trade
+- action: open_long, open_short, close, or hold
+- confidence: 0-100
+- reasoning: detailed step-by-step analysis
+- entryPrice: recommended entry price
+- stopLoss: stop loss price
+- takeProfit: take profit price
+- positionSize: position size in USD
+- marketContext: overall market conditions summary
+"""
+        
+        completion = client.chat.completions.create(
+            model=ai_model,
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_prompt}
+            ],
+            temperature=0.7,
+        )
+        
+        response_text = completion.choices[0].message.content
+        
+        json_match = re.search(r'\{.*\}', response_text, re.DOTALL)
+        if json_match:
+            analysis = json.loads(json_match.group())
+        else:
+            analysis = {
+                "recommendedSymbol": charts[0].get('symbol') if charts else "BTCUSD",
+                "action": "hold",
+                "confidence": 50,
+                "reasoning": response_text,
+                "entryPrice": charts[0].get('currentPrice', 0) if charts else 0,
+                "stopLoss": 0,
+                "takeProfit": 0,
+                "positionSize": 0,
+                "marketContext": "Analysis completed"
+            }
+        
+        return analysis
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Multi-chart AI analysis failed: {str(e)}")
+
+# ============================================================================
+# HYPERLIQUID ENDPOINTS
+# ============================================================================
+
+@router.post("/api/hyperliquid/test-connection")
+async def test_hyperliquid_connection(isTestnet: bool = False):
+    """Test connection to Hyperliquid API"""
+    try:
+        service = HyperliquidService(is_testnet=isTestnet)
+        meta = service.info.meta()
+        
+        if meta and 'universe' in meta:
+            assets = [asset['name'] for asset in meta['universe'][:5]]
+            return {
+                "success": True,
+                "message": "Connection successful",
+                "apiEndpoint": "https://api.hyperliquid-testnet.xyz" if isTestnet else "https://api.hyperliquid.xyz",
+                "appUrl": "https://app.hyperliquid-testnet.xyz" if isTestnet else "https://app.hyperliquid.xyz",
+                "assetsCount": len(meta['universe']),
+                "availableAssets": ", ".join(assets)
+            }
+        else:
+            return {
+                "success": False,
+                "message": "Connection failed",
+                "error": "Unable to fetch market metadata"
+            }
+    except Exception as e:
+        return {
+            "success": False,
+            "message": "Connection failed",
+            "error": str(e)
+        }
+
+@router.post("/api/hyperliquid/positions")
+async def get_hyperliquid_positions(request: dict):
+    """Get Hyperliquid positions"""
+    try:
+        api_secret = request.get("apiSecret")
+        wallet_address = request.get("walletAddress")
+        is_testnet = request.get("isTestnet", False)
+        
+        if not api_secret or not wallet_address:
+            raise HTTPException(status_code=400, detail="API secret and wallet address required")
+        
+        service = HyperliquidService(is_testnet=is_testnet)
+        positions = await service.get_positions(wallet_address)
+        
+        return {"success": True, "data": positions}
     except Exception as e:
         return {"success": False, "error": str(e)}
 
-# ... keep existing code (sample data endpoint)
+@router.post("/api/hyperliquid/execute-trade")
+async def execute_live_trade(request: dict):
+    """Execute live trade on Hyperliquid"""
+    try:
+        api_secret = request.get("apiSecret")
+        symbol = request.get("symbol")
+        side = request.get("side")
+        size = request.get("size")
+        price = request.get("price")
+        leverage = request.get("leverage", 1)
+        is_testnet = request.get("isTestnet", False)
+        
+        if not all([api_secret, symbol, side, size, price]):
+            raise HTTPException(status_code=400, detail="Missing required trade parameters")
+        
+        service = HyperliquidService(is_testnet=is_testnet)
+        
+        # Get asset index
+        asset_index = await service.get_asset_index(symbol)
+        
+        # Place order
+        result = await service.place_order(
+            api_secret=api_secret,
+            asset_index=asset_index,
+            is_buy=(side == "buy"),
+            size=size,
+            price=price,
+            leverage=leverage
+        )
+        
+        return {"success": True, "data": result}
+    except Exception as e:
+        return {"success": False, "error": str(e)}
+
+# ============================================================================
+# HEALTH CHECK
+# ============================================================================
+
+@router.get("/health")
+async def health_check():
+    """Health check endpoint"""
+    return {"status": "healthy", "service": "DeX Trading Agent API"}

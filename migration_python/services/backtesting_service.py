@@ -8,11 +8,45 @@ from datetime import datetime, timedelta
 import asyncio
 import logging
 from dataclasses import dataclass, asdict
-import json
 
 logger = logging.getLogger(__name__)
 
-# ... keep existing code (BacktestTrade and BacktestResult dataclasses)
+
+@dataclass
+class BacktestTrade:
+    """Represents a single trade in backtest"""
+    timestamp: datetime
+    symbol: str
+    action: str  # 'open_long', 'open_short', 'close'
+    price: float
+    size: float
+    confidence: float
+    reasoning: str
+    pnl: float = 0.0
+    balance_after: float = 0.0
+
+
+@dataclass
+class BacktestResult:
+    """Results of a backtest run"""
+    start_date: datetime
+    end_date: datetime
+    initial_balance: float
+    final_balance: float
+    total_trades: int
+    winning_trades: int
+    losing_trades: int
+    total_pnl: float
+    total_pnl_percent: float
+    max_drawdown: float
+    max_drawdown_percent: float
+    sharpe_ratio: float
+    win_rate: float
+    avg_win: float
+    avg_loss: float
+    trades: List[Dict]
+    equity_curve: List[Dict]  # [{timestamp, balance}, ...]
+
 
 class BacktestingService:
     """
@@ -28,25 +62,13 @@ class BacktestingService:
         self.equity_curve: List[Dict] = []
         self.peak_balance = initial_balance
         self.max_drawdown = 0.0
-        self.trade_log: List[str] = []  # Detailed trade logging
-        
-    def _log_trade_event(self, event_type: str, message: str, data: Dict = None):
-        """Log trade events with structured data"""
-        log_entry = {
-            "timestamp": datetime.now().isoformat(),
-            "event_type": event_type,
-            "message": message,
-            "data": data or {}
-        }
-        self.trade_log.append(json.dumps(log_entry))
-        logger.info(f"[{event_type}] {message}")
         
     async def run_backtest(
         self,
         symbol: str,
         start_date: datetime,
         end_date: datetime,
-        interval_minutes: int = 60,
+        interval_minutes: int = 60,  # Check every hour
         settings: Dict = None,
         ai_service = None,
         price_data: List[Dict] = None,
@@ -63,13 +85,7 @@ class BacktestingService:
             ai_service: AI analysis service for decision making
             price_data: Historical price data [{timestamp, price, volume}, ...]
         """
-        self._log_trade_event("BACKTEST_START", f"Starting backtest for {symbol}", {
-            "symbol": symbol,
-            "start_date": start_date.isoformat(),
-            "end_date": end_date.isoformat(),
-            "initial_balance": self.initial_balance,
-            "settings": settings
-        })
+        logger.info(f"Starting backtest for {symbol} from {start_date} to {end_date}")
         
         if not price_data:
             raise ValueError("Historical price data is required for backtesting")
@@ -80,7 +96,7 @@ class BacktestingService:
                 'leverage': 1,
                 'takeProfitPercent': 5.0,
                 'stopLossPercent': 2.0,
-                'maxPositionSize': 0.5,
+                'maxPositionSize': 0.5,  # 50% of balance
             }
         
         # Reset state
@@ -90,13 +106,13 @@ class BacktestingService:
         self.equity_curve = []
         self.peak_balance = self.initial_balance
         self.max_drawdown = 0.0
-        self.trade_log = []
         
         # Simulate trading at each interval
         current_time = start_date
         price_index = 0
         
         while current_time <= end_date and price_index < len(price_data):
+            # Get current price
             current_price_data = price_data[price_index]
             current_price = current_price_data['price']
             
@@ -130,15 +146,14 @@ class BacktestingService:
                     )
             
             # Record equity
-            position_value = self._get_position_value(current_price) if self.position else 0
             self.equity_curve.append({
                 'timestamp': current_time.isoformat(),
                 'balance': self.balance,
-                'position_value': position_value
+                'position_value': self._get_position_value(current_price) if self.position else 0
             })
             
             # Update peak and drawdown
-            total_equity = self.balance + position_value
+            total_equity = self.balance + (self._get_position_value(current_price) if self.position else 0)
             if total_equity > self.peak_balance:
                 self.peak_balance = total_equity
             
@@ -146,11 +161,6 @@ class BacktestingService:
             drawdown_percent = (drawdown / self.peak_balance) * 100 if self.peak_balance > 0 else 0
             if drawdown_percent > self.max_drawdown:
                 self.max_drawdown = drawdown_percent
-                self._log_trade_event("DRAWDOWN_UPDATE", f"New max drawdown: {drawdown_percent:.2f}%", {
-                    "drawdown_percent": drawdown_percent,
-                    "peak_balance": self.peak_balance,
-                    "current_equity": total_equity
-                })
             
             # Move to next interval
             current_time += timedelta(minutes=interval_minutes)
@@ -162,18 +172,49 @@ class BacktestingService:
             await self._close_position(end_date, final_price, "Backtest ended")
         
         # Calculate results
-        result = self._calculate_results(start_date, end_date)
-        
-        self._log_trade_event("BACKTEST_COMPLETE", "Backtest simulation completed", {
-            "total_trades": result.total_trades,
-            "final_balance": result.final_balance,
-            "total_pnl": result.total_pnl,
-            "win_rate": result.win_rate
-        })
-        
-        return result
+        return self._calculate_results(start_date, end_date)
     
-    # ... keep existing code (_update_position, _should_close_position)
+    def _update_position(self, current_price: float):
+        """Update position with current price"""
+        if not self.position:
+            return
+        
+        entry_price = self.position['entry_price']
+        size = self.position['size']
+        side = self.position['side']
+        
+        if side == 'long':
+            pnl = (current_price - entry_price) * size
+        else:  # short
+            pnl = (entry_price - current_price) * size
+        
+        self.position['current_price'] = current_price
+        self.position['unrealized_pnl'] = pnl
+    
+    def _should_close_position(self, current_price: float, settings: Dict) -> bool:
+        """Check if position should be closed based on TP/SL"""
+        if not self.position:
+            return False
+        
+        entry_price = self.position['entry_price']
+        side = self.position['side']
+        tp_percent = settings.get('takeProfitPercent', 5.0)
+        sl_percent = settings.get('stopLossPercent', 2.0)
+        
+        if side == 'long':
+            price_change_percent = ((current_price - entry_price) / entry_price) * 100
+        else:  # short
+            price_change_percent = ((entry_price - current_price) / entry_price) * 100
+        
+        # Check take profit
+        if price_change_percent >= tp_percent:
+            return True
+        
+        # Check stop loss
+        if price_change_percent <= -sl_percent:
+            return True
+        
+        return False
     
     async def _open_position(
         self,
@@ -210,16 +251,7 @@ class BacktestingService:
             'opened_at': timestamp,
         }
         
-        self._log_trade_event("POSITION_OPENED", f"Opened {side} position", {
-            "symbol": symbol,
-            "side": side,
-            "size": size,
-            "entry_price": price,
-            "position_value": position_value,
-            "confidence": confidence,
-            "reasoning": reasoning,
-            "balance_after": self.balance
-        })
+        logger.info(f"Opened {side} position: {size:.4f} {symbol} @ ${price:.2f}")
     
     async def _close_position(self, timestamp: datetime, price: float, reason: str):
         """Close current position"""
@@ -254,23 +286,32 @@ class BacktestingService:
         )
         self.trades.append(trade)
         
-        self._log_trade_event("POSITION_CLOSED", f"Closed {side} position", {
-            "symbol": self.position['symbol'],
-            "side": side,
-            "entry_price": entry_price,
-            "exit_price": price,
-            "size": size,
-            "pnl": pnl,
-            "pnl_percent": (pnl / (entry_price * size)) * 100,
-            "reason": reason,
-            "balance_after": self.balance,
-            "duration": str(timestamp - self.position['opened_at'])
-        })
+        logger.info(f"Closed {side} position: P&L ${pnl:.2f}, Balance: ${self.balance:.2f}")
         
         # Clear position
         self.position = None
     
-    # ... keep existing code (_get_position_value, _get_ai_decision)
+    def _get_position_value(self, current_price: float) -> float:
+        """Get current value of position"""
+        if not self.position:
+            return 0.0
+        return self.position['size'] * current_price
+    
+    async def _get_ai_decision(
+        self,
+        ai_service,
+        symbol: str,
+        price: float,
+        timestamp: datetime,
+        settings: Dict
+    ) -> Optional[Dict]:
+        """
+        Get AI trading decision (placeholder for now)
+        In production, this would call the AI analysis service
+        """
+        # For now, return None (no AI decision)
+        # In production, integrate with TradingService.analyze_market_single_chart
+        return None
     
     def _calculate_results(self, start_date: datetime, end_date: datetime) -> BacktestResult:
         """Calculate backtest statistics"""
@@ -309,10 +350,14 @@ class BacktestingService:
             trades=[asdict(t) for t in self.trades],
             equity_curve=self.equity_curve
         )
-    
-    def get_trade_logs(self) -> List[str]:
-        """Get detailed trade logs"""
-        return self.trade_log
 
 
-# ... keep existing code (singleton instance)
+# Singleton instance
+_backtest_service: Optional[BacktestingService] = None
+
+def get_backtest_service(initial_balance: float = 10000.0) -> BacktestingService:
+    """Get or create backtesting service instance"""
+    global _backtest_service
+    if _backtest_service is None:
+        _backtest_service = BacktestingService(initial_balance)
+    return _backtest_service

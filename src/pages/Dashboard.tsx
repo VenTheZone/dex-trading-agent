@@ -3,7 +3,6 @@ import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { TradingBackground } from '@/components/CyberpunkBackground';
 import { ApiKeySetup } from '@/components/ApiKeySetup';
 import { TradingChart } from '@/components/TradingChart';
@@ -11,7 +10,9 @@ import { TradingControls } from '@/components/TradingControls';
 import { LogoDropdown } from '@/components/LogoDropdown';
 import { storage } from '@/lib/storage';
 import { useTradingStore } from '@/store/tradingStore';
-import { Activity, DollarSign, TrendingUp, Settings, LineChart, Network, X, Loader2, AlertTriangle } from 'lucide-react';
+import { Activity, DollarSign, TrendingUp, Settings, LineChart, X, Loader2, AlertTriangle } from 'lucide-react';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
 import { TradingLogs } from '@/components/TradingLogs';
 import { NewsFeed } from '@/components/NewsFeed';
@@ -94,33 +95,6 @@ export default function Dashboard() {
         balance
       )
     : null;
-  
-  const handleModeToggle = () => {
-    const newMode = mode === 'paper' ? 'live' : 'paper';
-    if (newMode === 'live') {
-      const confirmed = window.confirm(
-        '⚠️ WARNING: You are about to switch to LIVE TRADING mode.\\n\\n' +
-        'Real funds will be at risk. Are you sure you want to continue?'
-      );
-      if (!confirmed) return;
-    }
-    setMode(newMode);
-    toast.success(`Switched to ${newMode.toUpperCase()} trading mode`);
-  };
-
-  const handleNetworkToggle = () => {
-    const newNetwork = network === 'mainnet' ? 'testnet' : 'mainnet';
-    const confirmed = window.confirm(
-      `Switch to Hyperliquid ${newNetwork.toUpperCase()}?\\n\\n` +
-      (newNetwork === 'testnet' 
-        ? 'Testnet uses test funds and is safe for experimentation.' 
-        : '⚠️ MAINNET uses real funds. Ensure you understand the risks.')
-    );
-    if (!confirmed) return;
-    
-    setNetwork(newNetwork);
-    toast.success(`Switched to Hyperliquid ${newNetwork.toUpperCase()}`);
-  };
   
   const handleClosePosition = async () => {
     if (!position) return;
@@ -219,7 +193,7 @@ export default function Dashboard() {
               </div>
             </div>
             
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-6">
               <Sheet>
                 <SheetTrigger asChild>
                   <Button
@@ -240,30 +214,88 @@ export default function Dashboard() {
                 </SheetContent>
               </Sheet>
 
-              <Badge 
-                variant="outline"
-                className={`text-lg px-4 py-2 font-mono cursor-pointer ${
-                  network === 'mainnet' 
-                    ? 'bg-purple-500/20 text-purple-400 border-purple-500' 
-                    : 'bg-blue-500/20 text-blue-400 border-blue-500'
-                }`}
-                onClick={handleNetworkToggle}
-              >
-                <Network className="mr-2 h-4 w-4" />
-                {network === 'mainnet' ? '🟣 MAINNET' : '🔵 TESTNET'}
-              </Badge>
+              {/* Network Switch */}
+              <div className="flex items-center gap-3 bg-gradient-to-r from-black/80 to-black/60 border-2 border-cyan-500/40 rounded-xl px-5 py-3 shadow-[0_0_20px_rgba(0,255,255,0.15)] hover:shadow-[0_0_30px_rgba(0,255,255,0.25)] transition-all">
+                <Label 
+                  htmlFor="network-switch" 
+                  className={`text-sm font-mono font-bold cursor-pointer transition-all duration-300 ${
+                    network === 'testnet' 
+                      ? 'text-blue-400 scale-110 drop-shadow-[0_0_8px_rgba(59,130,246,0.8)]' 
+                      : 'text-gray-600 hover:text-gray-400'
+                  }`}
+                >
+                  🔵 TESTNET
+                </Label>
+                <Switch
+                  id="network-switch"
+                  checked={network === 'mainnet'}
+                  onCheckedChange={(checked) => {
+                    const newNetwork = checked ? 'mainnet' : 'testnet';
+                    const confirmed = window.confirm(
+                      `Switch to Hyperliquid ${newNetwork.toUpperCase()}?\n\n` +
+                      (newNetwork === 'testnet' 
+                        ? 'Testnet uses test funds and is safe for experimentation.' 
+                        : '⚠️ MAINNET uses real funds. Ensure you understand the risks.')
+                    );
+                    if (confirmed) {
+                      setNetwork(newNetwork);
+                      toast.success(`Switched to Hyperliquid ${newNetwork.toUpperCase()}`);
+                    }
+                  }}
+                  className="data-[state=checked]:bg-gradient-to-r data-[state=checked]:from-purple-500 data-[state=checked]:to-purple-600 data-[state=checked]:shadow-[0_0_15px_rgba(168,85,247,0.6)] data-[state=unchecked]:bg-gradient-to-r data-[state=unchecked]:from-blue-500 data-[state=unchecked]:to-blue-600 data-[state=unchecked]:shadow-[0_0_15px_rgba(59,130,246,0.6)] transition-all duration-300"
+                />
+                <Label 
+                  htmlFor="network-switch" 
+                  className={`text-sm font-mono font-bold cursor-pointer transition-all duration-300 ${
+                    network === 'mainnet' 
+                      ? 'text-purple-400 scale-110 drop-shadow-[0_0_8px_rgba(168,85,247,0.8)]' 
+                      : 'text-gray-600 hover:text-gray-400'
+                  }`}
+                >
+                  🟣 MAINNET
+                </Label>
+              </div>
               
-              <Badge 
-                variant={mode === 'paper' ? 'secondary' : 'destructive'}
-                className={`text-lg px-4 py-2 font-mono cursor-pointer ${
-                  mode === 'paper' 
-                    ? 'bg-cyan-500/20 text-cyan-400 border-cyan-500' 
-                    : 'bg-red-500/20 text-red-400 border-red-500'
-                }`}
-                onClick={handleModeToggle}
-              >
-                {mode === 'paper' ? '📄 PAPER' : '🔴 LIVE'} TRADING
-              </Badge>
+              {/* Trading Mode Switch */}
+              <div className="flex items-center gap-3 bg-gradient-to-r from-black/80 to-black/60 border-2 border-cyan-500/40 rounded-xl px-5 py-3 shadow-[0_0_20px_rgba(0,255,255,0.15)] hover:shadow-[0_0_30px_rgba(0,255,255,0.25)] transition-all">
+                <Label 
+                  htmlFor="mode-switch" 
+                  className={`text-sm font-mono font-bold cursor-pointer transition-all duration-300 ${
+                    mode === 'paper' 
+                      ? 'text-cyan-400 scale-110 drop-shadow-[0_0_8px_rgba(0,255,255,0.8)]' 
+                      : 'text-gray-600 hover:text-gray-400'
+                  }`}
+                >
+                  📄 PAPER
+                </Label>
+                <Switch
+                  id="mode-switch"
+                  checked={mode === 'live'}
+                  onCheckedChange={(checked) => {
+                    const newMode = checked ? 'live' : 'paper';
+                    if (newMode === 'live') {
+                      const confirmed = window.confirm(
+                        '⚠️ WARNING: You are about to switch to LIVE TRADING mode.\n\n' +
+                        'Real funds will be at risk. Are you sure you want to continue?'
+                      );
+                      if (!confirmed) return;
+                    }
+                    setMode(newMode);
+                    toast.success(`Switched to ${newMode.toUpperCase()} trading mode`);
+                  }}
+                  className="data-[state=checked]:bg-gradient-to-r data-[state=checked]:from-red-500 data-[state=checked]:to-red-600 data-[state=checked]:shadow-[0_0_15px_rgba(239,68,68,0.6)] data-[state=unchecked]:bg-gradient-to-r data-[state=unchecked]:from-cyan-500 data-[state=unchecked]:to-cyan-600 data-[state=unchecked]:shadow-[0_0_15px_rgba(0,255,255,0.6)] transition-all duration-300"
+                />
+                <Label 
+                  htmlFor="mode-switch" 
+                  className={`text-sm font-mono font-bold cursor-pointer transition-all duration-300 ${
+                    mode === 'live' 
+                      ? 'text-red-400 scale-110 drop-shadow-[0_0_8px_rgba(239,68,68,0.8)]' 
+                      : 'text-gray-600 hover:text-gray-400'
+                  }`}
+                >
+                  🔴 LIVE
+                </Label>
+              </div>
               
               <Button
                 variant="outline"
