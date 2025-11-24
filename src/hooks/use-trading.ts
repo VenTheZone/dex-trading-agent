@@ -232,6 +232,8 @@ export function useTrading() {
             });
           } else {
             setPosition(null);
+            // Clear monitored positions when no active positions exist
+            liveTradingMonitor.clearPositions();
           }
         }
       } catch (error) {

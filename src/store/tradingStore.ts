@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { TradingSettings } from '@/lib/storage';
+import { validateNetwork } from '@/lib/constants';
 
 export interface Position {
   symbol: string;
@@ -145,7 +146,7 @@ export const useTradingStore = create<TradingState>()(
       resetBalance: () => set((state) => ({ balance: state.initialBalance, position: null })),
       setPosition: (position) => set({ position }),
       setMode: (mode) => set({ mode }),
-      setNetwork: (network) => set({ network }),
+      setNetwork: (network) => set({ network: validateNetwork(network) }),
       updateSettings: (newSettings) =>
         set((state) => ({
           settings: { ...state.settings, ...newSettings },

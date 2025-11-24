@@ -31,17 +31,13 @@ export const TradingChart = ({ symbol, chartId = 'tradingview_chart' }: TradingC
   useEffect(() => {
     if (!container.current) return;
     
+    // Clear container to prevent duplicate widgets
     container.current.innerHTML = '';
     
-    const script = document.createElement('script');
-    script.src = 'https://s3.tradingview.com/tv.js';
-    script.async = true;
-    script.onload = () => {
+    const initWidget = () => {
       if (typeof window.TradingView !== 'undefined' && container.current) {
-        // Cleanup previous widget if exists
-        if (container.current.innerHTML) {
-          container.current.innerHTML = '';
-        }
+        // Double check container is empty before creating widget
+        container.current.innerHTML = '';
 
         new window.TradingView.widget({
           autosize: true,
@@ -72,12 +68,37 @@ export const TradingChart = ({ symbol, chartId = 'tradingview_chart' }: TradingC
         });
       }
     };
+
+    // Check if script is already loaded
+    if (document.getElementById('tradingview-widget-script')) {
+      if (typeof window.TradingView !== 'undefined') {
+        initWidget();
+      } else {
+        // Script exists but might not be fully loaded, wait for it
+        const checkInterval = setInterval(() => {
+          if (typeof window.TradingView !== 'undefined') {
+            clearInterval(checkInterval);
+            initWidget();
+          }
+        }, 100);
+        return () => clearInterval(checkInterval);
+      }
+      return;
+    }
+    
+    const script = document.createElement('script');
+    script.id = 'tradingview-widget-script';
+    script.src = 'https://s3.tradingview.com/tv.js';
+    script.async = true;
+    script.onload = initWidget;
     
     document.head.appendChild(script);
     
+    // Don't remove the script on unmount as it might be used by other components
+    // Just ensure we clean up the widget container
     return () => {
-      if (document.head.contains(script)) {
-        document.head.removeChild(script);
+      if (container.current) {
+        container.current.innerHTML = '';
       }
     };
   }, [symbol, chartInterval, chartType, chartId, position]);
