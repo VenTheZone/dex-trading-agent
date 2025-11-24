@@ -1,0 +1,3 @@
+
+This is commonly used when parsing responses from AI models (like DeepSeek or OpenAI) because they sometimes wrap their JSON output in Markdown code fences, like this:
+

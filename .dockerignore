@@ -1,0 +1,27 @@
+# Dependencies
+node_modules
+.pnpm-store
+
+# Build outputs
+dist
+build
+
+# Version control
+.git
+.gitignore
+
+# Environment variables
+.env
+.env.*
+
+# Backend code (not needed for frontend build)
+migration_python
+
+# Docker files
+docker-compose.yml
+Dockerfile
+README.Docker.md
+
+# Logs and temp
+*.log
+.DS_Store

@@ -1,0 +1,32 @@
+# Python cache
+__pycache__
+*.py[cod]
+*$py.class
+
+# Virtual environments
+venv
+env
+.venv
+
+# Testing cache
+.pytest_cache
+.coverage
+htmlcov
+
+# Logs and data
+logs
+data
+*.log
+*.sqlite
+*.db
+
+# Version control
+.git
+.gitignore
+
+# Environment variables
+.env
+.env.*
+
+# Docker files
+Dockerfile

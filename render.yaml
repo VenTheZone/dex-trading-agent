@@ -1,0 +1,2 @@
+    dockerfilePath: ./migration_python/Dockerfile
+    dockerContext: ./migration_python
