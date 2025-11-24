@@ -8,7 +8,6 @@ import { liveTradingMonitor } from "@/lib/live-trading-monitor";
 export function useTrading() {
   const { balance, settings, mode, network, chartType, chartInterval, setBalance, setPosition, position, isAutoTrading, setAutoTrading, aiModel, customPrompt } = useTradingStore();
   const lastRecordedBalance = useRef(balance);
-  const marginWarningShown = useRef(false);
   const isRecordingBalance = useRef(false);
   const balanceRecordTimeout = useRef<NodeJS.Timeout | null>(null);
   
@@ -37,7 +36,7 @@ export function useTrading() {
             return;
           }
 
-          const currentPosition = position;
+          const currentPosition = useTradingStore.getState().position;
           if (!currentPosition || currentPosition.symbol !== symbol) {
             console.warn(`[Live Monitor] Position mismatch: ${symbol} not found`);
             return;
@@ -71,11 +70,42 @@ export function useTrading() {
         }
       });
 
+      // Start polling for positions
+      liveTradingMonitor.startPolling(
+        {
+          onPositionUpdate: (pos) => setPosition(pos),
+          onBalanceUpdate: (bal) => setBalance(bal),
+          onMarginWarning: (level, message) => {
+            if (level === 'critical' && isAutoTrading) {
+              setAutoTrading(false);
+              toast.error(message, { duration: 10000 });
+              
+              pythonApi.createTradingLog({
+                action: "auto_pause",
+                symbol: "SYSTEM",
+                reason: message,
+                details: "Auto-trading paused due to high margin usage",
+              });
+            } else if (level === 'warning') {
+              toast.warning(message, { duration: 5000 });
+            }
+          }
+        },
+        network,
+        {
+          leverage: settings.leverage,
+          useTrailingStop: settings.useTrailingStop,
+          stopLossPercent: settings.stopLossPercent,
+          takeProfitPercent: settings.takeProfitPercent
+        }
+      );
+
       return () => {
         liveTradingMonitor.stopMonitoring();
+        liveTradingMonitor.stopPolling();
       };
     }
-  }, [mode, network, position, balance, settings.leverage, setBalance, setPosition]);
+  }, [mode, network, settings.leverage, settings.useTrailingStop, settings.stopLossPercent, settings.takeProfitPercent, setBalance, setPosition, isAutoTrading, setAutoTrading]);
 
   // Record balance changes with debouncing to prevent race conditions
   useEffect(() => {
@@ -112,142 +142,6 @@ export function useTrading() {
       }
     };
   }, [balance, mode]);
-
-  // Poll for live positions if in live mode with trailing stop loss logic
-  useEffect(() => {
-    if (mode !== 'live') return;
-
-    const pollPositions = async () => {
-      try {
-        const keys = storage.getApiKeys();
-        if (!keys?.hyperliquid.apiSecret || !keys?.hyperliquid.walletAddress) return;
-
-        const result = await pythonApi.getHyperliquidPositions(
-          keys.hyperliquid.apiSecret,
-          keys.hyperliquid.walletAddress,
-          network === 'testnet'
-        );
-
-        if (result.success && result.data) {
-          // Update balance from margin summary
-          if (result.data.marginSummary?.accountValue) {
-            const accountValue = parseFloat(result.data.marginSummary.accountValue);
-            setBalance(accountValue);
-          }
-
-          // Check margin usage and liquidation risk
-          if (result.data.marginSummary) {
-            const totalMarginUsed = parseFloat(result.data.marginSummary.totalMarginUsed || "0");
-            const accountValue = parseFloat(result.data.marginSummary.accountValue || "0");
-            
-            if (accountValue > 0) {
-              const marginUsagePercent = (totalMarginUsed / accountValue) * 100;
-              
-              // Liquidation warning at 80% margin usage
-              if (marginUsagePercent >= 80 && isAutoTrading) {
-                if (!marginWarningShown.current) {
-                  toast.error(
-                    `⚠️ LIQUIDATION WARNING: ${marginUsagePercent.toFixed(1)}% margin usage! Auto-trading paused.`,
-                    { duration: 10000 }
-                  );
-                  marginWarningShown.current = true;
-                }
-                setAutoTrading(false);
-                
-                await pythonApi.createTradingLog({
-                  action: "auto_pause",
-                  symbol: "SYSTEM",
-                  reason: `Auto-trading paused due to high margin usage: ${marginUsagePercent.toFixed(1)}%`,
-                  details: `Total Margin Used: $${totalMarginUsed}, Account Value: $${accountValue}`,
-                });
-              } else if (marginUsagePercent < 70) {
-                marginWarningShown.current = false;
-              }
-              
-              // Warning at 60% margin usage
-              if (marginUsagePercent >= 60 && marginUsagePercent < 80 && !marginWarningShown.current) {
-                toast.warning(
-                  `⚠️ High margin usage: ${marginUsagePercent.toFixed(1)}%`,
-                  { duration: 5000 }
-                );
-              }
-            }
-          }
-
-          // Update active positions
-          if (result.data.assetPositions && result.data.assetPositions.length > 0) {
-            const pos = result.data.assetPositions[0];
-            const size = parseFloat(pos.position.szi);
-            const entryPrice = parseFloat(pos.position.entryPx || "0");
-            const unrealizedPnl = parseFloat(pos.position.unrealizedPnl || "0");
-            const currentPrice = entryPrice + (unrealizedPnl / size);
-
-            const currentPosition = {
-              symbol: pos.position.coin,
-              size: Math.abs(size),
-              entryPrice,
-              currentPrice,
-              pnl: unrealizedPnl,
-              side: size > 0 ? 'long' : 'short' as 'long' | 'short',
-              leverage: settings.leverage ?? 1,
-              stopLoss: undefined,
-              takeProfit: undefined,
-            };
-
-            setPosition(currentPosition);
-
-            // Update live trading monitor with current position and price
-            liveTradingMonitor.updatePosition({
-              symbol: currentPosition.symbol,
-              side: currentPosition.side,
-              size: currentPosition.size,
-              entryPrice: currentPosition.entryPrice,
-              currentPrice,
-              leverage: currentPosition.leverage,
-              stopLoss: currentPosition.stopLoss,
-              takeProfit: currentPosition.takeProfit,
-            });
-
-            // Set trailing stop if enabled
-            if (settings.useTrailingStop) {
-              liveTradingMonitor.setTrailingStop(
-                currentPosition.symbol,
-                settings.stopLossPercent / 2, // Trail at half of stop loss %
-                settings.takeProfitPercent * 0.5 // Activate at 50% of TP target
-              );
-            }
-
-            // Record position snapshot
-            await pythonApi.recordPositionSnapshot({
-              symbol: currentPosition.symbol,
-              side: currentPosition.side,
-              size: currentPosition.size,
-              entry_price: currentPosition.entryPrice,
-              current_price: currentPrice,
-              unrealized_pnl: currentPosition.pnl,
-              leverage: settings.leverage || 1,
-              mode,
-            }).catch((error: any) => {
-              console.error("Failed to record position snapshot:", error);
-            });
-          } else {
-            setPosition(null);
-            // Clear monitored positions when no active positions exist
-            liveTradingMonitor.clearPositions();
-          }
-        }
-      } catch (error) {
-        console.error("Failed to fetch positions:", error);
-        // Don't show toast on every poll error to avoid spam
-      }
-    };
-
-    // Poll every 5 seconds
-    const interval = setInterval(pollPositions, 5000);
-    pollPositions(); // Initial fetch
-
-    return () => clearInterval(interval);
-  }, [mode, network, setBalance, setPosition, isAutoTrading, setAutoTrading, settings.leverage, settings.useTrailingStop, settings.stopLossPercent, settings.takeProfitPercent]);
 
   const closePosition = useCallback(async (positionToClose: typeof position) => {
     if (!positionToClose) {
