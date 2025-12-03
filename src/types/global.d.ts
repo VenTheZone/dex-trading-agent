@@ -5,6 +5,7 @@ declare global {
      * @param redirectUrl - URL to redirect to after successful authentication
      */
     navigateToAuth: (redirectUrl: string) => void;
+    TradingView: any;
   }
 }
 

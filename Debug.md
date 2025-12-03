@@ -94,3 +94,31 @@ Added `network` parameter to the `pythonApi.getSnapshotsForAI()` call at line 10
 
 ### Files Modified
 - `src/hooks/use-trading.ts`
+
+---
+
+## Bug #5: Missing Network Parameter in AI Analysis
+**Status:** ✅ FIXED  
+**Date Found:** 2025-01-XX  
+**Severity:** High  
+**Component:** `src/lib/python-api-client.ts`, `src/hooks/use-trading.ts`
+
+### Description
+The AI analysis functions (`analyzeMarket` and `analyzeMultiChart`) were not receiving the `network` parameter (Mainnet/Testnet). This could lead to the backend using incorrect market data context (e.g., fetching Mainnet funding rates while the user is on Testnet) or failing to distinguish between environments.
+
+### Root Cause
+The `AIAnalysisRequest` interface and the calling functions in `use-trading.ts` did not include the `network` field.
+
+### Impact
+- Potential for AI to make decisions based on incorrect network data.
+- Inconsistency with other API calls that are network-aware.
+
+### Fix
+1. Updated `AIAnalysisRequest` interface in `src/lib/python-api-client.ts` to include `network?: 'mainnet' | 'testnet'`.
+2. Updated `runAIAnalysis` and `runMultiChartAIAnalysis` in `src/hooks/use-trading.ts` to pass the current `network` from the store.
+3. Added regression test `src/__tests__/ai-network-param.test.ts`.
+
+### Files Modified
+- `src/lib/python-api-client.ts`
+- `src/hooks/use-trading.ts`
+- `src/__tests__/ai-network-param.test.ts`

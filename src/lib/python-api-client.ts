@@ -73,6 +73,7 @@ export interface AIAnalysisRequest {
   isDemoMode?: boolean;
   aiModel?: string;
   customPrompt?: string;
+  network?: 'mainnet' | 'testnet';
 }
 
 export interface AIAnalysisResponse {
@@ -140,10 +141,11 @@ const snapshotMetrics: SnapshotCacheMetrics = {
   fullSnapshots: 0,
 };
 
-import { validateNetwork, networkToBoolean } from './constants';
+import { validateNetwork, networkToBoolean, validateSymbol, validateAddress, validateApiKey } from './constants';
 
 class PythonApiClient {
   private baseUrl: string;
+  private defaultTimeout: number = 30000; // 30 seconds default timeout
 
   constructor(baseUrl: string = API_BASE_URL) {
     this.baseUrl = baseUrl;
@@ -155,6 +157,10 @@ class PythonApiClient {
   ): Promise<ApiResponse<T>> {
     const startTime = Date.now();
     const method = options.method || 'GET';
+    
+    // Create abort controller for timeout
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), this.defaultTimeout);
     
     try {
       console.info(`[API Request] ${method} ${endpoint}`, {
@@ -168,8 +174,10 @@ class PythonApiClient {
           'Content-Type': 'application/json',
           ...options.headers,
         },
+        signal: controller.signal,
       });
 
+      clearTimeout(timeoutId);
       const duration = Date.now() - startTime;
 
       if (!response.ok) {
@@ -198,7 +206,17 @@ class PythonApiClient {
       
       return { success: true, data };
     } catch (error: any) {
+      clearTimeout(timeoutId);
       const duration = Date.now() - startTime;
+      
+      // Handle timeout specifically
+      if (error.name === 'AbortError') {
+        console.error(`[API Timeout] ${method} ${endpoint}`, {
+          duration: `${duration}ms`,
+          timestamp: new Date().toISOString(),
+        });
+        return { success: false, error: 'Request timed out' };
+      }
       
       console.error(`[API Failed] ${method} ${endpoint}`, {
         error: error.message,
@@ -274,6 +292,18 @@ class PythonApiClient {
 
   // AI Trading Analysis - Single Chart
   async analyzeMarket(request: AIAnalysisRequest): Promise<AIAnalysisResponse> {
+    // Validation
+    if (!request.apiKey && !request.isDemoMode) {
+      // API key might be optional if handled by backend env, but usually required for client requests if not proxied with auth
+      // checking if empty string if provided
+    }
+    if (request.userBalance < 0) {
+      throw new Error('Invalid user balance: must be non-negative');
+    }
+    if (request.settings.leverage && (request.settings.leverage < 1 || request.settings.leverage > 100)) {
+      throw new Error('Invalid leverage: must be between 1 and 100');
+    }
+
     const response = await this.request<AIAnalysisResponse>('/api/ai/analyze', {
       method: 'POST',
       body: JSON.stringify(request),
@@ -286,6 +316,14 @@ class PythonApiClient {
 
   // AI Trading Analysis - Multi Chart
   async analyzeMultiChart(request: AIAnalysisRequest): Promise<AIAnalysisResponse> {
+    // Validation
+    if (!request.charts || request.charts.length === 0) {
+      throw new Error('Invalid request: No charts provided for multi-chart analysis');
+    }
+    if (request.userBalance < 0) {
+      throw new Error('Invalid user balance: must be non-negative');
+    }
+
     const response = await this.request<AIAnalysisResponse>('/api/ai/analyze-multi-chart', {
       method: 'POST',
       body: JSON.stringify(request),
@@ -354,24 +392,13 @@ class PythonApiClient {
 
   async getHyperliquidPositions(apiSecret: string, walletAddress: string, isTestnet: boolean = false): Promise<ApiResponse<any>> {
     try {
-      // Validate inputs
-      if (!apiSecret || typeof apiSecret !== 'string' || apiSecret.trim() === '') {
-        console.error('[Get Positions] Validation failed: Invalid API secret', {
-          hasApiSecret: !!apiSecret,
-          apiSecretType: typeof apiSecret,
-          timestamp: new Date().toISOString(),
-        });
-        return { success: false, error: 'Invalid API secret: must be a non-empty string' };
-      }
-      
-      if (!walletAddress || typeof walletAddress !== 'string' || !walletAddress.startsWith('0x')) {
-        console.error('[Get Positions] Validation failed: Invalid wallet address', {
-          walletAddress,
-          hasWalletAddress: !!walletAddress,
-          walletAddressType: typeof walletAddress,
-          timestamp: new Date().toISOString(),
-        });
-        return { success: false, error: 'Invalid wallet address: must start with 0x' };
+      // Validate inputs using centralized validators
+      try {
+        validateApiKey(apiSecret);
+        validateAddress(walletAddress);
+      } catch (validationError: any) {
+        console.error('[Get Positions] Validation failed', { error: validationError.message });
+        return { success: false, error: validationError.message };
       }
       
       // Validate network parameter
@@ -421,9 +448,10 @@ class PythonApiClient {
   }
 
   async getOrderBook(coin: string, isTestnet: boolean = false): Promise<ApiResponse<any>> {
-    // Validate coin parameter
-    if (!coin || typeof coin !== 'string' || coin.trim() === '') {
-      return { success: false, error: 'Invalid coin: must be a non-empty string' };
+    try {
+      validateSymbol(coin);
+    } catch (e: any) {
+      return { success: false, error: e.message };
     }
     
     // Validate network parameter
@@ -437,9 +465,10 @@ class PythonApiClient {
   }
 
   async getAccountInfo(params: { walletAddress: string; isTestnet: boolean }): Promise<ApiResponse<any>> {
-    // Validate wallet address
-    if (!params.walletAddress || typeof params.walletAddress !== 'string' || !params.walletAddress.startsWith('0x')) {
-      return { success: false, error: 'Invalid wallet address: must start with 0x' };
+    try {
+      validateAddress(params.walletAddress);
+    } catch (e: any) {
+      return { success: false, error: e.message };
     }
     
     // Validate network parameter
@@ -476,54 +505,26 @@ class PythonApiClient {
   }): Promise<ApiResponse<any>> {
     try {
       // Validate trade parameters
-      if (!trade.apiSecret || typeof trade.apiSecret !== 'string' || trade.apiSecret.trim() === '') {
-        console.error('[Execute Trade] Validation failed: Invalid API secret', {
-          hasApiSecret: !!trade.apiSecret,
-          timestamp: new Date().toISOString(),
-        });
-        return { success: false, error: 'Invalid API secret: must be a non-empty string' };
-      }
-      
-      if (!trade.symbol || typeof trade.symbol !== 'string' || trade.symbol.trim() === '') {
-        console.error('[Execute Trade] Validation failed: Invalid symbol', {
-          symbol: trade.symbol,
-          timestamp: new Date().toISOString(),
-        });
-        return { success: false, error: 'Invalid symbol: must be a non-empty string' };
+      try {
+        validateApiKey(trade.apiSecret);
+        validateSymbol(trade.symbol);
+      } catch (validationError: any) {
+        return { success: false, error: validationError.message };
       }
       
       if (!['buy', 'sell'].includes(trade.side)) {
-        console.error('[Execute Trade] Validation failed: Invalid side', {
-          side: trade.side,
-          timestamp: new Date().toISOString(),
-        });
         return { success: false, error: 'Invalid side: must be "buy" or "sell"' };
       }
       
       if (typeof trade.size !== 'number' || trade.size <= 0) {
-        console.error('[Execute Trade] Validation failed: Invalid size', {
-          size: trade.size,
-          sizeType: typeof trade.size,
-          timestamp: new Date().toISOString(),
-        });
         return { success: false, error: 'Invalid size: must be a positive number' };
       }
       
       if (typeof trade.price !== 'number' || trade.price <= 0) {
-        console.error('[Execute Trade] Validation failed: Invalid price', {
-          price: trade.price,
-          priceType: typeof trade.price,
-          timestamp: new Date().toISOString(),
-        });
         return { success: false, error: 'Invalid price: must be a positive number' };
       }
       
       if (typeof trade.leverage !== 'number' || trade.leverage < 1 || trade.leverage > 50) {
-        console.error('[Execute Trade] Validation failed: Invalid leverage', {
-          leverage: trade.leverage,
-          leverageType: typeof trade.leverage,
-          timestamp: new Date().toISOString(),
-        });
         return { success: false, error: 'Invalid leverage: must be between 1 and 50' };
       }
       
@@ -590,14 +591,7 @@ class PythonApiClient {
   async fetchPrice(symbol: string, isTestnet: boolean = false): Promise<number> {
     try {
       // Validate symbol parameter
-      if (!symbol || typeof symbol !== 'string' || symbol.trim() === '') {
-        console.error('[Fetch Price] Validation failed: Invalid symbol', {
-          symbol,
-          symbolType: typeof symbol,
-          timestamp: new Date().toISOString(),
-        });
-        throw new Error('Invalid symbol: must be a non-empty string');
-      }
+      validateSymbol(symbol);
       
       // Validate network parameter
       const network = validateNetwork(isTestnet);
@@ -668,6 +662,13 @@ class PythonApiClient {
     takeProfit?: number;
     leverage: number;
   }): Promise<ApiResponse<any>> {
+    // Validation
+    if (!trade.symbol) throw new Error('Invalid symbol');
+    if (trade.size <= 0) throw new Error('Invalid size: must be positive');
+    if (trade.price <= 0) throw new Error('Invalid price: must be positive');
+    if (trade.leverage < 1) throw new Error('Invalid leverage: must be at least 1x');
+    if (!['buy', 'sell'].includes(trade.side)) throw new Error('Invalid side');
+
     return this.request<any>('/api/paper-trading/execute', {
       method: 'POST',
       body: JSON.stringify(trade),
@@ -788,6 +789,12 @@ class PythonApiClient {
     settings: any;
     priceData: any[];
   }): Promise<ApiResponse<any>> {
+    // Validation
+    if (!params.symbol) throw new Error('Invalid symbol');
+    if (params.initialBalance <= 0) throw new Error('Initial balance must be positive');
+    if (!params.priceData || params.priceData.length === 0) throw new Error('No price data provided for backtest');
+    if (new Date(params.startDate) >= new Date(params.endDate)) throw new Error('Start date must be before end date');
+
     return this.request<any>('/api/backtest/run', {
       method: 'POST',
       body: JSON.stringify(params),

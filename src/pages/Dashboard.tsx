@@ -1,35 +1,35 @@
-import { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
-import { useNavigate } from 'react-router';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
-import { TradingBackground } from '@/components/CyberpunkBackground';
-import { ApiKeySetup } from '@/components/ApiKeySetup';
-import { TradingChart } from '@/components/TradingChart';
-import { TradingControls } from '@/components/TradingControls';
-import { LogoDropdown } from '@/components/LogoDropdown';
-import { storage } from '@/lib/storage';
-import { useTradingStore } from '@/store/tradingStore';
-import { Activity, DollarSign, TrendingUp, Settings, LineChart, X, Loader2, AlertTriangle } from 'lucide-react';
-import { Switch } from '@/components/ui/switch';
-import { Label } from '@/components/ui/label';
-import { toast } from 'sonner';
-import { TradingLogs } from '@/components/TradingLogs';
-import { NewsFeed } from '@/components/NewsFeed';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
-import { BalanceChart } from '@/components/BalanceChart';
-import { useTrading } from '@/hooks/use-trading';
-import { Breadcrumb, BreadcrumbList, BreadcrumbItem, BreadcrumbLink, BreadcrumbSeparator, BreadcrumbPage } from '@/components/ui/breadcrumb';
-import { CloseAllPositionsDialog } from '@/components/CloseAllPositionsDialog';
-import { UpdateNotification } from '@/components/UpdateNotification';
-import { pythonApi } from '@/lib/python-api-client';
-import { AiThoughtsPanel } from '@/components/AiThoughtsPanel';
-import { BacktestingPanel } from '@/components/BacktestingPanel';
-import { assessLiquidationRisk } from '@/lib/liquidation-protection';
-import { FloatingLogViewer } from '@/components/FloatingLogViewer';
-import { PaperTradingGuide } from '@/components/PaperTradingGuide';
-import { TradesHistoryDashboard } from '@/components/TradesHistoryDashboard';
+import { useEffect, useState } from "react";
+import { useNavigate } from "react-router";
+import { motion } from "framer-motion";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { TradingBackground } from "@/components/CyberpunkBackground";
+import { ApiKeySetup } from "@/components/ApiKeySetup";
+import { useTradingStore } from "@/store/tradingStore";
+import { TradingChart } from "@/components/TradingChart";
+import { TradingControls } from "@/components/TradingControls";
+import { LogoDropdown } from "@/components/LogoDropdown";
+import { storage } from "@/lib/storage";
+import { Activity, DollarSign, TrendingUp, Settings, LineChart, X, Loader2, AlertTriangle } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
+import { toast } from "sonner";
+import { TradingLogs } from "@/components/TradingLogs";
+import { NewsFeed } from "@/components/NewsFeed";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import { BalanceChart } from "@/components/BalanceChart";
+import { useTrading } from "@/hooks/use-trading";
+import { Breadcrumb, BreadcrumbList, BreadcrumbItem, BreadcrumbLink, BreadcrumbSeparator, BreadcrumbPage } from "@/components/ui/breadcrumb";
+import { CloseAllPositionsDialog } from "@/components/CloseAllPositionsDialog";
+import { UpdateNotification } from "@/components/UpdateNotification";
+import { pythonApi } from "@/lib/python-api-client";
+import { AiThoughtsPanel } from "@/components/AiThoughtsPanel";
+import { BacktestingPanel } from "@/components/BacktestingPanel";
+import { assessLiquidationRisk } from "@/lib/liquidation-protection";
+import { FloatingLogViewer } from "@/components/FloatingLogViewer";
+import { PaperTradingGuide } from "@/components/PaperTradingGuide";
+import { TradesHistoryDashboard } from "@/components/TradesHistoryDashboard";
 
 export default function Dashboard() {
   const navigate = useNavigate();
@@ -500,7 +500,7 @@ export default function Dashboard() {
             }`}>
               {settings.allowedCoins && settings.allowedCoins.length > 0 ? (
                 settings.allowedCoins.map((symbol, index) => (
-                  <TradingChart key={`${symbol}-${index}`} symbol={symbol} chartId={index + 1} />
+                  <TradingChart key={`${symbol}-${index}`} symbol={symbol} chartId={(index + 1).toString()} />
                 ))
               ) : (
                 <div className="col-span-full flex items-center justify-center p-8">

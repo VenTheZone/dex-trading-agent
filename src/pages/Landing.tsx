@@ -2,7 +2,7 @@ import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router";
 import { TradingBackground } from "@/components/CyberpunkBackground";
-import { Activity, Brain, Shield, TrendingUp, Zap, Eye } from "lucide-react";
+import { Activity, Brain, Shield, TrendingUp, Zap, Eye, AlertCircle } from "lucide-react";
 import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { TokenTradingModal } from "@/components/TokenTradingModal";
@@ -11,10 +11,13 @@ import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { handleError, ERROR_MESSAGES } from "@/lib/error-handler";
 import { UpdateNotification } from "@/components/UpdateNotification";
-import { useLiveMarketData, MAX_RETRIES } from "@/hooks/use-live-market-data";
+import { useLiveMarketData } from "@/hooks/use-live-market-data";
+// import { useTradingStore } from "@/store/tradingStore"; // Removed unused import
 import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { RefreshCw } from "lucide-react";
+
+const MAX_RETRIES = 3;
 
 export default function Landing() {
   const navigate = useNavigate();
@@ -288,10 +291,16 @@ export default function Landing() {
                           </div>
                         ) : liveData?.price ? (
                           <div>
-                            <div className="text-xs text-gray-400 font-mono mb-1">
-                              Live Price
+                            <div className="text-xs text-gray-400 font-mono mb-1 flex items-center justify-between">
+                              <span>Live Price</span>
+                              {liveData.isStale && (
+                                <span className="text-yellow-500 text-[10px] font-bold flex items-center gap-1">
+                                  <AlertCircle className="h-3 w-3" />
+                                  STALE
+                                </span>
+                              )}
                             </div>
-                            <div className="text-lg font-bold text-cyan-100 font-mono">
+                            <div className={`text-lg font-bold font-mono ${liveData.isStale ? 'text-yellow-100' : 'text-cyan-100'}`}>
                               ${liveData.price.toLocaleString(undefined, {
                                 minimumFractionDigits: 2,
                                 maximumFractionDigits: 2,

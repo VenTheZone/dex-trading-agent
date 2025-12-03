@@ -8,7 +8,10 @@ const CURRENT_VERSION = "1.0.0"; // Will be synced with package.json
 const VERSION_CHECK_INTERVAL = 1000 * 60 * 60; // Check every hour
 const STORAGE_KEY = "dex_agent_last_version_check";
 
+export const APP_VERSION = "0.1.0";
+
 export interface VersionInfo {
+  version: string;
   currentVersion: string;
   latestVersion: string;
   updateAvailable: boolean;
@@ -53,6 +56,7 @@ export async function checkForUpdates(): Promise<VersionInfo | null> {
     const updateAvailable = compareVersions(latestVersion, CURRENT_VERSION) > 0;
 
     return {
+      version: APP_VERSION,
       currentVersion: CURRENT_VERSION,
       latestVersion,
       updateAvailable,

@@ -1,2 +1,195 @@
-// Line 46 in price-service.ts - HARDCODED to false (mainnet)
-const price = await pythonApi.fetchPrice(symbol, false);
+import { Activity, Brain, Shield, TrendingUp, Zap, Eye } from "lucide-react";
+
+export interface LiveMarketData {
+  symbol: string;
+  price: number;
+  priceChange24h?: number;
+  lastUpdated: number;
+  isLoading: boolean;
+  error?: string;
+  retryCount?: number;
+  isStale?: boolean;
+}
+
+export interface PriceResult {
+  price: number;
+  isStale: boolean;
+  timestamp: number;
+}
+
+export async function fetchPriceWithFallback(symbol: string, network: NetworkType = 'mainnet'): Promise<PriceResult> {
+  // Check cache first (network-specific)
+  const cacheKey = `${symbol}_${network}`;
+  const cached = priceCache[cacheKey];
+  if (cached && Date.now() - cached.timestamp < TRADING_CONSTANTS.CACHE_DURATION) {
+    cacheMetrics.hits++;
+    console.debug(`[Price Cache] HIT for ${symbol} on ${network} (age: ${Date.now() - cached.timestamp}ms)`);
+    return {
+      price: cached.price,
+      isStale: false,
+      timestamp: cached.timestamp
+    };
+  }
+
+  // Cache miss
+  cacheMetrics.misses++;
+  console.debug(`[Price Cache] MISS for ${symbol} on ${network} (reason: ${cached ? 'expired' : 'not found'})`);
+
+  try {
+    // Fetch from Hyperliquid via Python backend (avoids CORS)
+    const isTestnet = network === 'testnet';
+    const price = await pythonApi.fetchPrice(symbol, isTestnet);
+    
+    // Cache the result with network context
+    const timestamp = Date.now();
+    priceCache[cacheKey] = { price, timestamp, network };
+    return {
+      price,
+      isStale: false,
+      timestamp
+    };
+  } catch (error: any) {
+    cacheMetrics.errors++;
+    const errorInfo = categorizeError(error);
+    
+    console.error(`[Price Service] Failed to fetch ${symbol} on ${network}:`, {
+      type: errorInfo.type,
+      message: errorInfo.message,
+      isRetryable: errorInfo.isRetryable,
+      originalError: error.message,
+    });
+    
+    // If we have stale cache, use it as last resort
+    if (cached) {
+      console.warn(`[Price Service] Using stale cached price for ${symbol} on ${network} (age: ${Date.now() - cached.timestamp}ms)`);
+      return {
+        price: cached.price,
+        isStale: true,
+        timestamp: cached.timestamp
+      };
+    }
+    
+    // Enhance error message with categorization
+    const enhancedError = new Error(
+      `Failed to fetch price for ${symbol} on ${network}: ${errorInfo.message} (${errorInfo.type})`
+    );
+    (enhancedError as any).isRetryable = errorInfo.isRetryable;
+    (enhancedError as any).errorType = errorInfo.type;
+    
+    throw enhancedError;
+  }
+}
+
+export async function fetchMultiplePrices(symbols: string[], network: NetworkType = 'mainnet'): Promise<Record<string, PriceResult>> {
+  const results: Record<string, PriceResult> = {};
+  
+  await Promise.allSettled(
+    symbols.map(async (symbol) => {
+      try {
+        results[symbol] = await fetchPriceWithFallback(symbol, network);
+      } catch (error) {
+        console.error(`Failed to fetch price for ${symbol} on ${network}:`, error);
+        // Don't throw, just skip this symbol
+      }
+    })
+  );
+  
+  return results;
+}
+
+export function clearPriceCache() {
+  Object.keys(priceCache).forEach(key => delete priceCache[key]);
+}
+
+symbols.forEach(symbol => {
+  initialData[symbol] = {
+    symbol,
+    price: 0,
+    lastUpdated: Date.now(),
+    isLoading: true,
+    isStale: true,
+  };
+});
+
+results[symbol] = await fetchPriceWithFallback(symbol, network);
+
+// ... keep existing code
+  const retrySymbol = (symbol: string) => {
+    setMarketData(prev => ({
+      ...prev,
+      [symbol]: {
+        ...prev[symbol],
+        isLoading: true,
+        error: undefined,
+        retryCount: 0,
+      },
+    }));
+    
+    // Trigger a new fetch for this symbol with current network
+    fetchPriceWithFallback(symbol, network)
+      .then(result => {
+        setMarketData(prev => ({
+          ...prev,
+          [symbol]: {
+            symbol,
+            price: result.price,
+            lastUpdated: result.timestamp,
+            isLoading: false,
+            retryCount: 0,
+            isStale: result.isStale,
+          },
+        }));
+        if (result.isStale) {
+          toast.warning(`${symbol} updated with stale data`);
+        } else {
+          toast.success(`${symbol} price updated`);
+        }
+      })
+      .catch(error => {
+        const errorInfo = categorizeError(error);
+        const errorMessage = errorInfo.message;
+        
+        if (retryCount < MAX_RETRIES) {
+          // Retry with exponential backoff
+          const delay = Math.pow(2, retryCount) * 1000;
+          await new Promise(resolve => setTimeout(resolve, delay));
+          
+          fetchPriceWithRetry(symbol, retryCount + 1);
+        } else {
+          // Final attempt failed
+          setMarketData(prev => ({
+            ...prev,
+            [symbol]: {
+              symbol,
+              price: prev[symbol]?.price || 0,
+              lastUpdated: prev[symbol]?.lastUpdated || Date.now(),
+              isLoading: false,
+              error: errorMessage,
+              retryCount: MAX_RETRIES,
+              isStale: true,
+            },
+          }));
+          
+          // Clear global error if this was the last failing symbol
+          setError(null);
+        }
+      });
+  };
+
+// ... keep existing code
+                        ) : liveData?.price ? (
+                          <div>
+                            <div className="text-xs text-gray-400 font-mono mb-1">
+                              Live Price
+                            </div>
+                            <div className="text-lg font-bold text-cyan-100 font-mono">
+                              ${liveData.price.toLocaleString(undefined, {
+                                minimumFractionDigits: 2,
+                                maximumFractionDigits: 2,
+                              })}
+                            </div>
+                            <div className="text-xs text-gray-500 font-mono mt-1">
+                              Updated {Math.floor((Date.now() - liveData.lastUpdated) / 1000)}s ago
+                            </div>
+                          </div>
+                        ) : null}

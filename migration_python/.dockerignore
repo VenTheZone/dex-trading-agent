@@ -2,37 +2,31 @@
 __pycache__
 *.py[cod]
 *$py.class
-*.so
-.Python
 
 # Virtual environments
 venv
 env
-ENV
+.venv
 
-# Development files
-.git
-.gitignore
-.env
-.env.local
-
-# IDE
-.vscode
-.idea
-*.swp
-
-# OS
-.DS_Store
-
-# Testing
+# Testing cache
 .pytest_cache
 .coverage
 htmlcov
 
-# Database files (will be in volume)
-*.db
-*.sqlite
-*.sqlite3
-
-# Logs
+# Logs and data
+logs
+data
 *.log
+*.sqlite
+*.db
+
+# Version control
+.git
+.gitignore
+
+# Environment variables
+.env
+.env.*
+
+# Docker files
+Dockerfile

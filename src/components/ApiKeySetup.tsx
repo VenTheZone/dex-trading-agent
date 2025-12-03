@@ -1,17 +1,17 @@
-import { useState, useEffect } from 'react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { storage, ApiKeys } from '@/lib/storage';
-import { AlertTriangle, Key, Save, Info, Activity, CheckCircle2, HelpCircle } from 'lucide-react';
-import { toast } from 'sonner';
-import { motion } from 'framer-motion';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { WalletConnect } from '@/components/WalletConnect';
-import { sanitizeApiKey, sanitizeWalletAddress, sanitizePrivateKey, sanitizeNumberWithBounds } from '@/lib/utils';
-import { Separator } from '@/components/ui/separator';
+import { useState, useEffect } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { storage, ApiKeys } from "@/lib/storage";
+import { AlertTriangle, Key, Save, Info, Activity, CheckCircle2, HelpCircle } from "lucide-react";
+import { toast } from "sonner";
+import { motion } from "framer-motion";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { WalletConnect } from "@/components/WalletConnect";
+import { sanitizeApiKey, sanitizeWalletAddress, sanitizePrivateKey, sanitizeNumberWithBounds } from "@/lib/utils";
+import { Separator } from "@/components/ui/separator";
 
 interface ApiKeySetupProps {
   onComplete: () => void;

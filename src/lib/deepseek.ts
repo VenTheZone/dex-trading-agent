@@ -38,6 +38,12 @@ export interface MarketData {
   };
 }
 
+export interface AIModelResponse {
+  action: 'buy' | 'sell' | 'hold';
+  confidence: number;
+  reasoning: string;
+}
+
 export class DeepSeekService {
   private client: OpenAI;
 

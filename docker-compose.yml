@@ -1,85 +1,66 @@
-version: '3.8'
-
 services:
   # Python Backend (FastAPI)
   backend:
     build:
       context: ./migration_python
       dockerfile: Dockerfile
-      cache_from:
-        - dex-backend:latest
-    image: dex-backend:latest
     container_name: dex-backend
     ports:
-      - "127.0.0.1:8000:8000"
+      - "8000:8000"
     environment:
-      # Backend Configuration
       - ENVIRONMENT=production
       - HOST=0.0.0.0
       - PORT=8000
-      
-      # Database (SQLite for simplicity, can switch to PostgreSQL)
       - DATABASE_URL=sqlite:///./data/dex_trading.db
-      
-      # API Keys (optional - can be set in browser)
       - OPENROUTER_API_KEY=${OPENROUTER_API_KEY:-}
       - CRYPTOPANIC_AUTH_TOKEN=${CRYPTOPANIC_AUTH_TOKEN:-}
-      
-      # Redis for Celery (if using background tasks)
       - REDIS_URL=redis://redis:6379/0
     volumes:
       - backend-data:/app/data
+      - ./migration_python:/app
     depends_on:
-      redis:
-        condition: service_healthy
-    restart: always
+      - redis
+    restart: unless-stopped
     networks:
       - dex-network
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      test: ["CMD", "python", "-c", "import requests; requests.get('http://localhost:8000/health')"]
       interval: 30s
       timeout: 10s
       retries: 3
-      start_period: 10s
+      start_period: 40s
 
   # Redis for background tasks
   redis:
     image: redis:7-alpine
     container_name: dex-redis
     ports:
-      - "127.0.0.1:6379:6379"
+      - "6379:6379"
     volumes:
       - redis-data:/data
-    restart: always
+    restart: unless-stopped
     networks:
       - dex-network
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 10s
       timeout: 5s
-      retries: 3
+      retries: 5
 
   # Frontend (React/Vite)
   frontend:
     build:
       context: .
       dockerfile: Dockerfile
-      cache_from:
-        - dex-frontend:latest
-    image: dex-frontend:latest
     container_name: dex-frontend
     ports:
-      - "127.0.0.1:3000:3000"
+      - "3000:3000"
     environment:
-      # Python Backend API URL
-      - VITE_PYTHON_API_URL=http://backend:8000
-      
-      # Docker deployment flag
+      - VITE_PYTHON_API_URL=http://localhost:8000
       - VITE_DOCKER_DEPLOYMENT=true
     depends_on:
-      backend:
-        condition: service_healthy
-    restart: always
+      - backend
+    restart: unless-stopped
     networks:
       - dex-network
 

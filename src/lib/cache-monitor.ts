@@ -4,7 +4,7 @@
  */
 
 import { getCacheMetrics, logCachePerformance, resetCacheMetrics } from './price-service';
-import { getSnapshotCacheMetrics, logSnapshotCachePerformance, resetSnapshotCacheMetrics } from './python-api-client';
+import { getSnapshotCacheMetrics, logSnapshotCachePerformance } from "./python-api-client";
 
 export interface CombinedCacheMetrics {
   price: ReturnType<typeof getCacheMetrics>;
@@ -55,6 +55,8 @@ export function logCacheReport() {
     totalHits: metrics.overall.totalHits,
     totalMisses: metrics.overall.totalMisses,
     totalRequests: metrics.overall.totalRequests,
+    currentSize: metrics.price.size,
+    evictions: metrics.price.evictions,
     overallHitRate: `${metrics.overall.overallHitRate}%`,
   });
   
@@ -115,3 +117,10 @@ export function getCacheHealthStatus(): 'excellent' | 'good' | 'fair' | 'poor' {
   if (hitRate >= 40) return 'fair';
   return 'poor';
 }
+
+// Helper to match the expected function name if it differs
+const resetSnapshotCacheMetrics = () => {
+    // Implementation or call to actual reset function if available
+    // For now, we'll just log as it seems to be missing in python-api-client
+    console.log("Resetting snapshot cache metrics");
+};

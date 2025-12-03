@@ -5,46 +5,47 @@ import { Badge } from '@/components/ui/badge';
 
 interface TradingChartProps {
   symbol: string;
-  chartId: number;
+  theme?: 'light' | 'dark';
+  chartId?: string;
 }
 
-export function TradingChart({ symbol, chartId }: TradingChartProps) {
-  const containerRef = useRef<HTMLDivElement>(null);
-  const widgetRef = useRef<any>(null);
-  const { chartInterval, chartType, position, balance } = useTradingStore();
-  const [previousBalance, setPreviousBalance] = useState(balance);
+export const TradingChart = ({ symbol, chartId = 'tradingview_chart' }: TradingChartProps) => {
+  const container = useRef<HTMLDivElement>(null);
+  const { chartType, chartInterval, position } = useTradingStore();
+  const [previousBalance, setPreviousBalance] = useState(0);
   const [, setBalanceChange] = useState(0);
   
   // Track balance changes for visual feedback
   useEffect(() => {
-    if (balance !== previousBalance) {
-      const change = balance - previousBalance;
+    if (previousBalance !== 0) {
+      const change = previousBalance - 0;
       setBalanceChange(change);
-      setPreviousBalance(balance);
+      setPreviousBalance(0);
       
       // Clear the change indicator after 3 seconds
       const timeout = setTimeout(() => setBalanceChange(0), 3000);
       return () => clearTimeout(timeout);
     }
-  }, [balance, previousBalance]);
+  }, [previousBalance]);
   
   useEffect(() => {
-    if (!containerRef.current) return;
+    if (!container.current) return;
     
-    containerRef.current.innerHTML = '';
+    // Clear container to prevent duplicate widgets
+    container.current.innerHTML = '';
     
-    const script = document.createElement('script');
-    script.src = 'https://s3.tradingview.com/tv.js';
-    script.async = true;
-    script.onload = () => {
-      if (typeof window.TradingView !== 'undefined') {
-        widgetRef.current = new window.TradingView.widget({
+    const initWidget = () => {
+      if (typeof window.TradingView !== 'undefined' && container.current) {
+        // Double check container is empty before creating widget
+        container.current.innerHTML = '';
+
+        new window.TradingView.widget({
           autosize: true,
-          symbol: symbol,
-          interval: chartInterval,
+          symbol: `BINANCE:${symbol}USDT`,
+          interval: '15',
           timezone: 'Etc/UTC',
           theme: 'dark',
-          style: chartType === 'range' ? '3' : '1',
+          style: '1',
           locale: 'en',
           toolbar_bg: '#0a0a0a',
           enable_publishing: false,
@@ -53,23 +54,51 @@ export function TradingChart({ symbol, chartId }: TradingChartProps) {
           container_id: `tradingview_${chartId}`,
           backgroundColor: '#000000',
           gridColor: 'rgba(0, 255, 255, 0.1)',
-          studies: chartType === 'range' ? ['Volume@tv-basicstudies'] : [],
-          drawings_access: { type: 'black', tools: [{ name: 'LineToolHorzLine' }] },
+          studies: [
+            'RSI@tv-basicstudies',
+            'MASimple@tv-basicstudies'
+          ],
+          overrides: {
+            "mainSeriesProperties.candleStyle.upColor": "#00ff00",
+            "mainSeriesProperties.candleStyle.downColor": "#ff0000",
+            "paneProperties.background": "#000000",
+            "paneProperties.vertGridProperties.color": "rgba(0, 255, 255, 0.1)",
+            "paneProperties.horzGridProperties.color": "rgba(0, 255, 255, 0.1)",
+          },
         });
-
-        // Log chart initialization
-        console.log(`TradingView chart initialized for ${symbol}`);
-        if (position && position.symbol === symbol) {
-          console.log('Active position:', position);
-        }
       }
     };
+
+    // Check if script is already loaded
+    if (document.getElementById('tradingview-widget-script')) {
+      if (typeof window.TradingView !== 'undefined') {
+        initWidget();
+      } else {
+        // Script exists but might not be fully loaded, wait for it
+        const checkInterval = setInterval(() => {
+          if (typeof window.TradingView !== 'undefined') {
+            clearInterval(checkInterval);
+            initWidget();
+          }
+        }, 100);
+        return () => clearInterval(checkInterval);
+      }
+      return;
+    }
+    
+    const script = document.createElement('script');
+    script.id = 'tradingview-widget-script';
+    script.src = 'https://s3.tradingview.com/tv.js';
+    script.async = true;
+    script.onload = initWidget;
     
     document.head.appendChild(script);
     
+    // Don't remove the script on unmount as it might be used by other components
+    // Just ensure we clean up the widget container
     return () => {
-      if (document.head.contains(script)) {
-        document.head.removeChild(script);
+      if (container.current) {
+        container.current.innerHTML = '';
       }
     };
   }, [symbol, chartInterval, chartType, chartId, position]);
@@ -95,7 +124,7 @@ export function TradingChart({ symbol, chartId }: TradingChartProps) {
       
       <div 
         id={`tradingview_${chartId}`} 
-        ref={containerRef}
+        ref={container}
         className="w-full h-full"
         style={{ minHeight: '400px' }}
       />

@@ -1,16 +1,15 @@
-# Multi-stage production build for React frontend
+# Stage 1: Builder
 FROM node:20-alpine AS builder
 
 # Install pnpm
-RUN corepack enable && corepack prepare pnpm@latest --activate
+RUN npm install -g pnpm
 
-# Set working directory
 WORKDIR /app
 
 # Copy package files
 COPY package.json pnpm-lock.yaml* ./
 
-# Install all dependencies (including dev dependencies needed for build)
+# Install dependencies
 RUN pnpm install --frozen-lockfile
 
 # Copy source code
@@ -19,20 +18,23 @@ COPY . .
 # Build the application
 RUN pnpm build
 
-# Production stage - use lightweight static file server
+# Stage 2: Production
 FROM node:20-alpine
 
-# Install serve globally for serving static files
-RUN npm install -g serve
+RUN npm install -g pnpm
 
-# Set working directory
 WORKDIR /app
 
-# Copy built assets from builder stage
+# Copy package files
+COPY package.json pnpm-lock.yaml* ./
+
+# Install vite for preview command
+RUN pnpm add -D vite
+
+# Copy built application from builder
 COPY --from=builder /app/dist ./dist
 
-# Expose port
 EXPOSE 3000
 
-# Serve the static files on port 3000
-CMD ["serve", "-s", "dist", "-l", "3000", "--no-clipboard"]
+# Start the application
+CMD ["pnpm", "preview", "--host", "0.0.0.0"]

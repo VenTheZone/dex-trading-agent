@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogTitle, DialogHeader } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
@@ -237,12 +237,16 @@ const getSymbolFormats = (symbol: string, preferHyperliquid: boolean = true) => 
 function TimeChart({ symbol, interval, onError }: { symbol: string; interval: string; onError: (error: string | null) => void }) {
   useEffect(() => {
     let mounted = true;
+    const containerId = `tradingview_time_${symbol}`;
 
     const initChart = async () => {
       try {
         await loadTradingViewScript();
         
         if (!mounted) return;
+
+        const container = document.getElementById(containerId);
+        if (container) container.innerHTML = '';
 
         if (typeof window.TradingView !== 'undefined') {
           const symbolFormats = getSymbolFormats(symbol, true);
@@ -285,6 +289,8 @@ function TimeChart({ symbol, interval, onError }: { symbol: string; interval: st
     
     return () => {
       mounted = false;
+      const container = document.getElementById(containerId);
+      if (container) container.innerHTML = '';
     };
   }, [symbol, interval, onError]);
 
@@ -295,12 +301,16 @@ function TimeChart({ symbol, interval, onError }: { symbol: string; interval: st
 function RangeChart({ symbol, range, onError }: { symbol: string; range: string; onError: (error: string | null) => void }) {
   useEffect(() => {
     let mounted = true;
+    const containerId = `tradingview_range_${symbol}`;
 
     const initChart = async () => {
       try {
         await loadTradingViewScript();
         
         if (!mounted) return;
+
+        const container = document.getElementById(containerId);
+        if (container) container.innerHTML = '';
 
         if (typeof window.TradingView !== 'undefined') {
           const rangeToInterval: Record<string, string> = {
@@ -346,6 +356,8 @@ function RangeChart({ symbol, range, onError }: { symbol: string; range: string;
     
     return () => {
       mounted = false;
+      const container = document.getElementById(containerId);
+      if (container) container.innerHTML = '';
     };
   }, [symbol, range, onError]);
 

@@ -172,3 +172,10 @@ export function InstrumentationProvider({
     </>
   );
 }
+
+export function register() {
+  // Register instrumentation hooks
+  if (process.env.NEXT_RUNTIME === 'nodejs') {
+    // Server-side instrumentation
+  }
+}

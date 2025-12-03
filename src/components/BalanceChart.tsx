@@ -1,5 +1,5 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Area, AreaChart } from 'recharts';
+import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { TrendingUp, DollarSign } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useBalanceHistory, usePositionHistory } from '@/hooks/use-python-api';
@@ -133,7 +133,7 @@ export function BalanceChart() {
               </div>
             ) : (
               <ResponsiveContainer width="100%" height={300}>
-                <LineChart data={pnlChartData}>
+                <AreaChart data={pnlChartData}>
                   <CartesianGrid strokeDasharray="3 3" stroke="rgba(0, 255, 255, 0.1)" />
                   <XAxis 
                     dataKey="time" 
@@ -158,15 +158,14 @@ export function BalanceChart() {
                     `P&L (${props.payload.symbol})`
                   ]}
                   />
-                  <Line 
+                  <Area 
                     type="monotone" 
                     dataKey="pnl" 
                     stroke="#ff0080" 
                     strokeWidth={2}
-                    dot={{ fill: '#00ffff', r: 3 }}
-                    activeDot={{ r: 5, fill: '#ff0080' }}
+                    fill="none"
                   />
-                </LineChart>
+                </AreaChart>
               </ResponsiveContainer>
             )}
           </TabsContent>

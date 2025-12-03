@@ -1,51 +1,40 @@
-import { Toaster } from "@/components/ui/sonner";
-import { InstrumentationProvider } from "@/instrumentation.tsx";
 import { StrictMode, useEffect } from "react";
 import { createRoot } from "react-dom/client";
-import { BrowserRouter, Route, Routes, useLocation } from "react-router";
 import "./index.css";
-import Landing from "./pages/Landing.tsx";
-import NotFound from "./pages/NotFound.tsx";
-import Dashboard from "./pages/Dashboard.tsx";
-import Documentation from "./pages/Documentation.tsx";
-import "./types/global.d.ts";
+import { BrowserRouter, Routes, Route, useLocation } from "react-router";
+import { InstrumentationProvider, register } from "./instrumentation";
+import Landing from "./pages/Landing";
+import Dashboard from "./pages/Dashboard";
+import Auth from "./pages/Auth";
+import Documentation from "./pages/Documentation";
+import NotFound from "./pages/NotFound";
 
-function RouteSyncer() {
-  const location = useLocation();
-  useEffect(() => {
-    window.parent.postMessage(
-      { type: "iframe-route-change", path: location.pathname },
-      "*",
-    );
-  }, [location.pathname]);
+// Register instrumentation
+register();
+
+const ScrollToTop = () => {
+  const { pathname } = useLocation();
 
   useEffect(() => {
-    function handleMessage(event: MessageEvent) {
-      if (event.data?.type === "navigate") {
-        if (event.data.direction === "back") window.history.back();
-        if (event.data.direction === "forward") window.history.forward();
-      }
-    }
-    window.addEventListener("message", handleMessage);
-    return () => window.removeEventListener("message", handleMessage);
-  }, []);
+    window.scrollTo(0, 0);
+  }, [pathname]);
 
   return null;
-}
+};
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
     <InstrumentationProvider>
       <BrowserRouter>
-        <RouteSyncer />
+        <ScrollToTop />
         <Routes>
           <Route path="/" element={<Landing />} />
           <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/auth" element={<Auth />} />
           <Route path="/docs" element={<Documentation />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
-      <Toaster />
     </InstrumentationProvider>
   </StrictMode>,
 );

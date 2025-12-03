@@ -1,5 +1,13 @@
 import { toast } from "sonner";
 
+export type ErrorCategory = 'network' | 'api' | 'validation' | 'system' | 'unknown';
+
+export interface AppError {
+  message: string;
+  category: ErrorCategory;
+  retryable: boolean;
+}
+
 export interface ErrorConfig {
   title: string;
   description: string;
@@ -74,6 +82,11 @@ export const ERROR_MESSAGES = {
     title: "Service unavailable",
     description: "The backend service is currently unavailable. Please try again later.",
     logPrefix: "API unavailable",
+  },
+  MONITORING_ERROR: {
+    title: "Monitoring Error",
+    description: "Failed to monitor active positions. Please check your connection.",
+    logPrefix: "Live monitor error",
   },
 } as const;
 

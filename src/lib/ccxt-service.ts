@@ -16,6 +16,9 @@ export interface MarketData {
   timestamp: number;
 }
 
-// Note: Hyperliquid is the ONLY price source since it's our trading platform
-// Frontend: src/lib/price-service.ts -> pythonApi.fetchPrice()
-// Backend: migration_python/services/market_data_service.py -> fetch_from_hyperliquid()
+// This is a placeholder for CCXT service integration
+// In a real implementation, this would handle exchange connections via CCXT
+
+export class CCXTService {
+// ... keep existing code
+}

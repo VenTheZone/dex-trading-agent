@@ -76,3 +76,13 @@ export function setupCSPReporting() {
     });
   }
 }
+
+export const encryptData = (data: string, key: string): string => {
+  // Simple XOR encryption for demo purposes
+  // In production, use a proper encryption library like crypto-js
+  let encrypted = '';
+  for (let i = 0; i < data.length; i++) {
+    encrypted += String.fromCharCode(data.charCodeAt(i) ^ key.charCodeAt(i % key.length));
+  }
+  return encrypted;
+}

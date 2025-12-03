@@ -9,7 +9,7 @@ import {
 
 import { useAuth } from "@/hooks/use-auth";
 import { Loader2, UserX } from "lucide-react";
-import { Suspense, useEffect, useState } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useNavigate } from "react-router";
 
 interface AuthProps {

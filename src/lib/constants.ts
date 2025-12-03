@@ -73,14 +73,18 @@ export const ERROR_MESSAGES = {
 } as const;
 
 // Network validation
-export const NETWORK_TYPES = ['mainnet', 'testnet'] as const;
-export type NetworkType = typeof NETWORK_TYPES[number];
+export type NetworkType = 'mainnet' | 'testnet';
+
+export const NETWORKS: Record<string, NetworkType> = {
+  MAINNET: 'mainnet',
+  TESTNET: 'testnet',
+};
 
 /**
  * Validate network type
  */
 export function isValidNetwork(network: string): network is NetworkType {
-  return NETWORK_TYPES.includes(network as NetworkType);
+  return ['mainnet', 'testnet'].includes(network);
 }
 
 /**
@@ -111,4 +115,36 @@ export function validateNetwork(network: unknown): NetworkType {
   
   console.warn(`Invalid network type: ${network}, defaulting to mainnet`);
   return 'mainnet';
+}
+
+/**
+ * Validate symbol format
+ * Ensures symbol is a non-empty string and returns it uppercase
+ */
+export function validateSymbol(symbol: unknown): string {
+  if (!symbol || typeof symbol !== 'string' || symbol.trim() === '') {
+    throw new Error('Invalid symbol: must be a non-empty string');
+  }
+  return symbol.trim().toUpperCase();
+}
+
+/**
+ * Validate wallet address format
+ * Ensures address starts with 0x
+ */
+export function validateAddress(address: unknown): string {
+  if (!address || typeof address !== 'string' || !address.startsWith('0x')) {
+    throw new Error('Invalid wallet address: must start with 0x');
+  }
+  return address;
+}
+
+/**
+ * Validate API key/secret format
+ */
+export function validateApiKey(key: unknown): string {
+  if (!key || typeof key !== 'string' || key.trim() === '') {
+    throw new Error('Invalid API key/secret: must be a non-empty string');
+  }
+  return key.trim();
 }

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { fetchPriceWithFallback, clearAllCaches } from '@/lib/price-service';
+import { fetchPriceWithFallback, startCacheCleanup, getCachedPrice } from '@/lib/price-service';
 import { TRADING_TOKENS } from '@/lib/tokenData';
 import { toast } from 'sonner';
 import { categorizeError } from '@/lib/error-handler';
@@ -14,6 +14,7 @@ export interface LiveMarketData {
   isLoading: boolean;
   error?: string;
   retryCount?: number;
+  isStale?: boolean;
 }
 
 export const MAX_RETRIES = 3;
@@ -21,17 +22,15 @@ const RETRY_DELAY = 5000; // 5 seconds
 const REFRESH_INTERVAL = 30000; // 30 seconds
 
 export function useLiveMarketData() {
+  const { network } = useTradingStore();
   const [marketData, setMarketData] = useState<Record<string, LiveMarketData>>({});
   const [isInitialLoad, setIsInitialLoad] = useState(true);
-  const [globalError, setGlobalError] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
   
-  // Get network from trading store
-  const network = useTradingStore((state) => state.network);
-
   useEffect(() => {
     // Reset state when network changes to prevent stale data
     setIsInitialLoad(true);
-    setGlobalError(null);
+    setError(null);
     setMarketData({});
     
     let isActive = true;
@@ -40,27 +39,31 @@ export function useLiveMarketData() {
     
     // Start cache monitoring (logs every 5 minutes)
     const stopCacheMonitoring = startCacheMonitoring(300000);
+    
+    // Start cache cleanup
+    const stopCacheCleanup = startCacheCleanup();
 
     const fetchPriceWithRetry = async (symbol: string, retryCount = 0): Promise<void> => {
       if (!isActive) return;
 
       try {
-        const price = await fetchPriceWithFallback(symbol, network);
+        const result = await fetchPriceWithFallback(symbol, network);
         
         if (isActive) {
           setMarketData(prev => ({
             ...prev,
             [symbol]: {
               symbol,
-              price,
-              lastUpdated: Date.now(),
+              price: result.price,
+              lastUpdated: result.timestamp,
               isLoading: false,
               retryCount: 0,
+              isStale: result.isStale,
             },
           }));
           
           // Clear global error if this was the last failing symbol
-          setGlobalError(null);
+          setError(null);
         }
       } catch (error: any) {
         const errorInfo = categorizeError(error);
@@ -91,6 +94,7 @@ export function useLiveMarketData() {
                 isLoading: false,
                 error: `${errorInfo.message} (${retryCount + 1}/${MAX_RETRIES})`,
                 retryCount: retryCount + 1,
+                isStale: true,
               },
             }));
           } else {
@@ -108,6 +112,7 @@ export function useLiveMarketData() {
                 isLoading: false,
                 error: errorMessage,
                 retryCount: MAX_RETRIES,
+                isStale: true,
               },
             }));
             
@@ -134,12 +139,26 @@ export function useLiveMarketData() {
       if (isInitialLoad) {
         const initialData: Record<string, LiveMarketData> = {};
         symbols.forEach(symbol => {
-          initialData[symbol] = {
-            symbol,
-            price: 0,
-            lastUpdated: Date.now(),
-            isLoading: true,
-          };
+          // SWR Strategy: Check cache first to display data immediately
+          const cached = getCachedPrice(symbol, network);
+          
+          if (cached) {
+            initialData[symbol] = {
+              symbol,
+              price: cached.price,
+              lastUpdated: cached.timestamp,
+              isLoading: false, // Data available immediately
+              retryCount: 0,
+              isStale: cached.isStale,
+            };
+          } else {
+            initialData[symbol] = {
+              symbol,
+              price: 0,
+              lastUpdated: Date.now(),
+              isLoading: true,
+            };
+          }
         });
         setMarketData(initialData);
       }
@@ -166,7 +185,7 @@ export function useLiveMarketData() {
               });
               
               if (allFailed) {
-                setGlobalError('Unable to fetch live market data. Please check your internet connection and ensure the backend service is running.');
+                setError('Unable to fetch live market data. Please check your internet connection and ensure the backend service is running.');
                 toast.error('Market data unavailable', {
                   description: 'All price sources are currently unreachable. Check backend connection.',
                   duration: 10000,
@@ -186,7 +205,7 @@ export function useLiveMarketData() {
       } catch (error: any) {
         console.error('[Market Data] Unexpected error in fetchAllPrices:', error);
         if (isActive) {
-          setGlobalError('An unexpected error occurred while fetching market data');
+          setError('An unexpected error occurred while fetching market data');
         }
       }
     };
@@ -206,8 +225,8 @@ export function useLiveMarketData() {
       clearInterval(refreshInterval);
       retryTimeouts.forEach(timeout => clearTimeout(timeout));
       stopCacheMonitoring(); // Stop cache monitoring
-      // Clear caches on unmount to prevent stale data
-      clearAllCaches();
+      if (stopCacheCleanup) stopCacheCleanup(); // Stop cache cleanup
+      // Cache is preserved across unmounts to prevent unnecessary refetches
     };
   }, [network]); // Add network to dependencies
 
@@ -222,20 +241,25 @@ export function useLiveMarketData() {
       },
     }));
     
-    // Trigger a new fetch for this symbol with current network
-    fetchPriceWithFallback(symbol, network)
-      .then(price => {
+    // Trigger a new fetch for this symbol with current network and force refresh
+    fetchPriceWithFallback(symbol, network, true)
+      .then(result => {
         setMarketData(prev => ({
           ...prev,
           [symbol]: {
             symbol,
-            price,
-            lastUpdated: Date.now(),
+            price: result.price,
+            lastUpdated: result.timestamp,
             isLoading: false,
             retryCount: 0,
+            isStale: result.isStale,
           },
         }));
-        toast.success(`${symbol} price updated`);
+        if (result.isStale) {
+          toast.warning(`${symbol} updated with stale data`);
+        } else {
+          toast.success(`${symbol} price updated`);
+        }
       })
       .catch(error => {
         const errorInfo = categorizeError(error);
@@ -258,7 +282,7 @@ export function useLiveMarketData() {
   return { 
     marketData, 
     isInitialLoad, 
-    globalError,
+    globalError: error,
     retrySymbol,
   };
 }

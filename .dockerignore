@@ -1,38 +1,27 @@
 # Dependencies
 node_modules
+.pnpm-store
 
 # Build outputs
 dist
 build
-.next
 
-# Development files
+# Version control
 .git
 .gitignore
+
+# Environment variables
 .env
-.env.local
-.env.*.local
+.env.*
 
-# IDE
-.vscode
-.idea
-*.swp
-*.swo
+# Backend code (not needed for frontend build)
+migration_python
 
-# OS
-.DS_Store
-Thumbs.db
+# Docker files
+docker-compose.yml
+Dockerfile
+README.Docker.md
 
-# Logs
-logs
+# Logs and temp
 *.log
-npm-debug.log*
-
-# Testing
-coverage
-.nyc_output
-
-# Misc
-*.md
-!README.md
-Documentation
+.DS_Store

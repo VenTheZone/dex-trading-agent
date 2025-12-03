@@ -1,13 +1,13 @@
-import { useEffect, useState } from 'react';
-import { pythonApi } from '@/lib/python-api-client';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { ExternalLink, TrendingUp, TrendingDown, Flame, RefreshCw } from 'lucide-react';
-import { motion } from 'framer-motion';
-import { toast } from 'sonner';
-import { sanitizeUrl, sanitizeText } from '@/lib/utils';
+import { useEffect, useState } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { pythonApi } from "@/lib/python-api-client";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { ExternalLink, TrendingUp, TrendingDown, Flame, RefreshCw } from "lucide-react";
+import { motion } from "framer-motion";
+import { toast } from "sonner";
+import { sanitizeUrl, sanitizeText } from "@/lib/utils";
 
 interface NewsPost {
   id: string;

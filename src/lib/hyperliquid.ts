@@ -2,6 +2,10 @@
 
 import * as hl from "@nktkas/hyperliquid";
 import { privateKeyToAccount } from "viem/accounts";
+import { validateNetwork, networkToBoolean } from "./constants";
+
+export const HYPERLIQUID_API_URL = "https://api.hyperliquid.xyz";
+export const HYPERLIQUID_TESTNET_API_URL = "https://api.hyperliquid-testnet.xyz";
 
 export interface HyperliquidConfig {
   privateKey: string;
@@ -25,14 +29,31 @@ export interface StopLossParams {
   isMarket?: boolean;
 }
 
+export interface OrderRequest {
+  symbol: string;
+  side: "buy" | "sell";
+  size: string;
+  price?: string;
+  orderType: "market" | "limit";
+  reduceOnly?: boolean;
+}
+
 export class HyperliquidService {
   private exchangeClient: hl.ExchangeClient;
   private infoClient: hl.InfoClient;
   private walletAddress: string;
 
   constructor(config: HyperliquidConfig) {
+    // Validate network configuration
+    const network = validateNetwork(config.isTestnet);
+    const isTestnet = networkToBoolean(network);
+
+    if (!config.privateKey || !config.privateKey.startsWith('0x')) {
+      throw new Error('Invalid private key: must start with 0x');
+    }
+
     const transport = new hl.HttpTransport({
-      isTestnet: config.isTestnet ?? false,
+      isTestnet: isTestnet,
     });
 
     // Properly derive wallet address from private key
