@@ -12,6 +12,15 @@ DeX Trading Agent is an advanced AI-driven trading system for **Hyperliquid perp
 
 ---
 
+## 📖 Documentation
+
+**NEW:** For a complete architectural overview and operational workflow, see:
+- **[Complete Architecture & Workflow](./.agent/workflows/architecture.md)** - Comprehensive system documentation in one place
+
+*Legacy documentation has been archived to `Documentation_Archive/` for reference.*
+
+---
+
 ## 📊 System Workflow
 
 The DeX Trading Agent follows a comprehensive system workflow designed to maximize profitability while minimizing risk in perpetual futures trading:
