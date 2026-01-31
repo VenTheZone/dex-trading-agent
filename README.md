@@ -1,193 +1,298 @@
-# DeX Trading Agent - AI-Powered Perpetual Futures Trading System
+# DeX Trading Agent
 
-![DeX CyberAgent](./public/logo.svg)
+## 🚀 Desktop App Migration - Complete!
 
-## 🚀 Overview
-
-DeX Trading Agent is an advanced AI-driven trading system for **Hyperliquid perpetual futures**. It features live, paper, and demo trading modes with sophisticated risk management tailored for derivatives trading. The system leverages DeepSeek V3.1 and Qwen3 Max AI models for intelligent market analysis, incorporating funding rates, liquidation risk, and open interest data.
-
-**Architecture:** Python FastAPI backend + React frontend (no authentication required for local use)
-
-**Important:** Hyperliquid is an independent Layer 1 blockchain (Chain ID 998 for testnet). The platform uses its own consensus mechanism (HyperBFT) and native token (HYPE).
+**Status:** ✅ All 8 Phases Complete  
+**Version:** 2.0.0 (Tauri Desktop Edition)  
+**Date:** 2026-01-31
 
 ---
 
-## 📖 Documentation
+## 📦 What's New in v2.0
 
-**NEW:** For a complete architectural overview and operational workflow, see:
-- **[Complete Architecture & Workflow](./.agent/workflows/architecture.md)** - Comprehensive system documentation in one place
+### 🖥️ **Native Desktop Application**
+- **Tauri v2** powered desktop app for Windows, macOS, and Linux
+- **Secure API Key Storage** - Encrypted storage, not browser localStorage
+- **Native Performance** - Rust backend, not Electron bloat
+- **Offline-First** - Core functionality works without internet
 
-*Legacy documentation has been archived to `Documentation_Archive/` for reference.*
+### 🔒 **Security Enhancements**
+- API keys stored in **Tauri encrypted store** (not browser storage)
+- **Content Security Policy** hardened for desktop
+- **No browser vulnerabilities** - Native app sandbox
+
+### 🔄 **Architecture Changes**
+| Component | Before (Web) | After (Desktop) |
+|-----------|-------------|-----------------|
+| Storage | localStorage | Tauri Secure Store |
+| Dialogs | window.confirm | Native OS Dialogs |
+| Downloads | Blob/URL | Native File System |
+| Wallet | window.ethereum | Hybrid (Browser + Mobile) |
+| Cookies | document.cookie | Tauri Store |
 
 ---
 
-## 📊 System Workflow
+## 🎯 Quick Start
 
-The DeX Trading Agent follows a comprehensive system workflow designed to maximize profitability while minimizing risk in perpetual futures trading:
+### Prerequisites
+- **Node.js** 18+ and **npm**
+- **Rust** and **Cargo**
+- **Python** 3.10+ (for backend)
+
+### Installation
+
+```bash
+# 1. Clone the repository
+git clone https://github.com/VenTheZone/dex-trading-agent.git
+cd dex-trading-agent
+
+# 2. Install frontend dependencies
+npm install
+
+# 3. Install Tauri CLI
+cargo install tauri-cli
+
+# 4. Setup Python backend
+cd migration_python
+python -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
+pip install -r requirements.txt
+cd ..
+```
+
+### Running the Application
+
+**Development Mode:**
+```bash
+# Terminal 1: Start Python Backend
+python migration_python/main.py
+
+# Terminal 2: Start Desktop App
+npm run tauri dev
+```
+
+**Production Build:**
+```bash
+# Build desktop app for current platform
+npm run tauri build
+
+# Output: src-tauri/target/release/bundle/
+```
 
 ---
 
-## ✨ Key Features
+## 🏗️ Architecture
 
-### 🤖 AI-Powered Perpetual Futures Analysis
-- **DeepSeek V3.1** (Free) / **Qwen3 Max** (Paid) via OpenRouter
-- **Dual chart analysis per coin:** 5-minute timeframe + 1000-range chart
-- Multi-chart correlation analysis (up to 8 chart snapshots: 2 per coin × 4 coins)
-- **Derivatives-specific analysis:**
-  - Funding rate impact on profitability
-  - Liquidation price calculations with safety buffers
-  - Mark price vs Index price monitoring
-  - Open interest and long/short ratio analysis
-  - Position sizing based on leverage multiplier
-- **No buffering delay:** Both chart types sent simultaneously to LLM
+### System Components
+```
+┌─────────────────────────────────────────────────────────────┐
+│                    DeX Trading Agent                        │
+│                   (Tauri Desktop App)                       │
+├─────────────────────────────────────────────────────────────┤
+│  Frontend (React + TypeScript)                              │
+│  ├── Trading Interface                                      │
+│  ├── AI Analysis Dashboard                                  │
+│  ├── Wallet Integration                                     │
+│  └── TradingView Charts                                     │
+├─────────────────────────────────────────────────────────────┤
+│  Tauri Bridge (Rust)                                        │
+│  ├── Secure Store (API Keys)                                │
+│  ├── Native Dialogs                                         │
+│  ├── File System Access                                     │
+│  └── Window Management                                      │
+├─────────────────────────────────────────────────────────────┤
+│  Backend (Python FastAPI)                                   │
+│  ├── 48 API Endpoints                                       │
+│  ├── Hyperliquid Integration                                │
+│  ├── AI Analysis (DeepSeek/Qwen)                            │
+│  ├── Paper Trading Engine                                   │
+│  └── WebSocket Price Stream                                 │
+└─────────────────────────────────────────────────────────────┘
+```
 
-### 🛡️ Advanced Risk Management for Derivatives
+### API Endpoints (48 Total)
+- **Trading:** /api/trading-logs, /api/ai/analyze
+- **Wallet:** /api/hyperliquid/mainnet/*, /api/hyperliquid/testnet/*
+- **Market:** /api/v1/market/*/price
+- **Paper Trading:** /api/paper-trading/*
+- **Backtesting:** /api/backtest/*
+- **WebSocket:** /ws (real-time prices)
 
-The Trading Agent implements multi-layered risk management specifically designed for perpetual futures trading:
+---
 
-#### **1. Liquidation Risk Protection**
-- **Real-time Liquidation Monitoring:** Calculates liquidation price based on leverage and position size
-  - 5x leverage: ~20% price move buffer before liquidation
-  - 10x leverage: ~10% price move buffer before liquidation
-  - 20x leverage: ~5% price move buffer before liquidation
-  - 40x leverage: ~2.5% price move buffer before liquidation
-- **Safety Buffer Enforcement:** Stop losses are automatically placed with 15-20% buffer from liquidation price
-- **Margin Usage Alerts:** System auto-pauses trading when margin usage exceeds 80%
-- **Mark Price Monitoring:** Tracks mark price vs index price discrepancies to prevent unexpected liquidations
+## 🔐 Security Features
 
-#### **2. Position Sizing & Leverage Control**
-- **Maximum Risk Per Trade:** Limits risk to 2-5% of account balance per position
-- **Leverage Amplification Awareness:** AI accounts for leverage multiplier when calculating position size
-- **Dynamic Position Sizing:** Adjusts position size based on:
-  - Account balance
-  - Current volatility
-  - Market conditions
-  - Confidence level of AI analysis
-- **AI Leverage Recommendations:** When enabled, AI can suggest optimal leverage (1x-40x) based on market conditions
+### API Key Management
+```typescript
+// Old (Browser - Insecure)
+localStorage.setItem('api_keys', JSON.stringify(keys))
 
-#### **3. Funding Rate Management**
-- **Funding Cost Tracking:** Monitors 8-hour funding rates and calculates impact on profitability
-- **Crowded Position Detection:** Identifies when funding rates indicate overcrowded longs or shorts
-  - Positive funding >0.05%: Many longs (bearish signal)
-  - Negative funding <-0.05%: Many shorts (bullish signal)
-- **Hold Duration Optimization:** Considers funding costs when determining position hold time
-- **Funding Rate Alerts:** Warns when funding rates become extreme
+// New (Desktop - Secure)
+await invoke('set_api_keys', { keys })
+// Stored in: ~/.config/dex-trading-agent/api_keys.dat
+// Encrypted with OS-level keychain
+```
 
-#### **4. Stop Loss & Take Profit Strategy**
-- **Smart Stop Loss Placement:**
-  - Positioned at key technical levels (support/resistance)
-  - Always tighter than liquidation distance
-  - Accounts for market volatility and spread
-  - Minimum 15-20% buffer from liquidation price
-- **Take Profit Optimization:**
-  - Minimum 1:2 risk/reward ratio enforced
-  - Considers funding rate costs over expected hold time
-  - Adjusts for market volatility
-- **Trailing Stop Loss:** Dynamically adjusts stop loss as position moves into profit
-  - Locks in gains while allowing position to run
-  - Configurable trailing distance
+### Wallet Integration
+- **Browser Extension Mode:** Auto-detects MetaMask, etc.
+- **Mobile Wallet Mode:** Deep links to mobile apps
+- **Secure Storage:** Wallet addresses stored encrypted
 
-#### **5. Market Structure Analysis**
-- **Open Interest Monitoring:** Tracks total open interest to identify potential liquidation cascades
-- **Long/Short Ratio Analysis:** Monitors market sentiment and crowded positions
-- **Price Discrepancy Alerts:** Warns when mark price deviates significantly from index price
-- **Liquidity Assessment:** Evaluates order book depth before executing trades
+### Content Security Policy
+```
+script-src: 'self' 'unsafe-eval' https://s3.tradingview.com
+connect-src: 'self' http://localhost:8000 wss://*.tradingview.com
+frame-src: 'self' https://www.tradingview.com
+```
 
-#### **6. AI-Driven Risk Assessment**
-The AI model (DeepSeek V3.1 / Qwen3 Max) performs comprehensive risk analysis:
-- **Multi-Factor Risk Scoring:** Combines technical, fundamental, and derivatives-specific factors
-- **Confidence-Based Execution:** Only executes trades when confidence threshold is met
-- **Market Condition Adaptation:** Reduces position size or avoids trading in high volatility
-- **Confluence Requirement:** Requires multiple indicators to align before opening positions
-- **"When in Doubt, HOLD" Philosophy:** Prioritizes capital preservation over aggressive gains
+---
 
-#### **7. Emergency Controls**
-- **Auto-Pause Mechanism:** Automatically stops trading when:
-  - Margin usage exceeds 80%
-  - Consecutive losses exceed threshold
-  - Extreme market volatility detected
-  - API connection issues occur
-- **Manual Override:** Users can instantly close all positions via emergency button
-- **Position Limits:** Configurable maximum number of concurrent positions
-- **Daily Loss Limits:** Optional daily loss cap to prevent catastrophic drawdowns
+## 📊 Migration Guide (Web → Desktop)
 
-#### **8. Real-Time Monitoring & Alerts**
-- **Live Position Tracking:** Real-time P&L, liquidation distance, and margin usage
-- **Risk Metric Dashboard:** Visual display of all risk parameters
-- **Alert System:** Notifications for:
-  - Approaching liquidation levels
-  - High funding rates
-  - Significant price discrepancies
-  - Margin usage warnings
-  - Stop loss/take profit triggers
+### For Existing Users
+1. **Export your API keys** from browser localStorage
+2. **Install the desktop app**
+3. **Import API keys** in the desktop app
+4. **All settings preserved** - trading history, preferences
 
-**Risk Management Philosophy:** The Trading Agent prioritizes capital preservation over aggressive gains. It's designed to survive market volatility and avoid catastrophic losses through disciplined risk management, proper position sizing, and AI-driven decision making that accounts for the unique risks of leveraged perpetual futures trading.
+### Breaking Changes
+| Feature | Web | Desktop | Migration |
+|---------|-----|---------|-----------|
+| Storage | localStorage | Tauri Store | Auto-migrated |
+| Wallet | window.ethereum | Hybrid | Reconnect required |
+| Downloads | Browser | Native FS | Same functionality |
 
-### 📊 Trading Modes
-- **Live Trading:** Real funds on Hyperliquid Mainnet/Testnet with full derivatives features
-- **Paper Trading:** Simulated trading with realistic execution and funding rate simulation
-- **Demo Mode:** Practice environment with $10,000 virtual balance
+---
 
-### 🔒 Security & Storage
-- **Browser-only API key storage** - Keys never leave your device
-- **Agent Wallet Support** - Use Hyperliquid agent wallets (can trade but CANNOT withdraw)
-- **No authentication required** - Local/private use only
+## 🧪 Testing
 
-### 📈 Real-Time Data & Monitoring
-- Live balance tracking with unrealized PnL
-- Position snapshots with liquidation warnings
-- Comprehensive trading logs with AI reasoning
-- Performance metrics and P&L history
+### Integration Tests
+```typescript
+import { runAllIntegrationTests } from './src/lib/integration-tests'
+
+// Run all 12 tests
+await runAllIntegrationTests()
+```
+
+**Test Coverage:**
+- ✅ Storage API (3 tests)
+- ✅ Dialog API (1 test)
+- ✅ Wallet API (3 tests)
+- ✅ Trading Mode API (3 tests)
+- ✅ Settings API (2 tests)
+
+### Backend Tests
+```bash
+cd migration_python
+pytest tests/  # Run backend test suite
+```
+
+---
+
+## 🚀 Deployment
+
+### Build for Production
+
+**All Platforms:**
+```bash
+npm run tauri build
+```
+
+**Platform-Specific:**
+```bash
+# Windows
+npm run tauri build -- --target x86_64-pc-windows-msvc
+
+# macOS
+npm run tauri build -- --target x86_64-apple-darwin
+npm run tauri build -- --target aarch64-apple-darwin  # M1/M2
+
+# Linux
+npm run tauri build -- --target x86_64-unknown-linux-gnu
+```
+
+### Distribution
+Built apps available in:
+- `src-tauri/target/release/bundle/`
+  - `.msi` (Windows)
+  - `.dmg` (macOS)
+  - `.AppImage` / `.deb` (Linux)
+
+---
+
+## 📚 Documentation
+
+- **[Architecture Overview](./.agent/workflows/architecture.md)** - System design
+- **[API Documentation](./devdocs/findings.md)** - API endpoint reference
+- **[Migration Guide](./MIGRATION.md)** - Web to Desktop migration
+- **[Build Instructions](./BUILD.md)** - Development setup
+- **[Test Report](./devdocs/PHASE7_TEST_REPORT.md)** - Integration test results
 
 ---
 
 ## 🛠️ Tech Stack
 
-**Frontend:**
-- React 19 + TypeScript + Vite
-- React Router v7 for routing
-- Tailwind CSS v4 + Shadcn UI
-- Framer Motion for animations
-- Zustand for state management
+### Frontend
+- **React 18** + TypeScript
+- **Tailwind CSS** + shadcn/ui
+- **Tauri v2** (Desktop framework)
 
-**Backend:**
-- Python FastAPI (REST API + WebSockets)
-- SQLite (local) / PostgreSQL (production)
-- SQLAlchemy ORM
-- Celery + Redis for background tasks
+### Backend
+- **Python 3.10+**
+- **FastAPI** (48 endpoints)
+- **SQLAlchemy** (SQLite/PostgreSQL)
+- **Hyperliquid SDK**
 
-**Integrations:**
-- Hyperliquid SDK (@nktkas/hyperliquid)
-- OpenRouter API (DeepSeek V3.1 / Qwen3 Max)
-- CryptoPanic News API (optional)
-- Binance API (price data with fallback)
+### Desktop (Tauri)
+- **Rust** (system commands)
+- **Tao** (window management)
+- **Wry** (WebView engine)
 
 ---
 
-## 🚀 Quick Start
+## 🤝 Contributing
 
-### Option 1: Docker Deployment (Recommended)
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Run tests: `npm test && pytest`
+5. Submit a pull request
 
-Run the full stack with Docker:
+---
 
-```bash
-# Clone the repository
-git clone https://github.com/VenTheZone/dex-trading-agent.git
-cd dex-trading-agent
+## 📄 License
 
-# Start the application
-docker-compose up --build
-```
+MIT License - See [LICENSE](./LICENSE)
 
-This will automatically:
-- Build and run the React frontend
-- Start the Python FastAPI backend
-- Initialize the database
-- Set up background services
+---
 
-**Default Ports:**
-- Frontend: `http://127.0.0.1:3000`
-- Backend API: `http://127.0.0.1:8000`
-- Redis: `127.0.0.1:6379`
+## 🙏 Acknowledgments
 
-To start the application:
+- **Hyperliquid** - For the excellent perpetual futures exchange
+- **Tauri** - For the lightweight desktop framework
+- **DeepSeek/Qwen** - For AI models via OpenRouter
+- **TradingView** - For charting capabilities
+
+---
+
+## 📞 Support
+
+- **Issues:** [GitHub Issues](https://github.com/VenTheZone/dex-trading-agent/issues)
+- **Discord:** [Join our community](https://discord.gg/yourserver)
+- **Email:** support@dex-trading-agent.com
+
+---
+
+## 🎉 What's Next?
+
+- [ ] Mobile app (iOS/Android)
+- [ ] Cloud sync for settings
+- [ ] Advanced backtesting
+- [ ] More AI models
+- [ ] Multi-exchange support
+
+---
+
+**Built with ❤️ by the DeX Trading Agent Team**
+
+**Version 2.0.0** | **Tauri Desktop Edition**

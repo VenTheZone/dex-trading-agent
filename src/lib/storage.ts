@@ -1,177 +1,149 @@
-// Secure browser storage for API keys and settings
-const STORAGE_PREFIX = 'dex_agent_';
+import { invoke } from "@tauri-apps/api/core";
 
+const STORAGE_PREFIX = "dex_agent_";
+
+// API Keys storage using Tauri secure store
 export interface ApiKeys {
-  hyperliquid: {
-    apiKey: string;
-    apiSecret: string;
-    walletAddress?: string;
-  };
-  openRouter: string;
+  hyperliquidMainnetApiKey: string;
+  hyperliquidTestnetApiKey: string;
+  openRouterApiKey: string;
+  [key: string]: string;
 }
 
-export interface TradingSettings {
-  mode: 'paper' | 'live';
-  takeProfitPercent: number;
-  stopLossPercent: number;
-  useAdvancedStrategy: boolean;
-  partialProfitPercent: number;
-  useTrailingStop: boolean;
-  leverage: number;
-  maxLeverage: number;
-  allowAILeverage: boolean;
-  allowedCoins: string[];
-}
-
-export const storage = {
-  // API Keys
-  saveApiKeys: (keys: ApiKeys) => {
-    try {
-      // Validate OpenRouter key format if provided
-      if (keys.openRouter && keys.openRouter !== 'DEMO_MODE') {
-        if (!keys.openRouter.startsWith('sk-or-v1-')) {
-          throw new Error('Invalid OpenRouter API key format. Key must start with "sk-or-v1-"');
-        }
-      }
-
-      // Validate Hyperliquid keys if not demo mode
-      if (keys.hyperliquid.apiKey !== 'DEMO_MODE') {
-        if (!keys.hyperliquid.apiSecret || keys.hyperliquid.apiSecret.length < 10) {
-          throw new Error('Invalid Hyperliquid API secret');
-        }
-      }
-
-      // Check if demo mode
-      if (keys.hyperliquid.apiKey === 'DEMO_MODE') {
-        localStorage.setItem(`${STORAGE_PREFIX}demo_mode`, 'true');
-        // In demo mode, preserve OpenRouter key if provided for enhanced AI testing
-        if (keys.openRouter && keys.openRouter !== 'DEMO_MODE') {
-          const demoKeys = {
-            ...keys,
-            hyperliquid: { apiKey: 'DEMO_MODE', apiSecret: 'DEMO_MODE', walletAddress: 'DEMO_MODE' },
-          };
-          localStorage.setItem(`${STORAGE_PREFIX}api_keys`, JSON.stringify(demoKeys));
-        } else {
-          localStorage.setItem(`${STORAGE_PREFIX}api_keys`, JSON.stringify(keys));
-        }
-      } else {
-        localStorage.removeItem(`${STORAGE_PREFIX}demo_mode`);
-        localStorage.setItem(`${STORAGE_PREFIX}api_keys`, JSON.stringify(keys));
-      }
-    } catch (error) {
-      console.error('Failed to save API keys:', error);
-      throw error;
-    }
-  },
-  
-  getApiKeys: (): ApiKeys | null => {
-    try {
-      const data = localStorage.getItem(`${STORAGE_PREFIX}api_keys`);
-      if (!data) return null;
-      
-      const parsed = JSON.parse(data);
-      
-      // Validate structure
-      if (!parsed.hyperliquid || !parsed.openRouter) {
-        console.warn('Invalid API keys structure in storage');
-        return null;
-      }
-      
-      return parsed;
-    } catch (error) {
-      console.error('Failed to parse API keys:', error);
-      return null;
-    }
-  },
-
-  isDemoMode: (): boolean => {
-    return localStorage.getItem(`${STORAGE_PREFIX}demo_mode`) === 'true';
-  },
-  
-  // Trading Settings
-  saveSettings: (settings: TradingSettings) => {
-    try {
-      // Validate settings before saving
-      if (settings.leverage < 1 || settings.leverage > 100) {
-        throw new Error('Invalid leverage value (must be 1-100)');
-      }
-      if (settings.takeProfitPercent < 0 || settings.takeProfitPercent > 1000) {
-        throw new Error('Invalid take profit percentage (must be 0-1000)');
-      }
-      if (settings.stopLossPercent < 0 || settings.stopLossPercent > 100) {
-        throw new Error('Invalid stop loss percentage (must be 0-100)');
-      }
-      if (!Array.isArray(settings.allowedCoins)) {
-        throw new Error('Invalid allowedCoins format (must be array)');
-      }
-      
-      localStorage.setItem(`${STORAGE_PREFIX}settings`, JSON.stringify(settings));
-    } catch (error) {
-      console.error('Failed to save settings:', error);
-      throw error;
-    }
-  },
-  
-  getSettings: (): TradingSettings => {
-    try {
-      const data = localStorage.getItem(`${STORAGE_PREFIX}settings`);
-      if (!data) {
-        return {
-          mode: 'paper',
-          takeProfitPercent: 100,
-          stopLossPercent: 20,
-          useAdvancedStrategy: false,
-          partialProfitPercent: 50,
-          useTrailingStop: true,
-          leverage: 1,
-          maxLeverage: 20,
-          allowAILeverage: false,
-          allowedCoins: ['BTCUSD', 'ETHUSD', 'SOLUSD', 'AVAXUSD'],
-        };
-      }
-      
-      const parsed = JSON.parse(data);
-      
-      // Validate and sanitize settings
-      return {
-        mode: ['paper', 'live'].includes(parsed.mode) ? parsed.mode : 'paper',
-        takeProfitPercent: Math.max(0, Math.min(parsed.takeProfitPercent || 100, 1000)),
-        stopLossPercent: Math.max(0, Math.min(parsed.stopLossPercent || 20, 100)),
-        useAdvancedStrategy: Boolean(parsed.useAdvancedStrategy),
-        partialProfitPercent: Math.max(0, Math.min(parsed.partialProfitPercent || 50, 100)),
-        useTrailingStop: Boolean(parsed.useTrailingStop),
-        leverage: Math.max(1, Math.min(parsed.leverage || 1, 100)),
-        maxLeverage: Math.max(1, Math.min(parsed.maxLeverage || 20, 100)),
-        allowAILeverage: Boolean(parsed.allowAILeverage),
-        allowedCoins: Array.isArray(parsed.allowedCoins) ? parsed.allowedCoins : ['BTCUSD', 'ETHUSD', 'SOLUSD', 'AVAXUSD'],
-      };
-    } catch (error) {
-      console.error('Failed to parse settings:', error);
-      return {
-        mode: 'paper',
-        takeProfitPercent: 100,
-        stopLossPercent: 20,
-        useAdvancedStrategy: false,
-        partialProfitPercent: 50,
-        useTrailingStop: true,
-        leverage: 1,
-        maxLeverage: 20,
-        allowAILeverage: false,
-        allowedCoins: ['BTCUSD', 'ETHUSD', 'SOLUSD', 'AVAXUSD'],
-      };
-    }
-  },
-  
-  // Clear all data
-  clearAll: () => {
-    try {
-      Object.keys(localStorage).forEach(key => {
-        if (key.startsWith(STORAGE_PREFIX)) {
-          localStorage.removeItem(key);
-        }
-      });
-    } catch (error) {
-      console.error('Failed to clear storage:', error);
-    }
-  },
+// Demo keys for testing
+const DEMO_KEYS: ApiKeys = {
+  hyperliquidMainnetApiKey: "demo_mainnet_key",
+  hyperliquidTestnetApiKey: "demo_testnet_key",
+  openRouterApiKey: "demo_openrouter_key",
 };
+
+/**
+ * Get API keys from secure Tauri store
+ */
+export async function getApiKeys(): Promise<ApiKeys> {
+  try {
+    const keys = await invoke<ApiKeys>("get_api_keys");
+    return keys || {};
+  } catch (error) {
+    console.error("Error loading API keys from secure store:", error);
+    return {};
+  }
+}
+
+/**
+ * Save API keys to secure Tauri store
+ */
+export async function saveApiKeys(keys: ApiKeys): Promise<void> {
+  try {
+    await invoke("set_api_keys", { keys });
+  } catch (error) {
+    console.error("Error saving API keys to secure store:", error);
+    throw error;
+  }
+}
+
+/**
+ * Clear all API keys from secure store
+ */
+export async function clearApiKeys(): Promise<void> {
+  try {
+    await invoke("clear_api_keys");
+  } catch (error) {
+    console.error("Error clearing API keys:", error);
+    throw error;
+  }
+}
+
+/**
+ * Enable demo mode with demo keys
+ */
+export async function enableDemoMode(): Promise<void> {
+  await saveApiKeys(DEMO_KEYS);
+}
+
+/**
+ * Check if demo mode is enabled
+ */
+export async function isDemoMode(): Promise<boolean> {
+  const keys = await getApiKeys();
+  return keys.hyperliquidMainnetApiKey === "demo_mainnet_key";
+}
+
+/**
+ * Get a specific API key
+ */
+export async function getApiKey(key: keyof ApiKeys): Promise<string | null> {
+  const keys = await getApiKeys();
+  return keys[key] || null;
+}
+
+/**
+ * Validate that required API keys are present
+ */
+export async function validateApiKeys(): Promise<boolean> {
+  const keys = await getApiKeys();
+  const hasMainnetKey = !!keys.hyperliquidMainnetApiKey;
+  const hasTestnetKey = !!keys.hyperliquidTestnetApiKey;
+  const hasOpenRouterKey = !!keys.openRouterApiKey;
+  
+  return hasMainnetKey && hasTestnetKey && hasOpenRouterKey;
+}
+
+// ============================================
+// LEGACY localStorage functions (deprecated)
+// These are kept for backward compatibility during migration
+// ============================================
+
+/**
+ * @deprecated Use getApiKeys() instead
+ * Load API keys from localStorage (legacy)
+ */
+export function loadApiKeysLegacy(): ApiKeys | null {
+  try {
+    const stored = localStorage.getItem(`${STORAGE_PREFIX}api_keys`);
+    if (!stored) return null;
+    return JSON.parse(stored) as ApiKeys;
+  } catch (error) {
+    console.error("Error loading API keys from localStorage:", error);
+    return null;
+  }
+}
+
+/**
+ * @deprecated Use saveApiKeys() instead
+ * Save API keys to localStorage (legacy)
+ */
+export function saveApiKeysLegacy(keys: ApiKeys): void {
+  try {
+    localStorage.setItem(`${STORAGE_PREFIX}api_keys`, JSON.stringify(keys));
+  } catch (error) {
+    console.error("Error saving API keys to localStorage:", error);
+  }
+}
+
+/**
+ * @deprecated Use enableDemoMode() instead
+ * Enable demo mode with demo keys (legacy)
+ */
+export function enableDemoModeLegacy(): ApiKeys {
+  localStorage.setItem(`${STORAGE_PREFIX}demo_mode`, "true");
+  saveApiKeysLegacy(DEMO_KEYS);
+  return DEMO_KEYS;
+}
+
+/**
+ * @deprecated Use isDemoMode() instead
+ * Check if demo mode is enabled (legacy)
+ */
+export function isDemoModeLegacy(): boolean {
+  return localStorage.getItem(`${STORAGE_PREFIX}demo_mode`) === "true";
+}
+
+/**
+ * @deprecated Use clearApiKeys() instead
+ * Clear all API keys from localStorage (legacy)
+ */
+export function clearApiKeysLegacy(): void {
+  localStorage.removeItem(`${STORAGE_PREFIX}demo_mode`);
+  localStorage.removeItem(`${STORAGE_PREFIX}api_keys`);
+}

@@ -2,6 +2,8 @@ import { useEffect, useRef, useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { useTradingStore } from '@/store/tradingStore';
 import { Badge } from '@/components/ui/badge';
+import { Loader2, AlertTriangle } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 interface TradingChartProps {
   symbol: string;
@@ -14,6 +16,9 @@ export const TradingChart = ({ symbol, chartId = 'tradingview_chart' }: TradingC
   const { chartType, chartInterval, position } = useTradingStore();
   const [previousBalance, setPreviousBalance] = useState(0);
   const [, setBalanceChange] = useState(0);
+  const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [retryCount, setRetryCount] = useState(0);
   
   // Track balance changes for visual feedback
   useEffect(() => {
@@ -81,16 +86,37 @@ export const TradingChart = ({ symbol, chartId = 'tradingview_chart' }: TradingC
             initWidget();
           }
         }, 100);
-        return () => clearInterval(checkInterval);
+        
+        // Timeout after 10 seconds
+        const timeout = setTimeout(() => {
+          clearInterval(checkInterval);
+          setIsLoading(false);
+          setLoadError('TradingView failed to load. This might be due to network restrictions in desktop mode.');
+        }, 10000);
+        
+        return () => {
+          clearInterval(checkInterval);
+          clearTimeout(timeout);
+        };
       }
       return;
     }
+    
+    setIsLoading(true);
+    setLoadError(null);
     
     const script = document.createElement('script');
     script.id = 'tradingview-widget-script';
     script.src = 'https://s3.tradingview.com/tv.js';
     script.async = true;
-    script.onload = initWidget;
+    script.onload = () => {
+      setIsLoading(false);
+      initWidget();
+    };
+    script.onerror = () => {
+      setIsLoading(false);
+      setLoadError('Failed to load TradingView chart library. Please check your internet connection.');
+    };
     
     document.head.appendChild(script);
     
@@ -119,6 +145,42 @@ export const TradingChart = ({ symbol, chartId = 'tradingview_chart' }: TradingC
           >
             PnL: ${position.pnl.toFixed(2)}
           </Badge>
+        </div>
+      )}
+      
+      {/* Loading State */}
+      {isLoading && (
+        <div className="absolute inset-0 flex items-center justify-center bg-black/80 z-20">
+          <div className="text-center">
+            <Loader2 className="h-8 w-8 animate-spin text-cyan-400 mx-auto mb-2" />
+            <p className="text-sm text-gray-400 font-mono">Loading TradingView...</p>
+          </div>
+        </div>
+      )}
+      
+      {/* Error State */}
+      {loadError && (
+        <div className="absolute inset-0 flex items-center justify-center bg-black/90 z-20">
+          <div className="text-center p-4 max-w-md">
+            <AlertTriangle className="h-8 w-8 text-yellow-400 mx-auto mb-2" />
+            <p className="text-sm text-gray-300 mb-4">{loadError}</p>
+            <Button
+              onClick={() => {
+                setRetryCount(prev => prev + 1);
+                setLoadError(null);
+                setIsLoading(true);
+                // Remove existing script and retry
+                const existingScript = document.getElementById('tradingview-widget-script');
+                if (existingScript) {
+                  existingScript.remove();
+                }
+              }}
+              variant="outline"
+              className="border-cyan-500/50 text-cyan-400"
+            >
+              Retry ({retryCount})
+            </Button>
+          </div>
         </div>
       )}
       

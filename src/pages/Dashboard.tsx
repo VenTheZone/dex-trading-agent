@@ -9,7 +9,8 @@ import { useTradingStore } from "@/store/tradingStore";
 import { TradingChart } from "@/components/TradingChart";
 import { TradingControls } from "@/components/TradingControls";
 import { LogoDropdown } from "@/components/LogoDropdown";
-import { storage } from "@/lib/storage";
+import { getApiKeys, clearApiKeys } from "@/lib/storage";
+import { confirm } from "@tauri-apps/plugin-dialog";
 import { Activity, DollarSign, TrendingUp, Settings, LineChart, X, Loader2, AlertTriangle } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
@@ -39,15 +40,18 @@ export default function Dashboard() {
   const { closePosition, closeAllPositions } = useTrading();
   
   useEffect(() => {
-    const keys = storage.getApiKeys();
-    setHasApiKeys(!!keys);
+    const loadKeys = async () => {
+      const keys = await getApiKeys();
+      setHasApiKeys(Object.keys(keys).length > 0);
+    };
+    loadKeys();
   }, []);
 
   // Fetch perpetual wallet balance when network changes or component mounts
   useEffect(() => {
     const fetchBalance = async () => {
-      const keys = storage.getApiKeys();
-      if (!keys?.hyperliquid.apiKey) return;
+      const keys = await getApiKeys();
+      if (!keys?.hyperliquidMainnetApiKey) return;
 
       try {
         const result = await pythonApi.getAccountInfo({
@@ -229,13 +233,14 @@ export default function Dashboard() {
                 <Switch
                   id="network-switch"
                   checked={network === 'mainnet'}
-                  onCheckedChange={(checked) => {
+                  onCheckedChange={async (checked) => {
                     const newNetwork = checked ? 'mainnet' : 'testnet';
-                    const confirmed = window.confirm(
+                    const confirmed = await confirm(
                       `Switch to Hyperliquid ${newNetwork.toUpperCase()}?\n\n` +
                       (newNetwork === 'testnet' 
                         ? 'Testnet uses test funds and is safe for experimentation.' 
-                        : '⚠️ MAINNET uses real funds. Ensure you understand the risks.')
+                        : '⚠️ MAINNET uses real funds. Ensure you understand the risks.'),
+                      { title: 'Network Switch', kind: 'warning' }
                     );
                     if (confirmed) {
                       setNetwork(newNetwork);
@@ -271,12 +276,13 @@ export default function Dashboard() {
                 <Switch
                   id="mode-switch"
                   checked={mode === 'live'}
-                  onCheckedChange={(checked) => {
+                  onCheckedChange={async (checked) => {
                     const newMode = checked ? 'live' : 'paper';
                     if (newMode === 'live') {
-                      const confirmed = window.confirm(
+                      const confirmed = await confirm(
                         '⚠️ WARNING: You are about to switch to LIVE TRADING mode.\n\n' +
-                        'Real funds will be at risk. Are you sure you want to continue?'
+                        'Real funds will be at risk. Are you sure you want to continue?',
+                        { title: 'Live Trading Mode', kind: 'warning' }
                       );
                       if (!confirmed) return;
                     }
@@ -301,14 +307,15 @@ export default function Dashboard() {
                 variant="outline"
                 size="icon"
                 className="border-cyan-500/30 text-cyan-400 hover:bg-cyan-500/20"
-                onClick={() => {
-                  const confirmed = window.confirm(
-                    '⚠️ Clear all API keys and settings?\\n\\n' +
-                    'This will remove all stored API keys and reset your configuration.\\n\\n' +
-                    'Are you sure you want to continue?'
+                onClick={async () => {
+                  const confirmed = await confirm(
+                    '⚠️ Clear all API keys and settings?\n\n' +
+                    'This will remove all stored API keys and reset your configuration.\n\n' +
+                    'Are you sure you want to continue?',
+                    { title: 'Clear API Keys', kind: 'warning' }
                   );
                   if (confirmed) {
-                    storage.clearAll();
+                    await clearApiKeys();
                     setHasApiKeys(false);
                     toast.success('API keys cleared');
                   }

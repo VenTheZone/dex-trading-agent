@@ -7,12 +7,16 @@ import { toast } from 'sonner';
 import { motion } from 'framer-motion';
 import { sanitizeText } from '@/lib/utils';
 import { useTradingLogs } from '@/hooks/use-python-api';
+import { confirm } from '@tauri-apps/plugin-dialog';
 
 export function TradingLogs() {
   const { logs, loading, clearLogs } = useTradingLogs(100);
 
   const handleClearLogs = async () => {
-    const confirmed = window.confirm('Are you sure you want to clear all logs?');
+    const confirmed = await confirm('Are you sure you want to clear all logs?', {
+      title: 'Clear Trading Logs',
+      kind: 'warning'
+    });
     if (!confirmed) return;
     
     try {

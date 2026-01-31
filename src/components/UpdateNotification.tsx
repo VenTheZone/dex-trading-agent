@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { X, Download, ExternalLink } from "lucide-react";
 import { checkForUpdates, getUpdateInstructions, type VersionInfo } from "@/lib/version-checker";
 import { toast } from "sonner";
+import { open } from "@tauri-apps/plugin-opener";
 
 export function UpdateNotification() {
   const [versionInfo, setVersionInfo] = useState<VersionInfo | null>(null);
@@ -80,7 +81,14 @@ export function UpdateNotification() {
             </div>
 
             <Button
-              onClick={() => window.open(versionInfo.releaseUrl, "_blank")}
+              onClick={async () => {
+                try {
+                  await open(versionInfo.releaseUrl);
+                } catch (error) {
+                  console.error("Error opening URL:", error);
+                  toast.error("Failed to open release notes");
+                }
+              }}
               className="w-full bg-cyan-500 hover:bg-cyan-600 text-black font-bold font-mono"
             >
               <ExternalLink className="mr-2 h-4 w-4" />

@@ -11,6 +11,8 @@ import { TRADING_TOKENS } from "@/lib/tokenData";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { save } from "@tauri-apps/plugin-dialog";
+import { writeTextFile } from "@tauri-apps/plugin-fs";
 
 interface BacktestResult {
   startDate: string;
@@ -170,31 +172,39 @@ export function BacktestingPanel() {
     }
   };
 
-  const exportResults = () => {
+  const exportResults = async () => {
     if (!result) return;
     
-    const exportData = {
-      backtest_config: {
-        symbol,
-        days,
-        initialBalance,
-        leverage,
-        takeProfitPercent,
-        stopLossPercent,
-      },
-      results: result,
-      timestamp: new Date().toISOString(),
-    };
-    
-    const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `backtest_${symbol}_${new Date().toISOString().split('T')[0]}.json`;
-    a.click();
-    URL.revokeObjectURL(url);
-    
-    toast.success('Results exported!');
+    try {
+      const exportData = {
+        backtest_config: {
+          symbol,
+          days,
+          initialBalance,
+          leverage,
+          takeProfitPercent,
+          stopLossPercent,
+        },
+        results: result,
+        timestamp: new Date().toISOString(),
+      };
+      
+      const filePath = await save({
+        defaultPath: `backtest_${symbol}_${new Date().toISOString().split('T')[0]}.json`,
+        filters: [{
+          name: 'JSON',
+          extensions: ['json']
+        }]
+      });
+      
+      if (filePath) {
+        await writeTextFile(filePath, JSON.stringify(exportData, null, 2));
+        toast.success('Results exported!');
+      }
+    } catch (error) {
+      console.error('Error exporting results:', error);
+      toast.error('Failed to export results');
+    }
   };
 
   // Calculate drawdown curve from equity curve

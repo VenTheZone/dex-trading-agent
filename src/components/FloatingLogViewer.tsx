@@ -19,6 +19,8 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useTradingLogs } from '@/hooks/use-python-api';
+import { save } from '@tauri-apps/plugin-dialog';
+import { writeTextFile, BaseDirectory } from '@tauri-apps/plugin-fs';
 
 interface SystemLog {
   id: string;
@@ -126,12 +128,34 @@ export function FloatingLogViewer() {
     toast.success('System logs cleared');
   };
 
-  const handleDownloadLogs = () => {
-    const logsData = {
-      systemLogs,
-      tradingLogs,
-      exportedAt: new Date().toISOString(),
-    };
+  const handleDownloadLogs = async () => {
+    try {
+      const logsData = {
+        systemLogs,
+        tradingLogs,
+        exportedAt: new Date().toISOString(),
+      };
+      
+      const { save } = await import('@tauri-apps/plugin-dialog');
+      const { writeTextFile } = await import('@tauri-apps/plugin-fs');
+      
+      const filePath = await save({
+        defaultPath: `trading_logs_${new Date().toISOString().split('T')[0]}.json`,
+        filters: [{
+          name: 'JSON',
+          extensions: ['json']
+        }]
+      });
+      
+      if (filePath) {
+        await writeTextFile(filePath, JSON.stringify(logsData, null, 2));
+        toast.success('Logs downloaded successfully');
+      }
+    } catch (error) {
+      console.error('Error downloading logs:', error);
+      toast.error('Failed to download logs');
+    }
+  };
     
     const blob = new Blob([JSON.stringify(logsData, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);

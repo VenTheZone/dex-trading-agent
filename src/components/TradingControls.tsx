@@ -11,6 +11,7 @@ import { toast } from 'sonner';
 import { motion } from 'framer-motion';
 import { Bot, BotOff, Sparkles, X, Brain, AlertTriangle, FileText, RotateCcw, Network } from 'lucide-react';
 import { storage } from '@/lib/storage';
+import { confirm } from '@tauri-apps/plugin-dialog';
 import { useTrading } from '@/hooks/use-trading';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Textarea } from '@/components/ui/textarea';
@@ -157,9 +158,9 @@ export function TradingControls() {
     }
   };
 
-  const handleAiModelChange = (model: 'deepseek/deepseek-chat-v3-0324:free' | 'qwen/qwen3-max') => {
+  const handleAiModelChange = async (model: 'deepseek/deepseek-chat-v3-0324:free' | 'qwen/qwen3-max') => {
     if (model === 'qwen/qwen3-max') {
-      const confirmed = window.confirm(
+      const confirmed = await confirm(
         '⚠️ QWEN PRICING NOTICE\n\n' +
         'Qwen is a PAID model with the following pricing:\n\n' +
         '• Input (≤128K): $1.20 per 1M tokens\n' +
@@ -167,7 +168,8 @@ export function TradingControls() {
         '• Output (≤128K): $6.00 per 1M tokens\n' +
         '• Output (>128K): $15.00 per 1M tokens\n\n' +
         'DeepSeek is FREE and recommended for most users.\n\n' +
-        'Do you want to continue with Qwen?'
+        'Do you want to continue with Qwen?',
+        { title: 'Paid AI Model Warning', kind: 'warning' }
       );
       
       if (!confirmed) return;
