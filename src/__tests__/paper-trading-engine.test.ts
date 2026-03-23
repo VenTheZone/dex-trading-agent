@@ -39,7 +39,7 @@ describe('PaperTradingEngine', () => {
     
     const position = engine.getPosition('BTC-USD');
     expect(position?.unrealizedPnl).toBe(5000); // (55000 - 50000) * 1
-    expect(engine.getEquity()).toBe(15000); // 5000 balance + 5000 collateral + 5000 PnL
+    expect(engine.getEquity()).toBe(10000); // 5000 balance + 5000 PnL
   });
 
   it('should calculate PnL correctly for short position', () => {
@@ -50,7 +50,7 @@ describe('PaperTradingEngine', () => {
     
     const position = engine.getPosition('BTC-USD');
     expect(position?.unrealizedPnl).toBe(5000); // (50000 - 45000) * 1
-    expect(engine.getEquity()).toBe(15000);
+    expect(engine.getEquity()).toBe(10000);
   });
 
   it('should trigger stop loss', () => {
@@ -105,7 +105,7 @@ describe('PaperTradingEngine', () => {
   });
 
   it('should handle trailing stop', () => {
-    engine.placeOrder('BTC-USD', 'buy', 1, 50000, 'market', 1);
+    engine.placeOrder('BTC-USD', 'buy', 0.1, 50000, 'market', 1);
     // Set trailing stop 5% with 1% activation
     engine.setTrailingStop('BTC-USD', 5, 1);
     

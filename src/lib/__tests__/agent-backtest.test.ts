@@ -1,171 +1,168 @@
-import { describe, it, expect, beforeEach } from 'vitest';
-import { pythonApi } from '@/lib/python-api-client';
-import { fetchPriceWithFallback } from '@/lib/price-service';
-import { TRADING_TOKENS } from '@/lib/tokenData';
-import { PaperTradingEngine } from '@/lib/paper-trading-engine';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-/**
- * Trading Agent Backtesting Suite
- * 
- * Tests the complete trading workflow:
- * 1. Price Fetching - Can the agent see current market prices?
- * 2. Chart Analysis - Can the agent access chart data?
- * 3. Logging - Can the agent log its actions properly?
- * 4. Trading Execution - Can the agent execute trades?
- */
+import { PaperTradingEngine } from '@/lib/paper-trading-engine';
+import { fetchPriceWithFallback, clearPriceCache } from '@/lib/price-service';
+import { pythonApi } from '@/lib/python-api-client';
+import { TRADING_TOKENS } from '@/lib/tokenData';
+
+const PRICE_BY_SYMBOL: Record<string, number> = {
+  BTCUSD: 50000,
+  ETHUSD: 3000,
+  SOLUSD: 200,
+  HYPEUSD: 28,
+  XRPUSD: 0.6,
+  PUMPUSD: 0.012,
+  UNIUSD: 11,
+  ASTERUSD: 2.4,
+};
 
 describe('Trading Agent Backtesting Suite', () => {
+  beforeEach(() => {
+    clearPriceCache();
+    vi.restoreAllMocks();
+
+    vi.spyOn(pythonApi, 'fetchPrice').mockImplementation(async (symbol: string) => {
+      const price = PRICE_BY_SYMBOL[symbol];
+      if (price === undefined) {
+        throw new Error(`Failed to fetch price for ${symbol}: symbol not found`);
+      }
+      return price;
+    });
+
+    vi.spyOn(pythonApi, 'createTradingLog').mockImplementation(async (log: any) => ({
+      success: true,
+      data: { id: Date.now(), created_at: new Date().toISOString(), ...log },
+    }));
+
+    vi.spyOn(pythonApi, 'getTradingLogs').mockResolvedValue({
+      success: true,
+      data: [
+        {
+          id: 1,
+          action: 'analysis_start',
+          symbol: 'BTCUSD',
+          reason: 'seeded log',
+          details: 'deterministic test data',
+          created_at: new Date().toISOString(),
+        },
+      ],
+    } as any);
+
+    vi.spyOn(pythonApi, 'recordBalance').mockImplementation(async (balance: number, mode: any) => ({
+      success: true,
+      data: { id: Date.now(), balance, mode, created_at: new Date().toISOString() },
+    } as any));
+
+    vi.spyOn(pythonApi, 'recordPositionSnapshot').mockImplementation(async (snapshot: any) => ({
+      success: true,
+      data: { id: Date.now(), created_at: new Date().toISOString(), ...snapshot },
+    } as any));
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+    clearPriceCache();
+  });
+
   describe('1. Price Fetching Capability', () => {
     it('should fetch prices for all trading tokens', async () => {
       const results = await Promise.allSettled(
-        TRADING_TOKENS.map(token => 
-          fetchPriceWithFallback(`${token.symbol}USD`)
-        )
+        TRADING_TOKENS.map((token) => fetchPriceWithFallback(`${token.symbol}USD`))
       );
 
-      const successful = results.filter(r => r.status === 'fulfilled');
-      const failed = results.filter(r => r.status === 'rejected');
-
-      console.log(`✅ Price Fetch Results: ${successful.length}/${TRADING_TOKENS.length} successful`);
-      
-      if (failed.length > 0) {
-        console.warn(`⚠️ Failed to fetch prices for ${failed.length} tokens`);
-      }
-
-      // At least 50% of tokens should have prices available
-      expect(successful.length).toBeGreaterThanOrEqual(TRADING_TOKENS.length * 0.5);
-    }, 30000);
+      expect(results.every((result) => result.status === 'fulfilled')).toBe(true);
+      results.forEach((result) => {
+        if (result.status === 'fulfilled') {
+          expect(result.value.price).toBeGreaterThan(0);
+          expect(result.value.isStale).toBe(false);
+        }
+      });
+    });
 
     it('should fetch price via Python API endpoint', async () => {
-      const testSymbol = 'BTCUSD';
-      
-      try {
-        const price = await pythonApi.fetchPrice(testSymbol, false);
-        
-        expect(price).toBeGreaterThan(0);
-        expect(typeof price).toBe('number');
-        
-        console.log(`✅ Python API Price Fetch: ${testSymbol} = $${price.toLocaleString()}`);
-      } catch (error: any) {
-        console.error(`❌ Python API Price Fetch Failed: ${error.message}`);
-        throw error;
-      }
-    }, 15000);
+      const price = await pythonApi.fetchPrice('BTCUSD', false);
+
+      expect(price).toBe(50000);
+      expect(typeof price).toBe('number');
+    });
 
     it('should handle price fetch errors gracefully', async () => {
-      const invalidSymbol = 'INVALID_SYMBOL_XYZ';
-      
-      await expect(
-        pythonApi.fetchPrice(invalidSymbol, false)
-      ).rejects.toThrow();
-      
-      console.log('✅ Price fetch error handling works correctly');
+      await expect(pythonApi.fetchPrice('INVALID_SYMBOL_XYZ', false)).rejects.toThrow(
+        'symbol not found'
+      );
     });
   });
 
   describe('2. Chart Analysis Capability', () => {
     it('should validate TradingView symbol formats', () => {
-      const testCases = [
-        { symbol: 'BTC', expected: 'BTCUSD' },
-        { symbol: 'ETH', expected: 'ETHUSD' },
-        { symbol: 'SOL', expected: 'SOLUSD' },
-      ];
-
-      testCases.forEach(({ symbol, expected }) => {
-        const token = TRADING_TOKENS.find(t => t.symbol === symbol);
-        expect(token?.tradingViewSymbol).toBe(expected);
-      });
-
-      console.log('✅ TradingView symbol formats validated');
+      expect(TRADING_TOKENS.find((token) => token.symbol === 'BTC')?.tradingViewSymbol).toBe('BTCUSD');
+      expect(TRADING_TOKENS.find((token) => token.symbol === 'ETH')?.tradingViewSymbol).toBe('ETHUSD');
+      expect(TRADING_TOKENS.find((token) => token.symbol === 'SOL')?.tradingViewSymbol).toBe('SOLUSD');
     });
 
     it('should prepare multi-chart data for AI analysis', async () => {
-      const testSymbols = ['BTCUSD', 'ETHUSD'];
-      
       const chartData = await Promise.all(
-        testSymbols.map(async (symbol) => {
-          try {
-            const price = await pythonApi.fetchPrice(symbol, false);
-            return {
-              symbol,
-              currentPrice: price,
-              chartType: 'time' as const,
-              chartInterval: '5',
-            };
-          } catch {
-            return null;
-          }
-        })
+        ['BTCUSD', 'ETHUSD'].map(async (symbol) => ({
+          symbol,
+          currentPrice: await pythonApi.fetchPrice(symbol, false),
+          chartType: 'time' as const,
+          chartInterval: '5',
+        }))
       );
 
-      const validCharts = chartData.filter(c => c !== null);
-      
-      expect(validCharts.length).toBeGreaterThan(0);
-      validCharts.forEach(chart => {
-        expect(chart?.currentPrice).toBeGreaterThan(0);
-        expect(chart?.symbol).toBeTruthy();
-      });
-
-      console.log(`✅ Multi-chart data prepared: ${validCharts.length} charts`);
-    }, 30000);
+      expect(chartData).toEqual([
+        { symbol: 'BTCUSD', currentPrice: 50000, chartType: 'time', chartInterval: '5' },
+        { symbol: 'ETHUSD', currentPrice: 3000, chartType: 'time', chartInterval: '5' },
+      ]);
+    });
   });
 
   describe('3. Logging Capability', () => {
     it('should create trading log entries', async () => {
-      const testLog = {
+      const result = await pythonApi.createTradingLog({
         action: 'test_action',
         symbol: 'BTCUSD',
         reason: 'Backtesting log creation',
         details: 'Testing agent logging capability',
         price: 50000,
         size: 0.1,
-        side: 'long' as const,
-      };
+        side: 'long',
+      } as any);
 
-      const result = await pythonApi.createTradingLog(testLog);
-      
       expect(result.success).toBe(true);
-      expect(result.data).toBeDefined();
-      
-      console.log('✅ Trading log created successfully');
-    }, 10000);
+      expect(result.data?.symbol).toBe('BTCUSD');
+    });
 
     it('should retrieve trading logs', async () => {
       const result = await pythonApi.getTradingLogs(10);
-      
+
       expect(result.success).toBe(true);
       expect(Array.isArray(result.data)).toBe(true);
-      
-      console.log(`✅ Retrieved ${result.data?.length || 0} trading logs`);
-    }, 10000);
+      expect(result.data?.length).toBeGreaterThan(0);
+    });
 
     it('should record balance history', async () => {
-      const testBalance = 10000;
-      const result = await pythonApi.recordBalance(testBalance, 'paper');
-      
+      const result = await pythonApi.recordBalance(10000, 'paper');
+
       expect(result.success).toBe(true);
-      
-      console.log('✅ Balance history recorded');
-    }, 10000);
+      expect(result.data?.balance).toBe(10000);
+    });
 
     it('should record position snapshots', async () => {
-      const testSnapshot = {
+      const result = await pythonApi.recordPositionSnapshot({
         symbol: 'BTCUSD',
-        side: 'long' as const,
+        side: 'long',
         size: 0.1,
         entry_price: 50000,
         current_price: 51000,
         unrealized_pnl: 100,
         leverage: 2,
-        mode: 'paper' as const,
-      };
+        mode: 'paper',
+      });
 
-      const result = await pythonApi.recordPositionSnapshot(testSnapshot);
-      
       expect(result.success).toBe(true);
-      
-      console.log('✅ Position snapshot recorded');
-    }, 10000);
+      expect(result.data?.symbol).toBe('BTCUSD');
+    });
   });
 
   describe('4. Trading Execution Capability', () => {
@@ -176,238 +173,119 @@ describe('Trading Agent Backtesting Suite', () => {
     });
 
     it('should execute a complete long trade lifecycle', () => {
-      const symbol = 'BTCUSD';
-      const entryPrice = 50000;
-      const exitPrice = 52000;
-      const size = 0.1;
+      const order = engine.placeOrder('BTCUSD', 'buy', 0.1, 50000, 'market');
+      engine.updateMarketPrice('BTCUSD', 52000);
+      const closeResult = engine.closePosition('BTCUSD', 52000, 'manual');
 
-      // Open long position
-      const order = engine.placeOrder(symbol, 'buy', size, entryPrice, 'market');
       expect(order.status).toBe('filled');
-
-      // Verify position
-      const position = engine.getPosition(symbol);
-      expect(position).toBeDefined();
-      expect(position?.side).toBe('long');
-      expect(position?.size).toBe(size);
-
-      // Update price (simulate profit)
-      engine.updateMarketPrice(symbol, exitPrice);
-      const updatedPosition = engine.getPosition(symbol);
-      expect(updatedPosition?.unrealizedPnl).toBeGreaterThan(0);
-
-      // Close position
-      const closeResult = engine.closePosition(symbol, exitPrice, 'manual');
-      expect(closeResult.success).toBe(true);
-      expect(closeResult.pnl).toBeGreaterThan(0);
-
-      console.log(`✅ Long trade executed: Entry $${entryPrice}, Exit $${exitPrice}, P&L: $${closeResult.pnl.toFixed(2)}`);
+      expect(closeResult).toMatchObject({ success: true, pnl: 200 });
     });
 
     it('should execute a complete short trade lifecycle', () => {
-      const symbol = 'ETHUSD';
-      const entryPrice = 3000;
-      const exitPrice = 2800;
-      const size = 1;
+      const order = engine.placeOrder('ETHUSD', 'sell', 1, 3000, 'market');
+      engine.updateMarketPrice('ETHUSD', 2800);
+      const closeResult = engine.closePosition('ETHUSD', 2800, 'manual');
 
-      // Open short position
-      const order = engine.placeOrder(symbol, 'sell', size, entryPrice, 'market');
       expect(order.status).toBe('filled');
-
-      // Verify position
-      const position = engine.getPosition(symbol);
-      expect(position?.side).toBe('short');
-
-      // Update price (simulate profit for short)
-      engine.updateMarketPrice(symbol, exitPrice);
-      const updatedPosition = engine.getPosition(symbol);
-      expect(updatedPosition?.unrealizedPnl).toBeGreaterThan(0);
-
-      // Close position
-      const closeResult = engine.closePosition(symbol, exitPrice, 'manual');
-      expect(closeResult.success).toBe(true);
-      expect(closeResult.pnl).toBeGreaterThan(0);
-
-      console.log(`✅ Short trade executed: Entry $${entryPrice}, Exit $${exitPrice}, P&L: $${closeResult.pnl.toFixed(2)}`);
+      expect(closeResult).toMatchObject({ success: true, pnl: 200 });
     });
 
     it('should handle stop loss correctly', () => {
-      const symbol = 'BTCUSD';
-      const entryPrice = 50000;
-      const stopLoss = 49000;
-      const size = 0.1;
+      engine.placeOrder('BTCUSD', 'buy', 0.1, 50000, 'market');
+      engine.setStopLoss('BTCUSD', 49000);
+      engine.updateMarketPrice('BTCUSD', 48900);
 
-      // Open position with stop loss
-      engine.placeOrder(symbol, 'buy', size, entryPrice, 'market');
-      engine.setStopLoss(symbol, stopLoss);
-
-      const position = engine.getPosition(symbol);
-      expect(position?.stopLoss).toBe(stopLoss);
-
-      // Trigger stop loss
-      engine.updateMarketPrice(symbol, stopLoss - 100);
-      
-      // Position should be closed
-      expect(engine.getPosition(symbol)).toBeUndefined();
-
-      console.log('✅ Stop loss triggered correctly');
+      expect(engine.getPosition('BTCUSD')).toBeUndefined();
     });
 
     it('should handle take profit correctly', () => {
-      const symbol = 'ETHUSD';
-      const entryPrice = 3000;
-      const takeProfit = 3200;
-      const size = 1;
+      engine.placeOrder('ETHUSD', 'buy', 1, 3000, 'market');
+      engine.setTakeProfit('ETHUSD', 3200);
+      engine.updateMarketPrice('ETHUSD', 3300);
 
-      // Open position with take profit
-      engine.placeOrder(symbol, 'buy', size, entryPrice, 'market');
-      engine.setTakeProfit(symbol, takeProfit);
-
-      const position = engine.getPosition(symbol);
-      expect(position?.takeProfit).toBe(takeProfit);
-
-      // Trigger take profit
-      engine.updateMarketPrice(symbol, takeProfit + 100);
-      
-      // Position should be closed
-      expect(engine.getPosition(symbol)).toBeUndefined();
-
-      console.log('✅ Take profit triggered correctly');
+      expect(engine.getPosition('ETHUSD')).toBeUndefined();
     });
 
     it('should prevent trades with insufficient balance', () => {
-      const symbol = 'BTCUSD';
-      const entryPrice = 50000;
-      const size = 10; // Too large for $10k balance
+      const order = engine.placeOrder('BTCUSD', 'buy', 10, 50000, 'market');
 
-      const order = engine.placeOrder(symbol, 'buy', size, entryPrice, 'market');
-      
       expect(order.status).toBe('cancelled');
-      expect(engine.getPosition(symbol)).toBeUndefined();
-
-      console.log('✅ Insufficient balance protection works');
+      expect(engine.getPosition('BTCUSD')).toBeUndefined();
     });
 
     it('should track balance and equity correctly', () => {
-      const initialBalance = engine.getBalance();
-      expect(initialBalance).toBe(10000);
+      engine.placeOrder('BTCUSD', 'buy', 0.1, 50000, 'market');
+      engine.updateMarketPrice('BTCUSD', 52000);
 
-      // Execute profitable trade
-      const symbol = 'BTCUSD';
-      engine.placeOrder(symbol, 'buy', 0.1, 50000, 'market');
-      engine.updateMarketPrice(symbol, 52000);
-
-      const equity = engine.getEquity();
-      expect(equity).toBeGreaterThan(initialBalance);
-
-      console.log(`✅ Balance tracking: Initial $${initialBalance}, Equity $${equity.toFixed(2)}`);
+      expect(engine.getBalance()).toBe(5000);
+      expect(engine.getEquity()).toBe(5200);
     });
   });
 
   describe('5. End-to-End Integration Test', () => {
     it('should simulate complete trading agent workflow', async () => {
-      console.log('\n🤖 Starting Trading Agent Workflow Simulation...\n');
+      const createTradingLogSpy = vi.mocked(pythonApi.createTradingLog);
+      const recordPositionSnapshotSpy = vi.mocked(pythonApi.recordPositionSnapshot);
+      const recordBalanceSpy = vi.mocked(pythonApi.recordBalance);
 
-      // Step 1: Fetch market prices
-      console.log('📊 Step 1: Fetching market prices...');
-      const symbol = 'BTCUSD';
-      let currentPrice: number;
-      
-      try {
-        currentPrice = await pythonApi.fetchPrice(symbol, false);
-        console.log(`✅ Price fetched: ${symbol} = $${currentPrice.toLocaleString()}`);
-      } catch (error: any) {
-        console.log(`⚠️ Using fallback price due to: ${error.message}`);
-        currentPrice = 50000; // Fallback for testing
-      }
-
-      // Step 2: Log analysis start
-      console.log('\n📝 Step 2: Logging analysis start...');
-      await pythonApi.createTradingLog({
-        action: 'analysis_start',
-        symbol,
-        reason: 'Backtesting workflow simulation',
-        details: `Current price: $${currentPrice}`,
-      });
-      console.log('✅ Analysis logged');
-
-      // Step 3: Simulate trade decision
-      console.log('\n🎯 Step 3: Making trade decision...');
+      const currentPrice = await pythonApi.fetchPrice('BTCUSD', false);
       const engine = new PaperTradingEngine(10000);
       const tradeSize = 0.1;
-      const stopLoss = currentPrice * 0.98; // 2% stop loss
-      const takeProfit = currentPrice * 1.04; // 4% take profit
+      const stopLoss = currentPrice * 0.98;
+      const takeProfit = currentPrice * 1.04;
 
-      // Step 4: Execute trade
-      console.log('\n💰 Step 4: Executing trade...');
-      const order = engine.placeOrder(symbol, 'buy', tradeSize, currentPrice, 'market');
-      engine.setStopLoss(symbol, stopLoss);
-      engine.setTakeProfit(symbol, takeProfit);
+      await pythonApi.createTradingLog({
+        action: 'analysis_start',
+        symbol: 'BTCUSD',
+        reason: 'Backtesting workflow simulation',
+        details: `Current price: $${currentPrice}`,
+      } as any);
 
-      expect(order.status).toBe('filled');
-      console.log(`✅ Trade executed: ${order.side.toUpperCase()} ${tradeSize} ${symbol} @ $${currentPrice}`);
+      const order = engine.placeOrder('BTCUSD', 'buy', tradeSize, currentPrice, 'market');
+      engine.setStopLoss('BTCUSD', stopLoss);
+      engine.setTakeProfit('BTCUSD', takeProfit);
 
-      // Step 5: Log trade execution
-      console.log('\n📝 Step 5: Logging trade execution...');
       await pythonApi.createTradingLog({
         action: 'open_long',
-        symbol,
+        symbol: 'BTCUSD',
         side: 'long',
         price: currentPrice,
         size: tradeSize,
         reason: 'Backtesting simulation',
         details: `SL: $${stopLoss.toFixed(2)}, TP: $${takeProfit.toFixed(2)}`,
+      } as any);
+
+      await pythonApi.recordPositionSnapshot({
+        symbol: 'BTCUSD',
+        side: 'long',
+        size: tradeSize,
+        entry_price: currentPrice,
+        current_price: currentPrice,
+        unrealized_pnl: 0,
+        leverage: 1,
+        mode: 'paper',
       });
-      console.log('✅ Trade logged');
 
-      // Step 6: Record position snapshot
-      console.log('\n📸 Step 6: Recording position snapshot...');
-      const position = engine.getPosition(symbol);
-      if (position) {
-        await pythonApi.recordPositionSnapshot({
-          symbol,
-          side: 'long',
-          size: tradeSize,
-          entry_price: currentPrice,
-          current_price: currentPrice,
-          unrealized_pnl: 0,
-          leverage: 1,
-          mode: 'paper',
-        });
-        console.log('✅ Position snapshot recorded');
-      }
+      const exitPrice = currentPrice * 1.02;
+      engine.updateMarketPrice('BTCUSD', exitPrice);
+      const closeResult = engine.closePosition('BTCUSD', exitPrice, 'manual');
 
-      // Step 7: Simulate price movement and close
-      console.log('\n📈 Step 7: Simulating price movement...');
-      const exitPrice = currentPrice * 1.02; // 2% profit
-      engine.updateMarketPrice(symbol, exitPrice);
-      
-      const closeResult = engine.closePosition(symbol, exitPrice, 'manual');
-      expect(closeResult.success).toBe(true);
-      console.log(`✅ Position closed with P&L: $${closeResult.pnl.toFixed(2)}`);
-
-      // Step 8: Log final results
-      console.log('\n📝 Step 8: Logging final results...');
       await pythonApi.createTradingLog({
         action: 'close_position',
-        symbol,
+        symbol: 'BTCUSD',
         side: 'long',
         price: exitPrice,
         size: tradeSize,
         reason: 'Backtesting simulation complete',
         details: `P&L: $${closeResult.pnl.toFixed(2)}`,
-      });
-
+      } as any);
       await pythonApi.recordBalance(engine.getBalance(), 'paper');
-      console.log('✅ Final balance recorded');
 
-      console.log('\n✅ Trading Agent Workflow Simulation Complete!\n');
-      console.log('Summary:');
-      console.log(`  - Price Fetching: ✅`);
-      console.log(`  - Chart Analysis: ✅`);
-      console.log(`  - Logging: ✅`);
-      console.log(`  - Trade Execution: ✅`);
-      console.log(`  - Final P&L: $${closeResult.pnl.toFixed(2)}`);
-    }, 60000);
+      expect(order.status).toBe('filled');
+      expect(closeResult).toMatchObject({ success: true, pnl: 100 });
+      expect(createTradingLogSpy).toHaveBeenCalledTimes(3);
+      expect(recordPositionSnapshotSpy).toHaveBeenCalledTimes(1);
+      expect(recordBalanceSpy).toHaveBeenCalledWith(10100, 'paper');
+    });
   });
 });

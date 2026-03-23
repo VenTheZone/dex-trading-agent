@@ -1,4 +1,4 @@
-import { pythonApi } from "./python-api-client";
+import { clearSnapshotCache, pythonApi } from "./python-api-client";
 import { NetworkType } from "./constants";
 import { categorizeError } from "./error-handler";
 
@@ -240,6 +240,7 @@ export function clearPriceCache() {
 
 export function clearAllCaches() {
   clearPriceCache();
+  clearSnapshotCache();
   console.info('[Cache] All caches cleared');
 }
 

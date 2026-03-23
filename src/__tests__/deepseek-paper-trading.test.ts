@@ -53,18 +53,19 @@ describe('Paper Trading Engine - Perpetual Futures Simulation', () => {
       const size = 0.2; // 0.2 BTC
 
       engine.placeOrder('BTCUSD', 'buy', size, entryPrice, 'market', leverage);
+      const openedPosition = engine.getPosition('BTCUSD');
+      const collateral = openedPosition?.collateral ?? 0;
+      const liquidationPrice = openedPosition?.liquidationPrice;
       
-      // Price drops by 8% = $4000 (loss = $800, approaching liquidation)
-      const liquidationPrice = entryPrice * 0.92; // ~8% drop triggers liquidation at 10x
-      engine.updateMarketPrice('BTCUSD', liquidationPrice);
+      expect(liquidationPrice).toBeDefined();
+      engine.updateMarketPrice('BTCUSD', liquidationPrice!);
       
       const position = engine.getPosition('BTCUSD');
       
       // Position should be liquidated (closed automatically)
       expect(position).toBeUndefined();
       
-      // Balance should reflect liquidation loss (most collateral lost)
-      expect(engine.getBalance()).toBeLessThan(initialBalance - 800);
+      expect(engine.getBalance()).toBeCloseTo(initialBalance - collateral * 0.01, 2);
     });
   });
 

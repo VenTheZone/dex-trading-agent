@@ -1,8 +1,8 @@
-import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
-import { fetchPriceWithFallback, clearPriceCache, clearAllCaches } from '../price-service';
-import { pythonApi } from '../python-api-client';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-// Mock the python-api-client
+import { clearAllCaches, clearPriceCache, fetchPriceWithFallback } from '../price-service';
+import { clearSnapshotCache, pythonApi } from '../python-api-client';
+
 vi.mock('../python-api-client', () => ({
   pythonApi: {
     fetchPrice: vi.fn(),
@@ -12,137 +12,107 @@ vi.mock('../python-api-client', () => ({
 
 describe('Price Service Error Handling', () => {
   beforeEach(() => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-03-23T00:00:00Z'));
     clearPriceCache();
     vi.clearAllMocks();
   });
 
   afterEach(() => {
+    vi.useRealTimers();
     vi.restoreAllMocks();
   });
 
   describe('fetchPriceWithFallback', () => {
-    it('should return cached price when available and fresh', async () => {
-      // First call - populate cache
+    it('returns cached price results when available and fresh', async () => {
       vi.mocked(pythonApi.fetchPrice).mockResolvedValueOnce(50000);
-      const price1 = await fetchPriceWithFallback('BTCUSD');
-      expect(price1).toBe(50000);
 
-      // Second call - should use cache
-      const price2 = await fetchPriceWithFallback('BTCUSD');
-      expect(price2).toBe(50000);
+      const first = await fetchPriceWithFallback('BTCUSD');
+      const second = await fetchPriceWithFallback('BTCUSD');
+
+      expect(first).toMatchObject({ price: 50000, isStale: false });
+      expect(second).toMatchObject({ price: 50000, isStale: false, timestamp: first.timestamp });
       expect(pythonApi.fetchPrice).toHaveBeenCalledTimes(1);
     });
 
-    it('should fetch new price when cache is stale', async () => {
+    it('fetches a new price when the cache is stale', async () => {
       vi.mocked(pythonApi.fetchPrice)
         .mockResolvedValueOnce(50000)
         .mockResolvedValueOnce(51000);
 
-      const price1 = await fetchPriceWithFallback('BTCUSD');
-      expect(price1).toBe(50000);
+      const first = await fetchPriceWithFallback('BTCUSD');
+      vi.setSystemTime(new Date('2026-03-23T00:00:06Z'));
+      const second = await fetchPriceWithFallback('BTCUSD');
 
-      // Wait for cache to expire (mock time)
-      vi.useFakeTimers();
-      vi.advanceTimersByTime(6000); // 6 seconds > 5 second cache
-
-      const price2 = await fetchPriceWithFallback('BTCUSD');
-      expect(price2).toBe(51000);
+      expect(first.price).toBe(50000);
+      expect(second).toMatchObject({ price: 51000, isStale: false });
       expect(pythonApi.fetchPrice).toHaveBeenCalledTimes(2);
-
-      vi.useRealTimers();
     });
 
-    it('should use stale cache as fallback on network error', async () => {
-      // First call - populate cache
+    it('uses stale cache as a fallback on network error', async () => {
       vi.mocked(pythonApi.fetchPrice).mockResolvedValueOnce(50000);
-      const price1 = await fetchPriceWithFallback('BTCUSD');
-      expect(price1).toBe(50000);
+      const first = await fetchPriceWithFallback('BTCUSD');
 
-      // Clear cache timestamp to make it stale
-      vi.useFakeTimers();
-      vi.advanceTimersByTime(10000);
+      vi.setSystemTime(new Date('2026-03-23T00:00:10Z'));
+      vi.mocked(pythonApi.fetchPrice).mockRejectedValueOnce(new Error('Failed to fetch'));
 
-      // Second call - simulate network error
-      vi.mocked(pythonApi.fetchPrice).mockRejectedValueOnce(
-        new Error('Failed to fetch')
-      );
+      const second = await fetchPriceWithFallback('BTCUSD');
 
-      const price2 = await fetchPriceWithFallback('BTCUSD');
-      expect(price2).toBe(50000); // Should return stale cache
-
-      vi.useRealTimers();
+      expect(second).toMatchObject({
+        price: 50000,
+        isStale: true,
+        timestamp: first.timestamp,
+      });
     });
 
-    it('should throw enhanced error when no cache available', async () => {
-      vi.mocked(pythonApi.fetchPrice).mockRejectedValueOnce(
-        new Error('Network error')
-      );
+    it('throws enhanced errors when no cache is available', async () => {
+      vi.mocked(pythonApi.fetchPrice).mockRejectedValueOnce(new Error('Network error'));
 
-      await expect(fetchPriceWithFallback('BTCUSD')).rejects.toThrow(
-        /Failed to fetch price for BTCUSD/
-      );
+      await expect(fetchPriceWithFallback('BTCUSD')).rejects.toThrow(/Failed to fetch price for BTCUSD/);
     });
 
-    it('should categorize network errors correctly', async () => {
-      vi.mocked(pythonApi.fetchPrice).mockRejectedValueOnce(
-        new Error('Failed to fetch')
-      );
+    it('categorizes network errors correctly', async () => {
+      vi.mocked(pythonApi.fetchPrice).mockRejectedValueOnce(new Error('Failed to fetch'));
 
-      try {
-        await fetchPriceWithFallback('BTCUSD');
-      } catch (error: any) {
-        expect(error.isRetryable).toBe(true);
-        expect(error.errorType).toBe('network');
-      }
+      await expect(fetchPriceWithFallback('BTCUSD')).rejects.toMatchObject({
+        isRetryable: true,
+        errorType: 'network',
+      });
     });
 
-    it('should categorize timeout errors correctly', async () => {
-      vi.mocked(pythonApi.fetchPrice).mockRejectedValueOnce(
-        new Error('Request timeout')
-      );
+    it('categorizes timeout errors correctly', async () => {
+      vi.mocked(pythonApi.fetchPrice).mockRejectedValueOnce(new Error('Request timeout'));
 
-      try {
-        await fetchPriceWithFallback('ETHUSD');
-      } catch (error: any) {
-        expect(error.isRetryable).toBe(true);
-        expect(error.errorType).toBe('timeout');
-      }
+      await expect(fetchPriceWithFallback('ETHUSD')).rejects.toMatchObject({
+        isRetryable: true,
+        errorType: 'timeout',
+      });
     });
 
-    it('should categorize server errors correctly', async () => {
-      vi.mocked(pythonApi.fetchPrice).mockRejectedValueOnce(
-        new Error('500 Internal Server Error')
-      );
+    it('categorizes server errors correctly', async () => {
+      vi.mocked(pythonApi.fetchPrice).mockRejectedValueOnce(new Error('500 Internal Server Error'));
 
-      try {
-        await fetchPriceWithFallback('SOLUSD');
-      } catch (error: any) {
-        expect(error.isRetryable).toBe(true);
-        expect(error.errorType).toBe('server');
-      }
+      await expect(fetchPriceWithFallback('SOLUSD')).rejects.toMatchObject({
+        isRetryable: true,
+        errorType: 'server',
+      });
     });
 
-    it('should categorize client errors as non-retryable', async () => {
-      vi.mocked(pythonApi.fetchPrice).mockRejectedValueOnce(
-        new Error('404 Not Found')
-      );
+    it('categorizes client errors as non-retryable', async () => {
+      vi.mocked(pythonApi.fetchPrice).mockRejectedValueOnce(new Error('404 Not Found'));
 
-      try {
-        await fetchPriceWithFallback('INVALIDUSD');
-      } catch (error: any) {
-        expect(error.isRetryable).toBe(false);
-        expect(error.errorType).toBe('client');
-      }
+      await expect(fetchPriceWithFallback('INVALIDUSD')).rejects.toMatchObject({
+        isRetryable: false,
+        errorType: 'client',
+      });
     });
   });
 
   describe('clearAllCaches', () => {
-    it('should clear both price and snapshot caches', () => {
-      const { clearSnapshotCache } = require('../python-api-client');
-      
+    it('clears both price and snapshot caches', () => {
       clearAllCaches();
 
-      expect(clearSnapshotCache).toHaveBeenCalled();
+      expect(clearSnapshotCache).toHaveBeenCalledTimes(1);
     });
   });
 });

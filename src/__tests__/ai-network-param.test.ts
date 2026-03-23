@@ -52,7 +52,12 @@ describe('AI Analysis Network Parameter', () => {
 
     const request = {
       apiKey: 'sk-or-v1-test',
-      charts: [],
+      charts: [{
+        symbol: 'BTC',
+        currentPrice: 50000,
+        chartType: 'time' as const,
+        chartInterval: '1h',
+      }],
       userBalance: 1000,
       settings: {
         takeProfitPercent: 5,

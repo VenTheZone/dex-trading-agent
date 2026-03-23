@@ -86,14 +86,6 @@ export class PaperTradingEngine {
     const leverage = order.leverage || 1;
     const positionValue = order.size * executionPrice;
     const requiredCollateral = positionValue / leverage;
-    
-    // Check if we have enough balance for collateral
-    if (requiredCollateral > this.balance) {
-      order.status = "cancelled";
-      console.warn(`Insufficient balance: Required ${requiredCollateral}, Available ${this.balance}`);
-      return;
-    }
-
     const existingPosition = this.positions.get(order.symbol);
     
     if (existingPosition) {
@@ -117,6 +109,14 @@ export class PaperTradingEngine {
             
             // Open new opposite position
             const newCollateral = (remainingSize * executionPrice) / leverage;
+
+            if (newCollateral > this.balance) {
+              order.filled = existingPosition.size;
+              order.status = "partial";
+              console.warn(`Insufficient balance: Required ${newCollateral}, Available ${this.balance}`);
+              return;
+            }
+
             this.balance -= newCollateral;
             
             const newSide = order.side === "buy" ? "long" : "short";
@@ -154,7 +154,18 @@ export class PaperTradingEngine {
           existingPosition.collateral -= releasedCollateral;
           existingPosition.realizedPnl += closedPnl;
         }
+
+        order.filled = order.size;
+        order.status = "filled";
+        return;
       } else {
+        // Check if we have enough balance for added collateral
+        if (requiredCollateral > this.balance) {
+          order.status = "cancelled";
+          console.warn(`Insufficient balance: Required ${requiredCollateral}, Available ${this.balance}`);
+          return;
+        }
+
         // Adding to position (same side)
         const additionalCollateral = (order.size * executionPrice) / leverage;
         this.balance -= additionalCollateral;
@@ -174,6 +185,13 @@ export class PaperTradingEngine {
         );
       }
     } else {
+      // Check if we have enough balance for collateral
+      if (requiredCollateral > this.balance) {
+        order.status = "cancelled";
+        console.warn(`Insufficient balance: Required ${requiredCollateral}, Available ${this.balance}`);
+        return;
+      }
+
       // New position
       this.balance -= requiredCollateral;
       
