@@ -1,0 +1,27 @@
+{
+  "assetPositions": [
+    {
+      "position": {
+        "coin": "ETH",
+        "entryPx": "2986.3",
+        "szi": "0.0335"
+      },
+      "type": "oneWay"
+    },
+    {
+      "position": {
+        "coin": "BTC",
+        "entryPx": "64001.5",
+        "szi": "-0.125"
+      },
+      "type": "oneWay"
+    }
+  ],
+  "marginSummary": {
+    "accountValue": "13109.482328",
+    "totalMarginUsed": "4.967826",
+    "totalNtlPos": "100.02765",
+    "totalRawUsd": "13009.454678"
+  },
+  "withdrawable": "13104.514502"
+}

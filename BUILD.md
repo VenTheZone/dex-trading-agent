@@ -1,5 +1,19 @@
 # Build Instructions
 
+## Native Workspace Bootstrap (Rust + Qt6 Rewrite)
+
+Task 1 introduces a minimal Rust workspace in `native/`.
+
+This section documents rewrite bootstrap work only. The current production desktop build flow is still the Tauri app in `src-tauri/`.
+
+```bash
+# Run the bootstrap smoke test
+cargo test --manifest-path native/Cargo.toml -p app-bootstrap workspace_bootstraps -- --exact
+
+# Run all native workspace tests
+cargo test --manifest-path native/Cargo.toml
+```
+
 ## 🛠️ Development Setup
 
 This guide explains how to build the DeX Trading Agent desktop app from source.

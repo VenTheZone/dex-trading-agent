@@ -1,0 +1,11 @@
+[workspace]
+members = [
+    "crates/app-bootstrap",
+    "crates/app-core",
+    "crates/domain",
+    "crates/exchange-hyperliquid",
+    "crates/market-data",
+    "crates/persistence",
+    "crates/wallet",
+]
+resolver = "2"

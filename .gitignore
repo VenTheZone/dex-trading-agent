@@ -85,3 +85,6 @@ devdocs/
 devdocs/
 Documentation_Archive_OLD/
 *.OLD.md
+
+# Rust native workspace build artifacts
+native/target/

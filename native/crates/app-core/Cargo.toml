@@ -1,0 +1,12 @@
+[package]
+name = "app-core"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+domain = { path = "../domain" }
+exchange-hyperliquid = { path = "../exchange-hyperliquid" }
+serde_json = "1"
+
+[dev-dependencies]
+tokio = { version = "1", features = ["macros", "rt"] }

@@ -6,6 +6,20 @@
 **Version:** 2.0.0 (Tauri Desktop Edition)  
 **Date:** 2026-01-31
 
+## Native Rewrite Bootstrap
+
+The Rust + Qt6 rewrite now starts under `native/` as a standalone Cargo workspace.
+
+This is rewrite scaffolding only. The currently shipped desktop app in this repository remains the Tauri stack under `src-tauri/`.
+
+- Workspace manifest: `native/Cargo.toml`
+- Crates: `native/crates/app-bootstrap`, `native/crates/app-core`, `native/crates/domain`
+- Bootstrap smoke test (checks startup behavior and app identity):
+
+```bash
+cargo test --manifest-path native/Cargo.toml -p app-bootstrap workspace_bootstraps -- --exact
+```
+
 ---
 
 ## 📦 What's New in v2.0

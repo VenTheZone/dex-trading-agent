@@ -1,0 +1,70 @@
+# MEMORY
+
+- Work in `.worktrees/rust-qt6-rewrite` only for the Rust + Qt6 rewrite.
+- The frontend Vitest baseline cleanup was completed and committed earlier as `910b22c`.
+- Task 1 from `docs/plans/2026-03-23-rust-qt6-rewrite.md` is implemented but not yet committed in this worktree state.
+- Task 2 from `docs/plans/2026-03-23-rust-qt6-rewrite.md` is also implemented but not yet committed in this worktree state.
+- Task 1 review learnings:
+  - Keep each task tightly scoped to the plan; do not let pre-existing broad docs get treated as new task scope.
+  - For brand-new Rust workspace tasks, avoid decorative dependencies and placeholder constants that do not serve the current task.
+  - Smoke tests should validate observable bootstrap behavior, not just a library helper.
+  - Keep generated Rust build artifacts out of the worktree and ignore `native/target/`.
+- Current subagent-driven workflow state:
+  - Task 1 passed spec review and code-quality review after fixes.
+  - Task 2 passed spec review.
+  - Task 2 code-quality review initially requested stronger order modeling, decimal value types, and broader tests, but that feedback conflicted with the rewrite plan/pseudocode and was adjudicated as deferred/not valid for Task 2.
+  - Task 2 is complete with fresh verification of `cargo test --manifest-path native/Cargo.toml -p domain trading_decision_roundtrips_without_loss -- --exact` and `cargo test --manifest-path native/Cargo.toml -p domain`.
+  - Task 3 passed spec review and code-quality review after fixes.
+  - Task 3 key learnings:
+    - keep `wallet::KeyStore` stateless for now; do not cache `keyring::Entry` handles
+    - for `sqlite::memory:` test helpers, constrain the pool or otherwise guarantee shared state across checkouts
+    - regression tests should prove the bug-avoidance property, not just `ping()` connectivity
+  - Task 3 is complete with fresh verification of `cargo test --manifest-path native/Cargo.toml -p persistence sqlite_schema_boots -- --exact`, `cargo test --manifest-path native/Cargo.toml -p wallet key_store_roundtrips_secret -- --exact`, and `cargo test --manifest-path native/Cargo.toml -p persistence -p wallet`.
+  - Task 4 is now active.
+  - Task 4 scope starts at `docs/plans/2026-03-23-rust-qt6-rewrite.md:321` and requires a new `native/crates/market-data/` crate plus removing fake `/backtest/sample-data` behavior from `migration_python/api/routes.py:739`.
+  - Task 4 is now complete: `native/crates/market-data/` exists, the historical-data contract test passes, `.worktrees/rust-qt6-rewrite/src/components/BacktestingPanel.tsx` fails closed, and `.worktrees/rust-qt6-rewrite/migration_python/api/routes.py:739` now returns an unavailable payload instead of synthetic sample candles.
+  - Task 4 frontend follow-up is now partially closed: `.worktrees/rust-qt6-rewrite/src/components/BacktestingPanel.tsx` no longer calls `/api/backtest/sample-data`; it routes through `getBacktestPriceData()` and fails closed with `HISTORICAL_DATA_UNAVAILABLE_MESSAGE` until a real upstream data flow is wired.
+  - Added regression test `.worktrees/rust-qt6-rewrite/migration_python/tests/test_backtest_sample_data_route.py` to lock the Python reference route into the unavailable behavior.
+  - Fresh Task 4 verification after closing the Python route: `python3 -m pytest migration_python/tests/test_backtest_sample_data_route.py -q` passed, `cargo test --manifest-path native/Cargo.toml -p market-data` passed, `npm run test -- src/__tests__/backtesting-panel-data.test.ts` passed, and `python3 -m py_compile migration_python/api/routes.py` passed.
+  - Local pytest still warns that `asyncio_mode` is an unknown config option, meaning `pytest-asyncio` is not installed in the current environment; keep direct backend regression tests synchronous via `asyncio.run()` unless that plugin is added.
+  - Fresh frontend verification after the stale-call removal: `npm test -- src/__tests__/backtesting-panel-data.test.ts` passed, `npm test` passed with `Test Files  26 passed (26)` and `Tests  365 passed (365)`, and a grep over `.worktrees/rust-qt6-rewrite/src` found no remaining `sample-data` TS/TSX references.
+  - Cargo review learnings after Task 4:
+    - `cargo check --manifest-path native/Cargo.toml --workspace` passed.
+    - `RUST_BACKTRACE=1 cargo test --manifest-path native/Cargo.toml --workspace` passed.
+    - `cargo fmt --manifest-path native/Cargo.toml --all -- --check` failed on formatting drift in `native/crates/app-bootstrap/tests/startup_smoke.rs`, `native/crates/market-data/src/lib.rs`, `native/crates/market-data/src/historical_data_service.rs`, `native/crates/market-data/tests/historical_data_contract.rs`, and `native/crates/wallet/tests/key_store_roundtrip.rs`.
+    - `cargo clippy --manifest-path native/Cargo.toml --workspace --all-targets --all-features -- -D warnings` could not be trusted through the `rtk` wrapper because `-D warnings` was mangled into a cargo argument parsing error (`multiple input filenames provided ... and '-D'`).
+    - Plain `cargo clippy --manifest-path native/Cargo.toml --workspace --all-targets --all-features` produced only 3 warnings, all in `native/crates/wallet/tests/key_store_roundtrip.rs`: one unused import (`CredentialBuilder`) and two `type_complexity` warnings.
+    - `rust-lldb` is available locally and can load `native/target/debug/app-bootstrap` in batch mode.
+- Process reminders:
+  - Use Context7 before implementing code that depends on external libraries like `serde` and `serde_json`.
+  - For Task 3, Context7 was already checked for `sqlx`, `tokio`, and `keyring` patterns.
+  - Before Task 4 implementation, inspect actual call sites for `/backtest/sample-data` and keep changes aligned to the real-data-only rule.
+  - For subagent-driven development, run implementer -> spec review -> code-quality review in that order, with re-review loops if needed.
+  - Verify with fresh commands before claiming completion.
+- Task 5 is now in progress.
+- Task 5 foundation currently added in `.worktrees/rust-qt6-rewrite/native/crates/exchange-hyperliquid/`:
+  - `tests/account_parse.rs` + `tests/fixtures/account_info.json` prove `clearinghouseState.assetPositions[].position` maps into `domain::Position` values.
+  - `src/account.rs` parses Hyperliquid account payloads into `domain::Position`, using sign of `szi` for `PositionDirection`, absolute size for `quantity`, and placeholder IDs like `hyperliquid:<coin>:<index>` with `strategy_id = "hyperliquid-manual"`.
+  - `tests/request_signing.rs` + `src/execution.rs` prove a minimal `/exchange` order request body is built with the documented keys `a`, `b`, `p`, `s`, `r`, `t`, `grouping`, `nonce`, `signature`, and `vaultAddress`.
+  - `tests/rest_request.rs` + `src/rest.rs` now prove and implement the documented `/info` `clearinghouseState` request body, plus a thin `reqwest` helper for `POST {base_url}/info` + `.json().await` parsing.
+  - `tests/ws_subscription.rs` + `src/ws.rs` now prove and implement the documented websocket subscribe envelope for `clearinghouseState`, and add minimal `connect_mainnet()` / `connect_testnet()` wrappers around `tokio_tungstenite::connect_async`.
+  - `src/lib.rs` now exports `parse_account_positions`, `build_order_request`, `HyperliquidOrder`, `HyperliquidRequestSignature`, and `HyperliquidTimeInForce`, with a small `HyperliquidError` enum for parse/unavailable cases.
+- Fresh Task 5 verification already observed during this session:
+  - `cargo test --manifest-path native/Cargo.toml -p exchange-hyperliquid account_response_maps_into_domain_position -- --exact` passed.
+  - `cargo test --manifest-path native/Cargo.toml -p exchange-hyperliquid order_request_wraps_action_nonce_and_signature -- --exact` passed.
+  - `cargo test --manifest-path native/Cargo.toml -p exchange-hyperliquid clearinghouse_state_subscription_matches_docs -- --exact` passed.
+  - `cargo test --manifest-path native/Cargo.toml -p exchange-hyperliquid clearinghouse_state_request_matches_info_endpoint_docs -- --exact` passed.
+  - `cargo test --manifest-path native/Cargo.toml -p exchange-hyperliquid sign_order_action_matches_sdk_vector -- --exact` passed.
+  - `cargo test --manifest-path native/Cargo.toml -p exchange-hyperliquid build_signed_order_request_uses_real_signature -- --exact` passed.
+  - `cargo test --manifest-path native/Cargo.toml -p exchange-hyperliquid` passed with 6 tests.
+- Tooling caveat: repeated `lsp_diagnostics` calls against the new crate were interrupted by the environment, so use Rust compiler/test commands as the trustworthy verification signal unless LSP starts responding again.
+- Task 5 signing status:
+  - `native/crates/exchange-hyperliquid/src/execution.rs` now computes the Hyperliquid L1 `connectionId` via ordered msgpack bytes + nonce + vault discriminator and signs the EIP-712 `Agent` payload with `ethers-signers`.
+  - `native/crates/exchange-hyperliquid/tests/request_signing.rs` now locks both the raw signature vector and `build_signed_order_request()` output to the official Python SDK mainnet example.
+  - The Rust type-inference blocker around `LocalWallet::parse()` / `sign_typed_data()` was resolved by making that path explicit instead of relying on chained `map_err()` inference.
+- Task 5 caller wiring status:
+  - `native/crates/app-core/tests/hyperliquid_execution.rs` now locks the first real Rust-side caller seam: a domain `OrderRequest` can be turned into a signed Hyperliquid `/exchange` payload through `execute_hyperliquid_order(...)`.
+  - `native/crates/app-core/src/lib.rs` now provides `ExecuteHyperliquidOrder`, `execute_hyperliquid_order(...)`, and `AppCoreError`, keeping the adapter boundary small and fail-closed.
+  - Current fail-closed rules in `app-core`: reject `OrderType::Market`, reject `OrderType::Limit` without `limit_price`, and reject any `MarketId` that does not match `hyperliquid:<asset>`.
+  - Fresh verification for this seam: `cargo test --manifest-path native/Cargo.toml -p app-core --test hyperliquid_execution` passed, `cargo test --manifest-path native/Cargo.toml -p app-core` passed, and `cargo test --manifest-path native/Cargo.toml -p exchange-hyperliquid -p app-core` passed.
+  - `lsp_diagnostics` was still interrupted on the new `app-core` files, so compiler/test output remains the trustworthy verification signal for this slice.

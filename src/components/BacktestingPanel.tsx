@@ -42,6 +42,16 @@ interface ParameterSet {
   result?: BacktestResult;
 }
 
+export const HISTORICAL_DATA_UNAVAILABLE_MESSAGE =
+  "Historical data unavailable: backtests require a real upstream data source.";
+
+export async function getBacktestPriceData(
+  _symbol: string,
+  _days: number,
+): Promise<never> {
+  throw new Error(HISTORICAL_DATA_UNAVAILABLE_MESSAGE);
+}
+
 export function BacktestingPanel() {
   const [isRunning, setIsRunning] = useState(false);
   const [result, setResult] = useState<BacktestResult | null>(null);
@@ -59,16 +69,9 @@ export function BacktestingPanel() {
     setIsRunning(true);
 
     try {
-      toast.info('Fetching historical data...');
-      
-      const dataResponse = await fetch(
-        `${import.meta.env.VITE_PYTHON_API_URL || 'http://localhost:8000'}/api/backtest/sample-data?symbol=${symbol}&days=${days}`
-      );
-      const dataResult = await dataResponse.json();
-      
-      if (!dataResult.success) {
-        throw new Error(dataResult.error || 'Failed to fetch historical data');
-      }
+      toast.info("Checking historical data availability...");
+
+      const priceData = await getBacktestPriceData(symbol, days);
 
       toast.info('Running backtest simulation...');
 
@@ -99,7 +102,7 @@ export function BacktestingPanel() {
               stopLossPercent: testParams.stopLossPercent,
               maxPositionSize: 0.5,
             },
-            priceData: dataResult.priceData,
+            priceData,
           }),
         }
       );

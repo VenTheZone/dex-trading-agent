@@ -738,29 +738,20 @@ async def run_backtest_simulation(
 
 @router.get("/backtest/sample-data")
 async def get_backtest_sample_data(symbol: str, days: int = 30):
-    """Get sample price data for backtesting"""
+    """Reject synthetic sample data requests for backtesting."""
     try:
-        # Generate sample data (in production, fetch from historical source)
-        from datetime import datetime, timedelta
-        import random
-        
-        data = []
-        base_price = 50000.0 if symbol.upper() == "BTC" else 3000.0
-        
-        for i in range(days * 24):  # Hourly data
-            timestamp = datetime.now() - timedelta(hours=i)
-            price = base_price * (1 + random.uniform(-0.05, 0.05))
-            data.append({
-                "timestamp": timestamp.isoformat(),
-                "price": price,
-                "volume": random.uniform(1000000, 10000000)
-            })
-        
-        return success_response({
+        logger.warning(
+            "Rejected synthetic backtest sample data request for %s over %s days",
+            symbol,
+            days,
+        )
+        return {
+            "success": False,
+            "status": "unavailable",
+            "error": "historical data unavailable: sample-data endpoint is disabled; use a real upstream data source",
             "symbol": symbol,
             "days": days,
-            "data": list(reversed(data))  # Oldest first
-        })
+        }
     except Exception as e:
         logger.error(f"Error fetching sample data: {e}")
         return error_response(f"Failed to fetch sample data: {str(e)}")
