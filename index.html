@@ -6,6 +6,14 @@
   <link rel="icon" type="image/png" href="/logo.png" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>DeX-Trading-Agent</title>
+  <script src="qrc:///qtwebchannel/qwebchannel.js"></script>
+  <script>
+    if (typeof QWebChannel !== 'undefined') {
+      new QWebChannel(qt.webChannelTransport, function (channel) {
+        window.qtBridge = channel.objects.qtBridge;
+      });
+    }
+  </script>
 </head>
 
 

@@ -10,8 +10,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/co
 import { toast } from 'sonner';
 import { motion } from 'framer-motion';
 import { Bot, BotOff, Sparkles, X, Brain, AlertTriangle, FileText, RotateCcw, Network } from 'lucide-react';
-import { storage } from '@/lib/storage';
-import { confirm } from '@tauri-apps/plugin-dialog';
+import * as storage from '@/lib/storage';
 import { useTrading } from '@/hooks/use-trading';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Textarea } from '@/components/ui/textarea';
@@ -84,12 +83,12 @@ export function TradingControls() {
     });
   };
   
-  const handleToggleAutoTrading = () => {
+  const handleToggleAutoTrading = async () => {
     const newState = !isAutoTrading;
     
     if (newState) {
-      const keys = storage.getApiKeys();
-      const isDemoMode = storage.isDemoMode();
+      const keys = await storage.getApiKeys();
+      const isDemoMode = await storage.isDemoMode();
       
       // Validation checks
       if (!isDemoMode && (!keys?.openRouter || keys.openRouter === 'DEMO_MODE')) {
@@ -160,7 +159,7 @@ export function TradingControls() {
 
   const handleAiModelChange = async (model: 'deepseek/deepseek-chat-v3-0324:free' | 'qwen/qwen3-max') => {
     if (model === 'qwen/qwen3-max') {
-      const confirmed = await confirm(
+      const confirmed = await storage.nativeConfirm(
         '⚠️ QWEN PRICING NOTICE\n\n' +
         'Qwen is a PAID model with the following pricing:\n\n' +
         '• Input (≤128K): $1.20 per 1M tokens\n' +

@@ -7,7 +7,7 @@
 import { pythonApi } from './python-api-client';
 import { toast } from 'sonner';
 import { assessLiquidationRisk } from './liquidation-protection';
-import { storage } from './storage';
+import { getApiKeys } from './storage';
 import { Position } from '@/store/tradingStore';
 import { handleError, categorizeError, ERROR_MESSAGES } from './error-handler';
 
@@ -87,15 +87,13 @@ export class LiveTradingMonitor {
     settings: { leverage: number; useTrailingStop: boolean; stopLossPercent: number; takeProfitPercent: number }
   ) {
     if (this.pollingInterval) {
-      // If already polling, just update the interval if needed, but for now we'll just return
-      // Ideally we might want to update settings if they are used in polling
       return;
     }
 
     const pollPositions = async () => {
       try {
-        const keys = storage.getApiKeys();
-        if (!keys?.hyperliquid.apiSecret || !keys?.hyperliquid.walletAddress) return;
+        const keys = await getApiKeys();
+        if (!keys?.hyperliquid?.apiSecret || !keys?.hyperliquid?.walletAddress) return;
 
         const result = await pythonApi.getHyperliquidPositions(
           keys.hyperliquid.apiSecret,
@@ -254,7 +252,6 @@ export class LiveTradingMonitor {
     }
 
     this.positions.set(position.symbol, position);
-    // console.debug(`[Live Monitor] Tracking ${position.symbol}: ${position.side} ${position.size} @ ${position.entryPrice}`);
   }
 
   /**
@@ -306,7 +303,6 @@ export class LiveTradingMonitor {
         const pnlPercent = (pnl / (position.entryPrice * position.size)) * 100;
 
         // LIQUIDATION RISK ASSESSMENT using Hyperliquid's formula
-        // Note: We need account balance from the trading hook, so we'll estimate conservatively
         const estimatedBalance = (position.entryPrice * position.size) / position.leverage;
         const riskData = assessLiquidationRisk(
           {
