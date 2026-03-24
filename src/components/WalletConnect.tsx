@@ -2,12 +2,11 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Wallet, CheckCircle, AlertTriangle, Info, QrCode, Copy, ExternalLink } from "lucide-react";
+import { Wallet, CheckCircle, AlertTriangle, Info, QrCode, Copy } from "lucide-react";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { open } from "@tauri-apps/plugin-opener";
-import { invoke } from "@tauri-apps/api/core";
+import { invoke, openUrl } from "@/lib/storage";
 
 interface WalletConnectProps {
   onConnect: (address: string) => void;
@@ -82,7 +81,7 @@ export function WalletConnect({ onConnect }: WalletConnectProps) {
       if (accounts && accounts.length > 0) {
         const address = accounts[0];
         
-        // Save to Tauri secure store
+        // Save to secure store
         await invoke("save_wallet_connection", {
           address,
           network: network.name,
@@ -112,7 +111,7 @@ export function WalletConnect({ onConnect }: WalletConnectProps) {
       // Open wallet app via deep link
       const deepLink = WALLET_DEEP_LINKS[walletType];
       if (deepLink) {
-        await open(`${deepLink}wc?uri=${encodeURIComponent(mockUri)}`);
+        await openUrl(`${deepLink}wc?uri=${encodeURIComponent(mockUri)}`);
         toast.info('Please confirm connection in your wallet app');
         
         // Simulate successful connection after delay

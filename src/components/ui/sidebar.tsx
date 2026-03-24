@@ -8,7 +8,7 @@ import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Separator } from "@/components/ui/separator"
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet"
 import { Skeleton } from "@/components/ui/skeleton"
 import {
   Tooltip,
@@ -16,10 +16,9 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip"
-import { Store } from "@tauri-apps/plugin-store"
+import { storeGet, storeSet } from "@/lib/storage"
 
 const SIDEBAR_COOKIE_NAME = "sidebar_state"
-const SIDEBAR_COOKIE_MAX_AGE = 60 * 60 * 24 * 7
 const SIDEBAR_WIDTH = "16rem"
 const SIDEBAR_WIDTH_MOBILE = "18rem"
 const SIDEBAR_WIDTH_ICON = "3rem"
@@ -66,6 +65,19 @@ function SidebarProvider({
   // We use openProp and setOpenProp for control from outside the component.
   const [_open, _setOpen] = React.useState(defaultOpen)
   const open = openProp ?? _open
+
+  // Load initial state
+  React.useEffect(() => {
+    const loadState = async () => {
+      const savedOpen = await storeGet<boolean>(SIDEBAR_COOKIE_NAME);
+      if (savedOpen !== null) {
+        if (setOpenProp) setOpenProp(savedOpen);
+        else _setOpen(savedOpen);
+      }
+    };
+    loadState();
+  }, []);
+
   const setOpen = React.useCallback(
     (value: boolean | ((value: boolean) => boolean)) => {
       const openState = typeof value === "function" ? value(open) : value
@@ -75,7 +87,8 @@ function SidebarProvider({
         _setOpen(openState)
       }
 
-      // Sidebar state is saved via Tauri store in the useEffect below
+      // Sidebar state is saved via generic store
+      storeSet(SIDEBAR_COOKIE_NAME, openState).catch(console.error);
     },
     [setOpenProp, open]
   )
@@ -100,20 +113,6 @@ function SidebarProvider({
     window.addEventListener("keydown", handleKeyDown)
     return () => window.removeEventListener("keydown", handleKeyDown)
   }, [toggleSidebar])
-
-  // Save sidebar state to Tauri store when it changes
-  React.useEffect(() => {
-    const saveState = async () => {
-      try {
-        const store = await Store.load("sidebar-state.dat")
-        await store.set(SIDEBAR_COOKIE_NAME, open)
-        await store.save()
-      } catch (error) {
-        console.error("Error saving sidebar state:", error)
-      }
-    }
-    saveState()
-  }, [open])
 
   // We add a state so that we can do data-state="expanded" or "collapsed".
   // This makes it easier to style the sidebar with Tailwind classes.
@@ -701,6 +700,25 @@ function SidebarMenuSubButton({
       )}
       {...props}
     />
+  )
+}
+
+function PanelLeftIcon() {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width="24"
+      height="24"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <rect width="18" height="18" x="3" y="3" rx="2" ry="2" />
+      <line x1="9" x2="9" y1="3" y2="21" />
+    </svg>
   )
 }
 

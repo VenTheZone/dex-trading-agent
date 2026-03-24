@@ -1,9 +1,11 @@
 import { useCallback, useEffect, useRef } from "react";
-import { storage } from "@/lib/storage";
+import { getApiKeys, isDemoMode } from "@/lib/storage";
 import { useTradingStore } from "@/store/tradingStore";
 import { toast } from "sonner";
 import { pythonApi } from "@/lib/python-api-client";
 import { liveTradingMonitor } from "@/lib/live-trading-monitor";
+import { nativeConfirm } from "@/lib/storage";
+import { validateLeverage, canOpenPosition } from "@/lib/liquidation-protection";
 
 export function useTrading() {
   const { balance, settings, mode, network, chartType, chartInterval, setBalance, setPosition, position, isAutoTrading, setAutoTrading, aiModel, customPrompt } = useTradingStore();
@@ -30,8 +32,8 @@ export function useTrading() {
       // Start monitoring with position close callback
       liveTradingMonitor.startMonitoring(async (symbol, reason, price) => {
         try {
-          const keys = storage.getApiKeys();
-          if (!keys?.hyperliquid.apiSecret) {
+          const keys = await getApiKeys();
+          if (!keys?.hyperliquid?.apiSecret) {
             console.error('[Live Monitor] Cannot close position - API keys not configured');
             return;
           }
@@ -153,8 +155,8 @@ export function useTrading() {
       toast.info(`Closing ${positionToClose.symbol} position...`);
 
       if (mode === "live") {
-        const keys = storage.getApiKeys();
-        if (!keys?.hyperliquid.apiSecret) {
+        const keys = await getApiKeys();
+        if (!keys?.hyperliquid?.apiSecret) {
           toast.error("Hyperliquid API keys not configured");
           return;
         }
@@ -206,11 +208,12 @@ export function useTrading() {
         return;
       }
 
-      const confirmed = window.confirm(
+      const confirmed = await nativeConfirm(
         `⚠️ Close all positions?\n\n` +
         `This will close your ${position.symbol} ${position.side} position.\n` +
         `Current P&L: ${position.pnl.toFixed(2)}\n\n` +
-        `Are you sure?`
+        `Are you sure?`,
+        { title: "Close All Positions", kind: "warning" }
       );
 
       if (!confirmed) return;
@@ -233,12 +236,12 @@ export function useTrading() {
       setAiThinking(true);
       setAiThoughts(`🔍 Initializing analysis for ${symbol}...\n\nChecking market conditions and validating API keys...`);
 
-      const isDemoMode = storage.isDemoMode();
-      const keys = storage.getApiKeys();
+      const demo = await isDemoMode();
+      const keys = await getApiKeys();
       const openRouterKey = keys?.openRouter || '';
       
       // In demo mode without a real API key, skip AI analysis
-      if (isDemoMode && (!openRouterKey || openRouterKey === 'DEMO_MODE')) {
+      if (demo && (!openRouterKey || openRouterKey === 'DEMO_MODE')) {
         setAiThoughts("⚠️ Analysis skipped: Demo mode without API key.");
         toast.info('[DEMO] AI analysis skipped - No OpenRouter API key provided', {
           description: 'Add your OpenRouter key in Settings to enable real AI analysis in demo mode',
@@ -270,7 +273,7 @@ export function useTrading() {
       
       setAiThoughts(`✅ API Key Validated\n🤖 Model: ${modelName}\n\n📊 Analyzing ${symbol} market structure...\nPrice: $${currentPrice.toLocaleString()}\nChart: ${chartType === 'range' ? 'Range' : 'Time-based'} (${chartInterval})\n\nGathering technical indicators...`);
 
-      if (isDemoMode) {
+      if (demo) {
         toast.info(`[DEMO] 🤖 AI analyzing with your OpenRouter key (${modelName})...`);
       } else {
         toast.info(`🤖 AI analyzing market with ${modelName}...`);
@@ -326,7 +329,7 @@ export function useTrading() {
           stopLossPercent: settings.stopLossPercent,
           useAdvancedStrategy: settings.useAdvancedStrategy,
         },
-        isDemoMode,
+        isDemoMode: demo,
         aiModel,
         customPrompt,
         network,
@@ -350,11 +353,12 @@ export function useTrading() {
       setAiThoughts(`${thoughtsOnError}\n\n❌ Analysis Failed: ${error.message}`);
       toast.error(`❌ AI Analysis failed: ${error.message}`);
       
+      const demoModeActive = await isDemoMode();
       await pythonApi.createTradingLog({
         action: "ai_error",
         symbol,
         reason: `AI Analysis Error: ${error.message}`,
-        details: `Model: ${aiModel}, Demo: ${storage.isDemoMode()}`,
+        details: `Model: ${aiModel}, Demo: ${demoModeActive}`,
       });
       
       throw error;
@@ -370,12 +374,12 @@ export function useTrading() {
       setAiThinking(true);
       setAiThoughts('🔍 Initializing AI analysis...\\n\\nValidating API keys and market data...');
       
-      const isDemoMode = storage.isDemoMode();
-      const keys = storage.getApiKeys();
+      const demo = await isDemoMode();
+      const keys = await getApiKeys();
       const openRouterKey = keys?.openRouter || '';
       
       // In demo mode without a real API key, skip AI analysis
-      if (isDemoMode && (!openRouterKey || 
+      if (demo && (!openRouterKey ||
                          openRouterKey.trim() === '' || 
                          openRouterKey === 'DEMO_MODE' || 
                          !openRouterKey.startsWith('sk-or-v1-'))) {
@@ -427,7 +431,7 @@ export function useTrading() {
       
       setAiThoughts(`✅ API keys validated\\n\\n🤖 Using ${modelName} AI model\\n📊 Analyzing ${filteredCharts.length} trading pairs (dual chart snapshots)...\\n\\nMarket data:\\n${filteredCharts.map(c => `  • ${c.symbol}: ${c.currentPrice.toLocaleString()} [5min + 1000R]`).join('\\n')}`);
       
-      if (isDemoMode) {
+      if (demo) {
         toast.info(`[DEMO] 🤖 AI analyzing ${filteredCharts.length} coins (dual charts: 5min + 1000R) with ${modelName}...`);
       } else {
         toast.info(`🤖 AI analyzing ${filteredCharts.length} coins (dual charts: 5min + 1000R) with ${modelName}...`);
@@ -466,7 +470,7 @@ export function useTrading() {
           leverage: settings.leverage,
           allowAILeverage: settings.allowAILeverage,
         },
-        isDemoMode,
+        isDemoMode: demo,
         aiModel,
         customPrompt,
         network,
@@ -488,11 +492,12 @@ export function useTrading() {
       setAiThoughts(`❌ AI Analysis Error\\n\\n${error.message}\\n\\nPlease check your API keys and try again.`);
       toast.error(`❌ Multi-chart AI Analysis failed: ${error.message}`);
       
+      const demoModeActive = await isDemoMode();
       await pythonApi.createTradingLog({
         action: "ai_error",
         symbol: "MULTI",
         reason: `Multi-chart AI Analysis Error: ${error.message}`,
-        details: `Model: ${aiModel}, Demo: ${storage.isDemoMode()}, Charts: ${charts.length}`,
+        details: `Model: ${aiModel}, Demo: ${demoModeActive}, Charts: ${charts.length}`,
       });
       
       throw error;
@@ -501,238 +506,81 @@ export function useTrading() {
     }
   };
 
-  const executeTrade = async (
-    symbol: string,
-    action: string,
-    side: "long" | "short" | undefined,
-    price: number,
-    size: number,
-    stopLoss: number | undefined,
-    takeProfit: number | undefined,
-    reasoning: string,
-    skipConfirmation: boolean = false
-  ) => {
+  const executeTrade = useCallback(async (symbol: string, side: 'long' | 'short', size: number, price: number) => {
     try {
-      const allowedCoins = settings.allowedCoins || [];
-      if (allowedCoins.length > 0 && !allowedCoins.includes(symbol)) {
-        toast.error(`${symbol} is not in your allowed coins list`);
-        return;
-      }
-
-      // RISK MANAGEMENT: Validate leverage against asset-specific limits
-      const { validateLeverage } = await import('@/lib/liquidation-protection');
+      // Leverage Validation
       const leverageValidation = validateLeverage(symbol, settings.leverage);
+      let leverageToUse = settings.leverage;
       
-      if (!leverageValidation.valid) {
-        toast.error(
-          `⚠️ Leverage too high for ${symbol}`,
-          {
-            description: `Max leverage: ${leverageValidation.maxLeverage}x. Your setting: ${settings.leverage}x`,
-            duration: 7000,
-          }
-        );
-        
-        await pythonApi.createTradingLog({
-          action: "trade_rejected",
-          symbol,
-          reason: `Leverage validation failed: ${settings.leverage}x exceeds max ${leverageValidation.maxLeverage}x`,
-          details: reasoning,
-        });
-        
-        return;
+      if (!leverageValidation.valid && leverageValidation.adjustedLeverage) {
+        leverageToUse = leverageValidation.adjustedLeverage;
+        toast.warning(`Adjusting leverage for ${symbol} to ${leverageToUse}x (Max allowed: ${leverageValidation.maxLeverage}x)`);
       }
 
-      // RISK MANAGEMENT: Check if position can be safely opened
-      if (action !== "close_position" && side) {
-        const { canOpenPosition } = await import('@/lib/liquidation-protection');
-        const existingPositions = position ? [{
-          size: position.size,
-          entryPrice: position.entryPrice,
-          leverage: position.leverage || settings.leverage,
-        }] : [];
-        
-        const positionCheck = canOpenPosition(
-          balance,
-          existingPositions,
-          size,
-          price
-        );
-        
-        if (!positionCheck.canOpen) {
-          toast.error(
-            `⚠️ Position Rejected: ${positionCheck.reason}`,
-            {
-              description: positionCheck.maxSafeSize 
-                ? `Max safe size: ${positionCheck.maxSafeSize.toFixed(4)} ${symbol}`
-                : 'Reduce position size or close existing positions',
-              duration: 10000,
-            }
-          );
-          
-          await pythonApi.createTradingLog({
-            action: "trade_rejected",
-            symbol,
-            reason: `Position safety check failed: ${positionCheck.reason}`,
-            details: `Requested size: ${size}, Max safe: ${positionCheck.maxSafeSize?.toFixed(4) || 'N/A'}`,
-          });
-          
-          return;
-        }
-        
-        // Calculate and log liquidation risk
-        const { assessLiquidationRisk } = await import('@/lib/liquidation-protection');
-        const riskData = assessLiquidationRisk(
-          {
-            symbol,
-            side,
-            size,
-            entryPrice: price,
-            leverage: settings.leverage,
-          },
-          price,
-          balance
-        );
-        
-        // Warning for high-risk positions
-        if (riskData.riskLevel === 'danger' || riskData.riskLevel === 'critical') {
-          toast.warning(
-            `⚠️ HIGH RISK POSITION: ${riskData.riskLevel.toUpperCase()}`,
-            {
-              description: `Liquidation at ${riskData.liquidationPrice.toFixed(2)} (${riskData.distanceToLiquidation.toFixed(1)}% away)`,
-              duration: 10000,
-            }
-          );
-        }
-        
-        await pythonApi.createTradingLog({
-          action: "risk_assessment",
-          symbol,
-          reason: `Risk Level: ${riskData.riskLevel.toUpperCase()}`,
-          details: `Liq Price: ${riskData.liquidationPrice.toFixed(2)}, Distance: ${riskData.distanceToLiquidation.toFixed(1)}%, Margin: ${riskData.maintenanceMarginRate * 100}%`,
-        });
+      // Check if we can open this position (Risk Management)
+      const existingPositions = position ? [{
+        size: position.size,
+        entryPrice: position.entryPrice,
+        leverage: position.leverage || settings.leverage
+      }] : [];
+      const allowedToOpen = canOpenPosition(balance, existingPositions, size, price);
+      if (!allowedToOpen.canOpen) {
+        toast.error(`❌ Position rejected: ${allowedToOpen.reason}`);
+        return { success: false, error: allowedToOpen.reason };
       }
 
-      // Return trade details for confirmation modal if not skipping
-      if (!skipConfirmation) {
-        return {
-          requiresConfirmation: true,
-          tradeDetails: {
-            symbol,
-            action,
-            side,
-            price,
-            size,
-            stopLoss,
-            takeProfit,
-            leverage: settings.leverage,
-            mode,
-            network,
-            reasoning,
-          },
-        };
-      }
-
-      if (mode === "live") {
-        const keys = storage.getApiKeys();
-        if (!keys?.hyperliquid.apiSecret) {
+      if (mode === 'live') {
+        const keys = await getApiKeys();
+        if (!keys?.hyperliquid?.apiSecret) {
           toast.error("Hyperliquid API keys not configured");
-          return;
+          return { success: false, error: "API keys missing" };
         }
 
-        toast.info(`📡 Executing live trade on ${network}...`);
-        
         const result = await pythonApi.executeLiveTrade({
           apiSecret: keys.hyperliquid.apiSecret,
           symbol,
           side: side === 'long' ? 'buy' : 'sell',
           size,
           price,
-          stopLoss,
-          takeProfit,
-          leverage: settings.leverage,
+          leverage: leverageToUse,
           isTestnet: network === 'testnet',
         });
 
         if (!result.success) {
-          throw new Error(result.error || "Trade execution failed");
+          throw new Error(result.error || "Execution failed");
         }
-
-        toast.success(`✅ Live trade executed on ${network}`);
-      } else if (mode === "paper" && paperEngineRef.current) {
-        // Execute paper trade
-        toast.info("📄 Executing paper trade...");
+      } else if (mode === 'paper' && paperEngineRef.current) {
+        // Execute paper trade via engine
+        const result = await paperEngineRef.current.openPosition({
+          symbol,
+          side,
+          size,
+          entryPrice: price,
+          leverage: leverageToUse
+        });
         
-        if (action === "close_position" && position) {
-          const result = paperEngineRef.current.closePosition(symbol, price, "manual");
-          if (result.success) {
-            setBalance(paperEngineRef.current.getBalance());
-            setPosition(null);
-            toast.success(`📄 Paper position closed - P&L: $${result.pnl.toFixed(2)}`);
-          }
-        } else if (side) {
-          // Open new position
-          const order = paperEngineRef.current.placeOrder(
-            symbol,
-            side === 'long' ? 'buy' : 'sell',
-            size,
-            price,
-            'market'
-          );
-          
-          if (order.status === 'filled') {
-            // Set stop loss and take profit if provided
-            if (stopLoss) {
-              paperEngineRef.current.setStopLoss(symbol, stopLoss);
-            }
-            if (takeProfit) {
-              paperEngineRef.current.setTakeProfit(symbol, takeProfit);
-            }
-            
-            // Update balance and position
-            setBalance(paperEngineRef.current.getBalance());
-            const paperPosition = paperEngineRef.current.getPosition(symbol);
-            
-            if (paperPosition) {
-              setPosition({
-                symbol: paperPosition.symbol,
-                size: paperPosition.size,
-                entryPrice: paperPosition.entryPrice,
-                currentPrice: paperPosition.currentPrice,
-                pnl: paperPosition.unrealizedPnl,
-                side: paperPosition.side,
-                stopLoss: paperPosition.stopLoss,
-                takeProfit: paperPosition.takeProfit,
-              });
-            }
-            
-            toast.success(`📄 Paper trade executed: ${side.toUpperCase()} ${symbol}`);
-          } else {
-            throw new Error("Paper trade failed - insufficient balance");
-          }
+        if (!result.success) {
+          throw new Error(result.error || "Paper execution failed");
         }
-      } else {
-        toast.info("📄 Executing paper trade...");
       }
 
       await pythonApi.createTradingLog({
-        action,
+        action: side === 'long' ? "open_long" : "open_short",
         symbol,
         side,
         price,
         size,
-        reason: reasoning,
-        details: stopLoss 
-          ? `SL: ${stopLoss}, TP: ${takeProfit}, Leverage: ${settings.leverage}x, Network: ${network}, Chart: ${chartType} ${chartInterval}` 
-          : `Leverage: ${settings.leverage}x, Network: ${network}, Chart: ${chartType} ${chartInterval}`,
+        reason: "Manual/AI entry",
+        details: `Size: ${size}, Price: ${price}, Mode: ${mode}, Network: ${network}, Leverage: ${leverageToUse}x`,
       });
 
-      toast.success(`Trade executed: ${action.toUpperCase()}`);
+      toast.success(`✅ Trade executed: ${side.toUpperCase()} ${symbol}`);
       return { success: true };
     } catch (error: any) {
-      toast.error(`Trade execution failed: ${error.message}`);
-      throw error;
+      toast.error(`Trade failed: ${error.message}`);
+      return { success: false, error: error.message };
     }
-  };
+  }, [mode, network, settings.leverage, balance, position]);
 
   return {
     runAIAnalysis,

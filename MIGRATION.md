@@ -1,8 +1,8 @@
-# Migration Guide: Web → Desktop (Tauri)
+# Migration Guide: Web → Desktop (Qt6/PySide6)
 
 ## 🔄 Overview
 
-This guide helps you migrate from the web-based DeX Trading Agent to the new **Tauri Desktop Application**.
+This guide helps you migrate from the web-based DeX Trading Agent to the new **Qt6 Desktop Application**.
 
 **Migration Time:** ~5 minutes  
 **Data Preservation:** ✅ All settings and API keys  
@@ -16,7 +16,7 @@ Before migrating, ensure you have:
 
 - [ ] Exported your API keys from the web app
 - [ ] Backed up your trading history (optional)
-- [ ] Installed the desktop app prerequisites
+- [ ] Installed the desktop app prerequisites (Python, PySide6, cryptography, keyring)
 
 ---
 
@@ -48,39 +48,19 @@ console.log('Your API Keys:', keys);
 ## 💻 Step 2: Install Desktop App
 
 ### Download
-Download the latest release for your platform:
-- **Windows:** `DeX-Trading-Agent_2.0.0_x64.msi`
-- **macOS:** `DeX-Trading-Agent_2.0.0_x64.dmg`
-- **Linux:** `DeX-Trading-Agent_2.0.0_amd64.AppImage`
+Currently, the Qt6 version is optimized for Linux environments.
 
-### Install
+### Prerequisites
+Ensure you have the following installed:
+- **Python 3.10+**
+- **PySide6** (`pip install PySide6`)
+- **Keyring & Cryptography** (`pip install keyring cryptography`)
 
-**Windows:**
-```bash
-# Run the installer
-DeX-Trading-Agent_2.0.0_x64.msi
-
-# Or install via command line
-msiexec /i DeX-Trading-Agent_2.0.0_x64.msi /qn
-```
-
-**macOS:**
-```bash
-# Mount DMG
-open DeX-Trading-Agent_2.0.0_x64.dmg
-
-# Drag to Applications folder
-cp -R "/Volumes/DeX Trading Agent/DeX Trading Agent.app" /Applications/
-```
-
-**Linux:**
-```bash
-# Make AppImage executable
-chmod +x DeX-Trading-Agent_2.0.0_amd64.AppImage
-
-# Run
-./DeX-Trading-Agent_2.0.0_amd64.AppImage
-```
+### Running the App
+1. Clone the repository
+2. Install frontend dependencies: `pnpm install`
+3. Build the frontend: `pnpm build`
+4. Launch the application: `python src-qt/main.py`
 
 ---
 
@@ -99,7 +79,7 @@ OpenRouter API Key: [paste your key]
 ```
 
 ### Save
-Click "Save API Keys" - they will be securely stored in the Tauri encrypted store.
+Click "Save API Keys" - they will be securely encrypted using Fernet and stored in your system's native keyring (GNOME Keyring/KWallet).
 
 **✅ Success!** Your keys are now stored securely on your local machine.
 
@@ -141,19 +121,19 @@ If you have MetaMask or similar browser extension:
 
 ### 1. Storage Mechanism
 **Before:** localStorage (browser)  
-**After:** Tauri Secure Store (encrypted)
+**After:** System Keyring + Fernet Encryption
 
 **Impact:** You need to re-enter API keys once.
 
 ### 2. Wallet Connection
 **Before:** Direct MetaMask browser extension  
-**After:** Hybrid (Browser + Mobile deep links)
+**After:** Hybrid (Browser + Mobile deep links + Manual Address)
 
 **Impact:** Reconnect your wallet using the new method.
 
 ### 3. File Downloads
 **Before:** Browser downloads to default folder  
-**After:** Native file picker (you choose location)
+**After:** Native Qt file picker (you choose location)
 
 **Impact:** Better UX, you control where files go.
 
@@ -212,7 +192,7 @@ import('./src/lib/integration-tests').then(m => m.runAllIntegrationTests())
 
 ## 📞 Need Help?
 
-- **Documentation:** See [README_TAURI.md](./README_TAURI.md)
+- **Documentation:** See [README_QT.md](./README_QT.md)
 - **Issues:** [GitHub Issues](https://github.com/VenTheZone/dex-trading-agent/issues)
 - **Discord:** [Community Support](https://discord.gg/yourserver)
 
@@ -220,16 +200,15 @@ import('./src/lib/integration-tests').then(m => m.runAllIntegrationTests())
 
 ## 🎉 Migration Complete!
 
-You now have the **secure, fast, native desktop version** of DeX Trading Agent!
+You now have the **secure, fast, native Qt6 desktop version** of DeX Trading Agent!
 
 ### Benefits You Now Have:
-- ✅ **Encrypted API key storage**
-- ✅ **Native performance** (no browser overhead)
-- ✅ **Better security** (no browser vulnerabilities)
+- ✅ **System Keyring integration** for API keys
+- ✅ **Native Qt6 performance**
+- ✅ **Enhanced security** via encryption
 - ✅ **Native file dialogs**
-- ✅ **Works offline** (core functionality)
-- ✅ **System tray integration**
-- ✅ **Auto-updates** (coming soon)
+- ✅ **Python-powered backend** management
+- ✅ **System-native look and feel**
 
 ---
 

@@ -11,8 +11,7 @@ import { TRADING_TOKENS } from "@/lib/tokenData";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { save } from "@tauri-apps/plugin-dialog";
-import { writeTextFile } from "@tauri-apps/plugin-fs";
+import { saveFileDialog } from "@/lib/storage";
 
 interface BacktestResult {
   startDate: string;
@@ -189,17 +188,21 @@ export function BacktestingPanel() {
         timestamp: new Date().toISOString(),
       };
       
-      const filePath = await save({
-        defaultPath: `backtest_${symbol}_${new Date().toISOString().split('T')[0]}.json`,
-        filters: [{
-          name: 'JSON',
-          extensions: ['json']
-        }]
-      });
+      const fileName = `backtest_${symbol}_${new Date().toISOString().split('T')[0]}.json`;
+      const filePath = await saveFileDialog("Save Backtest Results", fileName);
+
+      const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filePath ? filePath.split('/').pop() || fileName : fileName;
+      a.click();
+      URL.revokeObjectURL(url);
       
       if (filePath) {
-        await writeTextFile(filePath, JSON.stringify(exportData, null, 2));
         toast.success('Results exported!');
+      } else {
+        toast.success('Results downloaded via browser');
       }
     } catch (error) {
       console.error('Error exporting results:', error);

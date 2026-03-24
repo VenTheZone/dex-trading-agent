@@ -82,6 +82,9 @@ env/
 # Vercel
 .vercel
 devdocs/
-devdocs/
 Documentation_Archive_OLD/
 *.OLD.md
+
+# Rust / Tauri
+src-tauri/target/
+src-qt/target/

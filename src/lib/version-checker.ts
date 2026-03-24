@@ -6,7 +6,9 @@
 const GITHUB_REPO = "VenTheZone/dex-trading-agent";
 const CURRENT_VERSION = "1.0.0"; // Will be synced with package.json
 const VERSION_CHECK_INTERVAL = 1000 * 60 * 60; // Check every hour
-const STORAGE_KEY = "dex_agent_last_version_check";
+import { storeGet, storeSet } from "./storage";
+
+const STORAGE_KEY = "last_version_check";
 
 export const APP_VERSION = "0.1.0";
 
@@ -25,7 +27,7 @@ export interface VersionInfo {
 export async function checkForUpdates(): Promise<VersionInfo | null> {
   try {
     // Check if we've checked recently
-    const lastCheck = localStorage.getItem(STORAGE_KEY);
+    const lastCheck = await storeGet<string>(STORAGE_KEY);
     if (lastCheck) {
       const timeSinceCheck = Date.now() - parseInt(lastCheck);
       if (timeSinceCheck < VERSION_CHECK_INTERVAL) {
@@ -51,7 +53,7 @@ export async function checkForUpdates(): Promise<VersionInfo | null> {
     const latestVersion = data.tag_name?.replace(/^v/, "") || data.name;
 
     // Store the check timestamp
-    localStorage.setItem(STORAGE_KEY, Date.now().toString());
+    await storeSet(STORAGE_KEY, Date.now().toString());
 
     const updateAvailable = compareVersions(latestVersion, CURRENT_VERSION) > 0;
 

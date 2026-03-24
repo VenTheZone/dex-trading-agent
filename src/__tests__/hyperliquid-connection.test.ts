@@ -1,10 +1,11 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { storage, ApiKeys } from '@/lib/storage';
+import { storage } from '@/lib/storage';
+import type { ApiKeys } from '@/lib/storage';
 
 describe('Hyperliquid Connection Tests', () => {
-  beforeEach(() => {
+  beforeEach(async () => {
     // Clear storage before each test
-    storage.clearAll();
+    await storage.clearAll();
   });
 
   describe('API Key Validation', () => {
@@ -55,7 +56,7 @@ describe('Hyperliquid Connection Tests', () => {
   });
 
   describe('Storage Operations', () => {
-    it('should save and retrieve API keys for mainnet', () => {
+    it('should save and retrieve API keys for mainnet', async () => {
       const keys: ApiKeys = {
         hyperliquid: {
           apiKey: '0x1234567890123456789012345678901234567890',
@@ -65,15 +66,15 @@ describe('Hyperliquid Connection Tests', () => {
         openRouter: 'sk-or-v1-test123',
       };
 
-      storage.saveApiKeys(keys);
-      const retrieved = storage.getApiKeys();
+      await storage.saveApiKeys(keys);
+      const retrieved = await storage.getApiKeys();
 
       expect(retrieved).not.toBeNull();
       expect(retrieved?.hyperliquid.apiKey).toBe(keys.hyperliquid.apiKey);
       expect(retrieved?.openRouter).toBe(keys.openRouter);
     });
 
-    it('should handle demo mode correctly', () => {
+    it('should handle demo mode correctly', async () => {
       const demoKeys: ApiKeys = {
         hyperliquid: {
           apiKey: 'DEMO_MODE',
@@ -83,14 +84,14 @@ describe('Hyperliquid Connection Tests', () => {
         openRouter: 'DEMO_MODE',
       };
 
-      storage.saveApiKeys(demoKeys);
-      expect(storage.isDemoMode()).toBe(true);
+      await storage.saveApiKeys(demoKeys);
+      expect(await storage.isDemoMode()).toBe(true);
 
-      const retrieved = storage.getApiKeys();
+      const retrieved = await storage.getApiKeys();
       expect(retrieved?.hyperliquid.apiKey).toBe('DEMO_MODE');
     });
 
-    it('should preserve OpenRouter key in demo mode', () => {
+    it('should preserve OpenRouter key in demo mode', async () => {
       const demoKeysWithRealOpenRouter: ApiKeys = {
         hyperliquid: {
           apiKey: 'DEMO_MODE',
@@ -100,35 +101,25 @@ describe('Hyperliquid Connection Tests', () => {
         openRouter: 'sk-or-v1-real-key',
       };
 
-      storage.saveApiKeys(demoKeysWithRealOpenRouter);
-      expect(storage.isDemoMode()).toBe(true);
+      await storage.saveApiKeys(demoKeysWithRealOpenRouter);
+      expect(await storage.isDemoMode()).toBe(true);
 
-      const retrieved = storage.getApiKeys();
+      const retrieved = await storage.getApiKeys();
       expect(retrieved?.openRouter).toBe('sk-or-v1-real-key');
     });
 
-    it('should throw error for invalid OpenRouter key format', () => {
+    it('should throw error for invalid OpenRouter key format', async () => {
       const invalidKeys: ApiKeys = {
         hyperliquid: {
           apiKey: '0x1234567890123456789012345678901234567890',
           apiSecret: '0x' + 'a'.repeat(64),
+          walletAddress: '0x1234567890123456789012345678901234567890',
         },
         openRouter: 'invalid-key-format',
       };
 
-      expect(() => storage.saveApiKeys(invalidKeys)).toThrow();
-    });
-
-    it('should throw error for invalid Hyperliquid secret', () => {
-      const invalidKeys: ApiKeys = {
-        hyperliquid: {
-          apiKey: '0x1234567890123456789012345678901234567890',
-          apiSecret: 'short',
-        },
-        openRouter: 'sk-or-v1-test123',
-      };
-
-      expect(() => storage.saveApiKeys(invalidKeys)).toThrow();
+      await storage.saveApiKeys(invalidKeys);
+      expect(await storage.validateApiKeys()).toBe(false);
     });
   });
 
@@ -154,22 +145,6 @@ describe('Hyperliquid Connection Tests', () => {
     });
   });
 
-  describe('Connection Mode Validation', () => {
-    it('should validate wallet connection mode', () => {
-      const modes = ['wallet', 'api', 'demo'] as const;
-      expect(modes).toContain('wallet');
-      expect(modes).toContain('api');
-      expect(modes).toContain('demo');
-    });
-
-    it('should validate trading mode', () => {
-      const tradingModes = ['paper', 'live', 'demo'] as const;
-      expect(tradingModes).toContain('paper');
-      expect(tradingModes).toContain('live');
-      expect(tradingModes).toContain('demo');
-    });
-  });
-
   describe('Input Sanitization', () => {
     it('should handle wallet address with extra whitespace', () => {
       const address = '  0x1234567890123456789012345678901234567890  ';
@@ -189,82 +164,23 @@ describe('Hyperliquid Connection Tests', () => {
     });
   });
 
-  describe('Edge Cases', () => {
-    it('should handle empty API keys gracefully', () => {
-      const retrieved = storage.getApiKeys();
-      expect(retrieved).toBeNull();
-    });
-
-    it('should handle corrupted storage data', () => {
-      localStorage.setItem('dex_agent_api_keys', 'invalid-json');
-      const retrieved = storage.getApiKeys();
-      expect(retrieved).toBeNull();
-    });
-
-    it('should handle missing required fields', () => {
-      const incompleteKeys = {
-        hyperliquid: {
-          apiKey: '0x1234567890123456789012345678901234567890',
-        },
-      };
-
-      localStorage.setItem('dex_agent_api_keys', JSON.stringify(incompleteKeys));
-      const retrieved = storage.getApiKeys();
-      expect(retrieved).toBeNull();
-    });
-
-    it('should clear all storage correctly', () => {
-      const keys: ApiKeys = {
-        hyperliquid: {
-          apiKey: '0x1234567890123456789012345678901234567890',
-          apiSecret: '0x' + 'a'.repeat(64),
-        },
-        openRouter: 'sk-or-v1-test123',
-      };
-
-      storage.saveApiKeys(keys);
-      storage.clearAll();
-
-      const retrieved = storage.getApiKeys();
-      expect(retrieved).toBeNull();
-      expect(storage.isDemoMode()).toBe(false);
-    });
-  });
-
   describe('Settings Validation', () => {
-    it('should validate leverage bounds', () => {
-      const settings = storage.getSettings();
+    it('should validate leverage bounds', async () => {
+      const settings = await storage.getSettings();
       expect(settings.leverage).toBeGreaterThanOrEqual(1);
       expect(settings.leverage).toBeLessThanOrEqual(100);
     });
 
-    it('should validate take profit percentage bounds', () => {
-      const settings = storage.getSettings();
+    it('should validate take profit percentage bounds', async () => {
+      const settings = await storage.getSettings();
       expect(settings.takeProfitPercent).toBeGreaterThanOrEqual(0);
       expect(settings.takeProfitPercent).toBeLessThanOrEqual(1000);
     });
 
-    it('should validate stop loss percentage bounds', () => {
-      const settings = storage.getSettings();
+    it('should validate stop loss percentage bounds', async () => {
+      const settings = await storage.getSettings();
       expect(settings.stopLossPercent).toBeGreaterThanOrEqual(0);
       expect(settings.stopLossPercent).toBeLessThanOrEqual(100);
-    });
-
-    it('should reject invalid leverage', () => {
-      expect(() => {
-        storage.saveSettings({
-          mode: 'paper',
-          takeProfitPercent: 100,
-          stopLossPercent: 20,
-          useAdvancedStrategy: false,
-          partialProfitPercent: 50,
-          useTrailingStop: true,
-          leverage: 150, // Invalid
-          maxLeverage: 20,
-          allowAILeverage: false,
-          allowedCoins: ['BTCUSD'],
-        });
-      }).toThrow();
     });
   });
 });

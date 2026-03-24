@@ -9,8 +9,7 @@ import { useTradingStore } from "@/store/tradingStore";
 import { TradingChart } from "@/components/TradingChart";
 import { TradingControls } from "@/components/TradingControls";
 import { LogoDropdown } from "@/components/LogoDropdown";
-import { getApiKeys, clearApiKeys } from "@/lib/storage";
-import { confirm } from "@tauri-apps/plugin-dialog";
+import * as storage from "@/lib/storage";
 import { Activity, DollarSign, TrendingUp, Settings, LineChart, X, Loader2, AlertTriangle } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
@@ -41,7 +40,7 @@ export default function Dashboard() {
   
   useEffect(() => {
     const loadKeys = async () => {
-      const keys = await getApiKeys();
+      const keys = await storage.getApiKeys();
       setHasApiKeys(Object.keys(keys).length > 0);
     };
     loadKeys();
@@ -50,8 +49,8 @@ export default function Dashboard() {
   // Fetch perpetual wallet balance when network changes or component mounts
   useEffect(() => {
     const fetchBalance = async () => {
-      const keys = await getApiKeys();
-      if (!keys?.hyperliquidMainnetApiKey) return;
+      const keys = await storage.getApiKeys();
+      if (!keys?.hyperliquid?.apiKey) return;
 
       try {
         const result = await pythonApi.getAccountInfo({
@@ -235,7 +234,7 @@ export default function Dashboard() {
                   checked={network === 'mainnet'}
                   onCheckedChange={async (checked) => {
                     const newNetwork = checked ? 'mainnet' : 'testnet';
-                    const confirmed = await confirm(
+                    const confirmed = await storage.nativeConfirm(
                       `Switch to Hyperliquid ${newNetwork.toUpperCase()}?\n\n` +
                       (newNetwork === 'testnet' 
                         ? 'Testnet uses test funds and is safe for experimentation.' 
@@ -279,7 +278,7 @@ export default function Dashboard() {
                   onCheckedChange={async (checked) => {
                     const newMode = checked ? 'live' : 'paper';
                     if (newMode === 'live') {
-                      const confirmed = await confirm(
+                      const confirmed = await storage.nativeConfirm(
                         '⚠️ WARNING: You are about to switch to LIVE TRADING mode.\n\n' +
                         'Real funds will be at risk. Are you sure you want to continue?',
                         { title: 'Live Trading Mode', kind: 'warning' }
@@ -308,14 +307,14 @@ export default function Dashboard() {
                 size="icon"
                 className="border-cyan-500/30 text-cyan-400 hover:bg-cyan-500/20"
                 onClick={async () => {
-                  const confirmed = await confirm(
+                  const confirmed = await storage.nativeConfirm(
                     '⚠️ Clear all API keys and settings?\n\n' +
                     'This will remove all stored API keys and reset your configuration.\n\n' +
                     'Are you sure you want to continue?',
                     { title: 'Clear API Keys', kind: 'warning' }
                   );
                   if (confirmed) {
-                    await clearApiKeys();
+                    await storage.clearApiKeys();
                     setHasApiKeys(false);
                     toast.success('API keys cleared');
                   }
