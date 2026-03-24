@@ -19,8 +19,7 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useTradingLogs } from '@/hooks/use-python-api';
-import { save } from '@tauri-apps/plugin-dialog';
-import { writeTextFile, BaseDirectory } from '@tauri-apps/plugin-fs';
+import { saveFileDialog } from '@/lib/storage';
 
 interface SystemLog {
   id: string;
@@ -136,35 +135,26 @@ export function FloatingLogViewer() {
         exportedAt: new Date().toISOString(),
       };
       
-      const { save } = await import('@tauri-apps/plugin-dialog');
-      const { writeTextFile } = await import('@tauri-apps/plugin-fs');
+      const fileName = `trading_logs_${new Date().toISOString().split('T')[0]}.json`;
+      const filePath = await saveFileDialog("Save Logs", fileName);
       
-      const filePath = await save({
-        defaultPath: `trading_logs_${new Date().toISOString().split('T')[0]}.json`,
-        filters: [{
-          name: 'JSON',
-          extensions: ['json']
-        }]
-      });
+      const blob = new Blob([JSON.stringify(logsData, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filePath ? filePath.split('/').pop() || fileName : fileName;
+      a.click();
+      URL.revokeObjectURL(url);
       
       if (filePath) {
-        await writeTextFile(filePath, JSON.stringify(logsData, null, 2));
-        toast.success('Logs downloaded successfully');
+        toast.success('Logs exported');
+      } else {
+        toast.success('Logs downloaded via browser');
       }
     } catch (error) {
       console.error('Error downloading logs:', error);
       toast.error('Failed to download logs');
     }
-  };
-    
-    const blob = new Blob([JSON.stringify(logsData, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `dex-logs-${Date.now()}.json`;
-    a.click();
-    URL.revokeObjectURL(url);
-    toast.success('Logs downloaded');
   };
 
   const errorCount = systemLogs.filter(log => log.level === 'error').length;

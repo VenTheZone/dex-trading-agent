@@ -24,37 +24,39 @@ export function isScriptInjection(input: string): boolean {
   return dangerousPatterns.some(pattern => pattern.test(input));
 }
 
+import { storeGet, storeSet } from "./storage";
+
 /**
- * Validate localStorage access is safe
+ * Validate store access is safe
  */
-export function safeLocalStorageGet(key: string): string | null {
+export async function safeStoreGet(key: string): Promise<string | null> {
   try {
-    const value = localStorage.getItem(key);
+    const value = await storeGet<string>(key);
     if (value && isScriptInjection(value)) {
-      console.warn(`Potential XSS detected in localStorage key: ${key}`);
-      localStorage.removeItem(key);
+      console.warn(`Potential XSS detected in store key: ${key}`);
+      // Consider if we should clear it here as well
       return null;
     }
     return value;
   } catch (error) {
-    console.error('localStorage access error:', error);
+    console.error('Store access error:', error);
     return null;
   }
 }
 
 /**
- * Safely set localStorage with validation
+ * Safely set store with validation
  */
-export function safeLocalStorageSet(key: string, value: string): boolean {
+export async function safeStoreSet(key: string, value: string): Promise<boolean> {
   try {
     if (isScriptInjection(value)) {
-      console.warn(`Attempted to store potentially malicious content in localStorage key: ${key}`);
+      console.warn(`Attempted to store potentially malicious content in store key: ${key}`);
       return false;
     }
-    localStorage.setItem(key, value);
+    await storeSet(key, value);
     return true;
   } catch (error) {
-    console.error('localStorage write error:', error);
+    console.error('Store write error:', error);
     return false;
   }
 }

@@ -4,7 +4,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { storage, ApiKeys } from "@/lib/storage";
+import * as storage from "@/lib/storage";
+import type { ApiKeys } from "@/lib/storage";
 import { AlertTriangle, Key, Save, Info, Activity, CheckCircle2, HelpCircle } from "lucide-react";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
@@ -18,10 +19,20 @@ interface ApiKeySetupProps {
 }
 
 export function ApiKeySetup({ onComplete }: ApiKeySetupProps) {
-  const [keys, setKeys] = useState<ApiKeys>(storage.getApiKeys() || {
+  const [keys, setKeys] = useState<ApiKeys>({
     hyperliquid: { apiKey: '', apiSecret: '', walletAddress: '' },
     openRouter: '',
   });
+
+  useEffect(() => {
+    const loadKeys = async () => {
+      const storedKeys = await storage.getApiKeys();
+      if (storedKeys && storedKeys.hyperliquid) {
+        setKeys(storedKeys);
+      }
+    };
+    loadKeys();
+  }, []);
   const [, setMode] = useState<'wallet' | 'api' | 'demo'>('wallet');
   const [backendKeysConfigured, setBackendKeysConfigured] = useState(false);
 
@@ -47,14 +58,14 @@ export function ApiKeySetup({ onComplete }: ApiKeySetupProps) {
     });
   };
 
-  const handleDemoMode = () => {
+  const handleDemoMode = async () => {
     const balanceInput = document.getElementById('demo-initial-balance') as HTMLInputElement;
     const rawBalance = balanceInput ? balanceInput.value : '10000';
     const initialBalance = sanitizeNumberWithBounds(rawBalance, 100, 1000000, 10000);
     const rawOpenRouterKey = keys.openRouter && keys.openRouter.trim() !== '' ? keys.openRouter : 'DEMO_MODE';
     const openRouterKey = rawOpenRouterKey === 'DEMO_MODE' ? 'DEMO_MODE' : sanitizeApiKey(rawOpenRouterKey);
     
-    storage.saveApiKeys({
+    await storage.saveApiKeys({
       hyperliquid: { apiKey: 'DEMO_MODE', apiSecret: 'DEMO_MODE', walletAddress: 'DEMO_MODE' },
       openRouter: openRouterKey,
     });
@@ -139,7 +150,7 @@ export function ApiKeySetup({ onComplete }: ApiKeySetupProps) {
       keys.hyperliquid.apiSecret = privateKey;
     }
 
-    storage.saveApiKeys({
+    await storage.saveApiKeys({
       hyperliquid: {
         apiKey: sanitizedApiKey,
         apiSecret: keys.hyperliquid.apiSecret,
@@ -247,7 +258,7 @@ export function ApiKeySetup({ onComplete }: ApiKeySetupProps) {
                     <ul className="mt-2 space-y-1 text-sm">
                       <li>• <strong className="text-red-300">ALWAYS use a separate/dedicated wallet for AI trading</strong></li>
                       <li>• <strong className="text-red-300">NEVER use your main wallet with significant funds</strong></li>
-                      <li>• Keys are stored in browser localStorage only</li>
+                      <li>• Keys are encrypted and stored in secure system keyring</li>
                       <li>• Start with testnet to verify functionality</li>
                     </ul>
                   </AlertDescription>

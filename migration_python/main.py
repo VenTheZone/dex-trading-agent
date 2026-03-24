@@ -61,14 +61,14 @@ async def lifespan(app: FastAPI):
         logger.info("[STARTUP] Database initialized successfully")
         
         # Start price stream service
-        price_stream_service.start(
+        await price_stream_service.start(
             symbols=["BTC", "ETH", "SOL", "AVAX"],
             is_testnet=False
         )
         logger.info("[STARTUP] Price stream service started")
         
         # Start chart snapshot service
-        snapshot_service.start()
+        await snapshot_service.start()
         logger.info("[STARTUP] Chart snapshot service started")
         
         logger.info("[STARTUP] API ready to accept connections")
@@ -82,8 +82,8 @@ async def lifespan(app: FastAPI):
     # Shutdown
     logger.info("[SHUTDOWN] Cleaning up resources...")
     try:
-        price_stream_service.stop()
-        snapshot_service.stop()
+        await price_stream_service.stop()
+        await snapshot_service.stop()
         logger.info("[SHUTDOWN] Services stopped successfully")
     except Exception as e:
         logger.error(f"[SHUTDOWN] Error during cleanup: {e}", exc_info=True)
