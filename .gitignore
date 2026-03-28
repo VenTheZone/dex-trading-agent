@@ -88,3 +88,4 @@ Documentation_Archive_OLD/
 # Rust / Tauri
 src-tauri/target/
 src-qt/target/
+.worktrees
