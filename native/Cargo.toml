@@ -1,11 +1,14 @@
 [workspace]
 members = [
+    "crates/ai-providers",
     "crates/app-bootstrap",
     "crates/app-core",
     "crates/domain",
     "crates/exchange-hyperliquid",
     "crates/market-data",
+    "crates/paper-trading",
     "crates/persistence",
+    "crates/ui-shell",
     "crates/wallet",
 ]
 resolver = "2"

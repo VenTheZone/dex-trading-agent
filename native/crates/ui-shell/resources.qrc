@@ -1,0 +1,10 @@
+<!-- Qt Resource File for DeX Trading Agent -->
+<!-- Embeds QML files in the binary -->
+<RCC>
+    <qresource prefix="/DeXTradingAgent">
+        <file>qml/Main.qml</file>
+        <file>qml/TradingView.qml</file>
+        <file>qml/WalletView.qml</file>
+        <file>qml/SettingsView.qml</file>
+    </qresource>
+</RCC>

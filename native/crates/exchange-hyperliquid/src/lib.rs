@@ -8,7 +8,7 @@ pub use execution::{
     build_order_request, build_signed_order_request, sign_order_action, HyperliquidNetwork,
     HyperliquidOrder, HyperliquidRequestSignature, HyperliquidTimeInForce,
 };
-pub use rest::build_clearinghouse_state_request;
+pub use rest::{build_clearinghouse_state_request, fetch_clearinghouse_state};
 pub use ws::build_clearinghouse_state_subscription;
 
 use std::error::Error;

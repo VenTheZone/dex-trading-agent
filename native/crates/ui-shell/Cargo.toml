@@ -1,0 +1,23 @@
+[package]
+name = "ui-shell"
+version = "0.1.0"
+edition = "2021"
+description = "Qt6/QML UI shell for DeX Trading Agent"
+
+[dependencies]
+# Internal crates (always available)
+app-core = { path = "../app-core" }
+domain = { path = "../domain" }
+
+# Error handling
+thiserror = "1"
+anyhow = "1"
+
+# Async runtime for background tasks
+tokio = { version = "1", features = ["full"] }
+
+[build-dependencies]
+# C++ compilation
+cc = "1"
+# Qt6 pkg-config
+pkg-config = "0.3"
